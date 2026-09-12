@@ -15,6 +15,7 @@
 - session-context hook은 환경변수 또는 설치된 Codex/Claude symlink에서 checkout root를 해석한다.
 - 임의의 공백·한글 checkout에서 root를 찾고 `dev-oh`를 만들지 않는 회귀 테스트를 추가한다.
 - 공개 감사기는 원작성자 checkout 이름이 현재 실행 tree에 재등장하면 실패한다. 이미 배포된 commit history는 실행 경로가 아니며 기존 clone을 깨뜨리는 history rewrite를 피하기 위해 이 항목의 history 검사에서는 제외한다.
+- PR 검증 중 gitleaks action의 최신 요구사항에 맞춰 pull request scan에 `GITHUB_TOKEN`을 명시했다.
 
 ## 추적
 - https://github.com/oyuns-wishket/ai-working/issues/2
