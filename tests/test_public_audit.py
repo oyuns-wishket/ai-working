@@ -34,6 +34,9 @@ class PublicAuditTests(unittest.TestCase):
     def test_personal_local_hostname_is_rejected(self):
         self.assertIn("local_hostname", self.categories(b"ssh://my-private-mac." + b"local/path"))
 
+    def test_original_author_checkout_name_is_rejected(self):
+        self.assertIn("author_checkout", self.categories(b"$HOME/de" + b"v-oh/ai-working"))
+
     def test_machine_local_denylist_is_rejected_without_public_values(self):
         encoded = base64.b64encode(b"Example Confidential Name\n").decode()
         with patch.dict(os.environ, {"AI_WORKING_AUDIT_DENYLIST_B64": encoded}, clear=False):

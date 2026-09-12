@@ -17,8 +17,10 @@ TEXT_LIMIT = 1_000_000
 LEGACY_WAIVERS = {
     "bootstrap.sh",
     "docs/impl-notes/2026-09-12-public-only-ssot.md",
+    "docs/impl-notes/2026-09-12-portable-checkout-path.md",
     "docs/migration-ledger.md",
     "tests/bootstrap.test.mjs",
+    "tests/hook-session-context.test.mjs",
 }
 
 
@@ -64,6 +66,7 @@ def patterns() -> dict[str, re.Pattern[bytes]]:
             rb"\bC(?=[A-Z0-9]{8,}\b)(?=[A-Z0-9]*\d)[A-Z0-9]{8,}\b"
         ),
         "legacy_name": re.compile(legacy_name.encode(), re.IGNORECASE),
+        "author_checkout": re.compile(("dev" + "-oh").encode(), re.IGNORECASE),
     }
     denylist: list[bytes] = []
     denylist_paths = [Path.home() / ".config" / "ai-working" / "public-audit-denylist.txt"]
@@ -104,7 +107,9 @@ def scan_blob(path: str, data: bytes, checks: dict[str, re.Pattern[bytes]], *, h
         failures.append("binary")
         return failures
     for category, pattern in checks.items():
-        if category == "legacy_name" and path in LEGACY_WAIVERS:
+        if history and category == "author_checkout":
+            continue
+        if category in {"legacy_name", "author_checkout"} and path in LEGACY_WAIVERS:
             continue
         if pattern.search(data):
             failures.append(category)
