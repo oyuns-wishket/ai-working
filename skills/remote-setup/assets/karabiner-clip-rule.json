@@ -1,0 +1,19 @@
+{
+  "_comment": "remote-setup 스킬 동봉 — 맥북(VIEWER)의 ~/.config/karabiner/karabiner.json 안 profiles[].complex_modifications.rules 배열에 이 객체 하나를 추가한다. Jump 창이 앞에 있을 때 오른쪽 ⌘+V를 가로채 send-clip.sh 실행(원격엔 키 안보냄). 왼쪽 ⌘V는 평소대로 텍스트 붙여넣기.",
+  "description": "Jump 떠있을 때 오른쪽 ⌘+V → 맥북 클립보드 이미지를 미니로 전송 (미니에서 ⌘V로 붙여넣기)",
+  "manipulators": [
+    {
+      "type": "basic",
+      "from": { "key_code": "v", "modifiers": { "mandatory": ["right_command"] } },
+      "conditions": [
+        {
+          "type": "frontmost_application_if",
+          "bundle_identifiers": ["^com\\.p5sys\\.jump"]
+        }
+      ],
+      "to": [
+        { "shell_command": "/bin/bash -lc '$HOME/.config/remote-clip/send-clip.sh'" }
+      ]
+    }
+  ]
+}

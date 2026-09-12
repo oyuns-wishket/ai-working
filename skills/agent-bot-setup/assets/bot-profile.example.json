@@ -1,0 +1,62 @@
+{
+  "example_only": true,
+  "tenant_id": "example-organization",
+  "project_id": "example-project",
+  "bot_name": "Project Assistant",
+  "chat": {
+    "adapter": "slack-socket-mode",
+    "workspace_id": "SET_FROM_TARGET_ORGANIZATION",
+    "allowed_channel_ids": [],
+    "allowed_user_policy": "resolve from target workspace membership and channel policy",
+    "automatic_report_channels": [],
+    "direct_questions_require_reply": true
+  },
+  "runtime": {
+    "engine": "codex-app-server",
+    "version_policy": "probe-installed-binary-before-use",
+    "model": null,
+    "reasoning_effort": "high",
+    "model_verified_for_this_account": false,
+    "binary_path": null,
+    "workspace_path": null,
+    "private_state_root": null,
+    "permissions_profile": "agent-readonly",
+    "turn_timeout_seconds": 900,
+    "host_read_limit_per_turn": 80,
+    "native_turn_limit_per_tenant_day": 100,
+    "concurrency": 1
+  },
+  "auth": {
+    "owner": "target-organization",
+    "mode": "resolve-supported-account-auth-mode",
+    "secret_reference": null,
+    "copy_credentials_from_another_tenant": false
+  },
+  "sources": {
+    "approved_source_roots": [],
+    "include_paths_and_extensions": [],
+    "canonical_project_documents": [],
+    "revision": null,
+    "freshness": "unknown",
+    "projection_manifest": "SOURCE_MANIFEST.json"
+  },
+  "read_tools": {
+    "data_role_reference": null,
+    "allowlisted_datasets": [],
+    "sanitized_log_sources": [],
+    "scope_comes_from_validated_host_context": true
+  },
+  "host_workflows": {
+    "reply_in_origin_conversation": true,
+    "request_intake_backend": null,
+    "approved_actions": []
+  },
+  "deployment": {
+    "target_host_reference": null,
+    "service_account": null,
+    "resource_limits": "measure on target before activation",
+    "release_path": null,
+    "rollback_reference": null,
+    "scope_authorized_in_current_session": false
+  }
+}

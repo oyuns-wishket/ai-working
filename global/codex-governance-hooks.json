@@ -1,0 +1,66 @@
+{
+  "description": "ai-working cross-agent governance hooks managed by bootstrap.sh.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/dev-resource-guard.mjs",
+            "timeout": 5,
+            "additionalContextLimit": 800,
+            "statusMessage": "Checking local development resources"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/preview-db-guard.mjs",
+            "timeout": 6,
+            "additionalContextLimit": 1200,
+            "statusMessage": "Checking Preview DB isolation"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/dev-resource-guard.mjs",
+            "timeout": 5,
+            "statusMessage": "Enforcing local resource limits"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/preview-db-guard.mjs",
+            "timeout": 4,
+            "statusMessage": "Enforcing Preview DB isolation"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "other",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/dev-resource-guard.mjs",
+            "timeout": 10,
+            "statusMessage": "Cleaning up session-owned Supabase stack"
+          }
+        ]
+      }
+    ]
+  }
+}

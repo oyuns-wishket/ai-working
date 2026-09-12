@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "projects": [
+    {
+      "id": "github.com/example-org/sample-app",
+      "canonical_remote": "github.com/example-org/sample-app",
+      "remote_aliases": [],
+      "local_aliases": ["sample-app"],
+      "connection_status": "connected",
+      "wiki_namespace": "wiki/sample-app",
+      "retrieval": {
+        "max_documents": 4,
+        "max_total_bytes": 80000,
+        "pinned": [],
+        "intent_routes": {}
+      }
+    }
+  ]
+}

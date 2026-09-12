@@ -1,0 +1,4 @@
+interface:
+  display_name: "Knowns"
+  short_description: "운영배포 후 한 번의 선택으로 wiki 게시·배포"
+  default_prompt: "Use $knowns after verified production deployment, show one batched recommended wiki plan, honor skip, and otherwise ingest, validate, commit, push, and deploy without another confirmation."

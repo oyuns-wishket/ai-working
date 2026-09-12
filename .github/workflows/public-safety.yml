@@ -1,0 +1,43 @@
+name: public-safety
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit public contents and history
+        env:
+          AI_WORKING_AUDIT_DENYLIST_B64: ${{ secrets.AI_WORKING_AUDIT_DENYLIST_B64 }}
+        run: python3 scripts/public_audit.py --history
+      - name: Validate skills
+        run: python3 scripts/validate_skills.py
+      - name: Validate shell and JSON
+        run: |
+          git diff-tree --check --root --no-commit-id -r HEAD
+          bash -n bootstrap.sh hooks/*.sh
+          python3 -m json.tool manifest.json >/dev/null
+          for file in global/*.json; do python3 -m json.tool "$file" >/dev/null; done
+      - name: Run hook tests
+        run: node --test tests/*.test.mjs
+      - name: Run skill tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          python3 skills/agent-bot-setup/scripts/test_runtime_guard.py
+          python3 skills/knowns/scripts/test_inspect_context.py
+          python3 skills/knowns/scripts/test_publish_git.py
+          python3 -m unittest discover -s skills/multi-agent-dev/tests -p 'test_*.py'
+          python3 -m unittest discover -s skills/project-wiki-context/tests -p 'test_*.py'

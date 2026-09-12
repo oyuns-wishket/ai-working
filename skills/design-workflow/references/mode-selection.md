@@ -1,0 +1,61 @@
+# Mode selection
+
+## Decision table
+
+| 사용자 요청·프로젝트 상태 | 모드 | 기본 범위 | 하지 않는 것 |
+|---|---|---|---|
+| 새 제품, 신규 랜딩, 빈 화면 | `new` | 제품 맥락, 디자인 언어, 토큰, 첫 대표 화면 | 모든 페이지 동시 제작 |
+| 로고·색·서체·톤을 새 브랜드로 교체 | `rebrand` | 브랜드 정본과 단계별 화면 전환 | 기능·데이터 모델 재작성 |
+| 낡거나 제네릭한 UI를 개선 | `refactor` | 정보 위계, layout, component, responsive | 승인 없는 브랜드 전환 |
+| 메뉴·탭·모달·폼·한 화면 추가 | `small-feature` | 인접 UI 패턴을 복제한 최소 diff | 전역 palette·typography 변경 |
+| 문제와 개선안만 요청 | `audit` | 읽기, 캡처, finding과 우선순위 | 파일 수정, 설치, issue/commit |
+| 발표덱·제안서·리포트 신규 제작 | `new` | 덱 목적·청중·핵심 메시지, 시각 언어, 대표 슬라이드 | 전 슬라이드 동시 제작 |
+| 기존 덱·리포트의 위계·레이아웃 개선 | `refactor` | slide grid, typography scale, 도표 표현 | 승인 없는 브랜드 전환 |
+| 기존 덱에 슬라이드·섹션 추가 | `small-feature` | 기존 마스터 슬라이드를 복제한 최소 diff | 전체 palette·템플릿 변경 |
+
+## Ambiguous cases
+
+- "대시보드 예쁘게": 기존 브랜드가 있으면 `refactor`, 없고 새 제품이면 `new`.
+- "메뉴 추가하면서 전반적으로 정리": 먼저 `small-feature`; 전반 정리는 별도 `refactor` 제안.
+- "브랜드 컬러만 바꿔": token 영향 범위를 확인한다. 전체 인상을 바꾸려는 목적이면 `rebrand`, 지정 토큰 치환이면 좁은 refactor.
+- "레퍼런스처럼 만들어": 기능·콘텐츠 구조가 같지 않으면 시각 요소만 분해해 채택한다. 복제 요청으로 해석하지 않는다.
+- "모바일 화면도": 별도 제품이 아니라 기존 범위의 responsive acceptance criterion으로 포함한다.
+- "발표덱 만들어줘": 산출물 자체가 시각물이므로 이 스킬의 대상이다. 기존 덱 템플릿·브랜드가 있으면 `small-feature` 또는 `refactor`, 없으면 `new`이며 `new`의 절대 게이트를 그대로 통과한다.
+- "간단히 슬라이드 몇 장만": "간단히"는 게이트 면제가 아니다. 범위를 `small-feature`로 좁히되 기존 덱 정본을 먼저 확인하고 따른다. 정본이 없으면 `new`다.
+- "리포트/대시보드 뽑아줘": 데이터 산출이 목적이면 이 스킬 밖이다. **보여주는 형태**를 새로 정해야 하면 시각 산출물로 보고 모드를 고른다.
+
+## Scope guards
+
+### New
+
+- 첫 대표 화면과 공통 토큰으로 방향을 검증한 뒤 확장한다.
+- `PRODUCT.md`와 `DESIGN.md` 없이 구현부터 시작하지 않는다.
+
+### Rebrand
+
+- 브랜드 자산, legal name, 로고 사용 규칙을 사용자 제공 또는 공식 자료로 확인한다.
+- old/new token mapping과 rollout 순서를 남긴다.
+- 모든 화면을 한 번에 바꾸기보다 shell 또는 대표 flow에서 승인받는다.
+
+### Refactor
+
+- 사용자 flow, route, API, analytics event, permission을 acceptance criterion에 보존 대상으로 적는다.
+- DOM 구조 변경이 테스트나 접근성에 미치는 영향을 확인한다.
+
+### Small feature
+
+- 인접 화면 2개 이상에서 typography, spacing, color, radius, state pattern을 추출한다.
+- 새 token은 기존 token으로 표현할 수 없을 때만 추가한다.
+- 공통 component 변경은 해당 메뉴 밖 영향 범위를 캡처하고 검증한다.
+
+### Audit
+
+- 심각도보다 사용자 영향과 수정 비용을 함께 표시한다.
+- 자동 finding, 직접 관찰, 추론을 구분한다.
+
+### 앱이 아닌 시각 산출물(덱·제안서·리포트)
+
+- 모드와 게이트는 앱 작업과 동일하다. Git 프로젝트가 아니라는 이유로 인터뷰·3방향·3시안을 줄이지 않는다.
+- comp는 전체 덱이 아니라 대표 슬라이드(표지 + 핵심 본문) 기준으로 만들고, 승인 뒤 나머지를 전개한다.
+- 정본은 산출물 디렉토리의 `DECK.md`(또는 동등 문서)에 남긴다: 목적, 청중, 핵심 메시지, palette, typography, slide grid, 채택·비채택 레퍼런스.
+- 검증은 lint·build 대신 실제 렌더 확인으로 치환한다: 브라우저 전 슬라이드 확인, 투사 비율, overflow·폰트 fallback·이미지 누락, 대비.

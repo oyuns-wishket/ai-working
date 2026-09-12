@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hermes Bot Setup"
+  short_description: "Set up Hermes, Codex, Slack, Gmail, and Calendar on a Mac."
+  default_prompt: "Use $hermes-bot-setup to set up or migrate a Hermes-powered Slack personal assistant on this Mac."

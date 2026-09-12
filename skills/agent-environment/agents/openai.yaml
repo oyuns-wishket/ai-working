@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Environment"
+  short_description: "Sync Claude, Codex, and Claude account switching."
+  default_prompt: "Synchronize or diagnose my Claude and Codex development environment."

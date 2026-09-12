@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Bot Setup"
+  short_description: "지속 조사 봇을 조직별 읽기 권한으로 구축"
+  default_prompt: "Use $agent-bot-setup to connect this project's chat bot like a persistent terminal agent, with code edits and deployment blocked."

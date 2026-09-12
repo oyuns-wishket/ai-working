@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Wiki Context"
+  short_description: "Resolve safe, current project wiki context"
+  default_prompt: "Use $project-wiki-context to resolve this repository and retrieve bounded canonical context."

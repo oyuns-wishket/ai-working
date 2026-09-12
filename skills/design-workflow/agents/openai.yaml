@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design Workflow"
+  short_description: "인터뷰와 시안 승인 후 프로젝트 디자인을 구현·검증합니다"
+  default_prompt: "$design-workflow를 사용해 인터뷰부터 시작하고 시안을 승인받은 뒤 이 프로젝트의 UI를 구현해 주세요."

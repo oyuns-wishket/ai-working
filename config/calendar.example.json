@@ -1,0 +1,13 @@
+{
+  "adapter": "slack",
+  "adapter_tool": "<MACHINE_LOCAL_ADAPTER_TOOL>",
+  "destination_label": "attendance",
+  "channel_id": "<MACHINE_LOCAL_CHANNEL_ID>",
+  "mention_ids": ["<OPTIONAL_USER_ID>"],
+  "messages": {
+    "remote": "Working remotely today.",
+    "offsite": "Working off-site today.",
+    "leave": "Leaving work now.",
+    "weekend": "Working this weekend."
+  }
+}

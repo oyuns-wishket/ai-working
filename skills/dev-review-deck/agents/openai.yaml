@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dev Review Deck"
+  short_description: "완료 기능을 실제 Playwright 화면으로 담아 폰에서 빠르게 확인"
+  default_prompt: "Use $dev-review-deck to capture the completed features with Playwright and serve a lightweight HTML deck I can review on my phone."

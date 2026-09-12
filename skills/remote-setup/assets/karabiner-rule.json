@@ -1,0 +1,19 @@
+{
+  "_comment": "remote-setup 스킬 동봉 — 맥북(VIEWER)의 ~/.config/karabiner/karabiner.json 안 profiles[].complex_modifications.rules 배열에 이 객체 하나를 추가한다. (이미 같은 description 규칙이 있으면 교체)",
+  "description": "Jump 떠있을 때 Caps Lock → 맥북 로컬 IME만 한영 토글 (원격엔 키 안보냄)",
+  "manipulators": [
+    {
+      "type": "basic",
+      "from": { "key_code": "caps_lock" },
+      "conditions": [
+        {
+          "type": "frontmost_application_if",
+          "bundle_identifiers": ["^com\\.p5sys\\.jump"]
+        }
+      ],
+      "to": [
+        { "shell_command": "/bin/bash -lc '$HOME/.config/karabiner/jump-hangul-toggle.sh'" }
+      ]
+    }
+  ]
+}
