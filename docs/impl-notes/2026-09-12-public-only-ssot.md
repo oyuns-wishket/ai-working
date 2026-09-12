@@ -42,5 +42,12 @@
 - 추가 token 형식과 개인 `.local` host 회귀 테스트를 넣고, MIT license와 26-skill catalog를 추가했다.
 - `knowns` 실행 조건이 글로벌 규칙과 충돌하던 세 skill을 검증된 운영 배포 후로 한정했다.
 
+## 전환 검증
+- Clean public root `468c174`를 main에 게시했고 GitHub Actions public-safety run `34687076051`이 gitleaks, full-history audit, skill validation, shell/JSON, Node, Python 검사를 모두 통과했다.
+- 현재 Mac에서 public main의 bootstrap을 적용한 뒤 재적용은 `변경 0 / 정상 69`, status는 `정상 69`를 기록했다.
+- Claude/Codex/global/workspace active symlink 55개가 public checkout을 가리키고 이전 SSOT 대상은 0개다. 나머지 symlink는 별도 marketplace skill이다.
+- 기존 memory 27개 파일을 machine-local real directory로 보존했다. 상대 memory symlink도 이동 전에 실제 대상을 고정하도록 회귀 테스트를 추가했다.
+- calendar 설정과 project context registry를 `~/.config/ai-working/` 아래 machine-local 설정으로 이관했고, connected project가 `wiki-bounded`로 resolve되는 것을 확인했다.
+
 ## ⚠️ DEVIATION
 - 이전 구현은 private overlay를 유지했으나 사용자의 명시적 정정과 맞지 않았다. 이번 작업에서 overlay를 제거하고 public-only로 교정한다.

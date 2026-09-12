@@ -75,7 +75,7 @@ test("public-only bootstrap migrates legacy managed state and is idempotent", ()
   }
   fs.symlinkSync(marketplace, path.join(target, ".agents", "skills", "external-skill"))
   fs.mkdirSync(path.dirname(memoryPath(target)), { recursive: true })
-  fs.symlinkSync(path.join(legacy, "memory"), memoryPath(target))
+  fs.symlinkSync(path.relative(path.dirname(memoryPath(target)), path.join(legacy, "memory")), memoryPath(target))
 
   const claudeFile = path.join(target, ".claude", "CLAUDE.md")
   fs.writeFileSync(
@@ -85,6 +85,9 @@ test("public-only bootstrap migrates legacy managed state and is idempotent", ()
       "<!-- BEGIN AGENT-DEV-CONSORTIUM (auto) -->",
       `@${legacy}/global/AI-WORKING.md`,
       "<!-- END AGENT-DEV-CONSORTIUM (auto) -->",
+      "<!-- BEGIN AI-WORKING (auto) -->",
+      `@${legacy}/global/AI-WORKING.md`,
+      "<!-- END AI-WORKING (auto) -->",
       "",
     ].join("\n"),
   )

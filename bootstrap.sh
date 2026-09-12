@@ -92,7 +92,7 @@ do_import(){
     if [ "$STATUS" = 1 ]; then say "$c_warn" "  ! import 갱신 필요: $into"; problems=$((problems+1)); return; fi
     record_change "  → import 갱신: $into"; [ "$DRY" = 1 ] && return
     local backup; backup="$(backup_path "$file").pre-import"; mkdir -p "$(dirname "$backup")"; cp "$file" "$backup"
-    awk -v b="$begin" -v e="$end" -v repl="$block" '$0==b{print repl; skip=1; next} skip&&$0==e{skip=0; next} !skip{print}' "$file" > "$file.tmp"; mv "$file.tmp" "$file"
+    awk -v b="$begin" -v e="$end" -v line="$line" '$0==b{print b; print line; print e; skip=1; next} skip&&$0==e{skip=0; next} !skip{print}' "$file" > "$file.tmp"; mv "$file.tmp" "$file"
   else
     if [ "$STATUS" = 1 ]; then say "$c_warn" "  ! import 없음: $into"; problems=$((problems+1)); return; fi
     record_change "  → import 주입: $into"; [ "$DRY" = 1 ] && return
@@ -103,12 +103,17 @@ do_import(){
 }
 
 ensure_local_memory(){
-  local dst backup; dst="$(target_path '~/.claude/projects/__USER_SLUG__/memory')"
+  local dst backup source_dir=""; dst="$(target_path '~/.claude/projects/__USER_SLUG__/memory')"
   if [ -d "$dst" ] && [ ! -L "$dst" ]; then say "$c_skip" "  = machine-local memory 디렉토리"; ok=$((ok+1)); return; fi
   if [ "$STATUS" = 1 ]; then say "$c_warn" "  ! machine-local memory 이관 필요"; problems=$((problems+1)); return; fi
   record_change "  → machine-local memory 디렉토리로 이관"; [ "$DRY" = 1 ] && return
   mkdir -p "$(dirname "$dst")"
-  if [ -e "$dst" ] || [ -L "$dst" ]; then backup="$(backup_move "$dst")"; mkdir -p "$dst"; if [ -d "$backup" ]; then cp -aL "$backup"/. "$dst"/; fi
+  if [ -L "$dst" ]; then source_dir="$(cd "$(dirname "$dst")" && cd "$(readlink "$dst")" 2>/dev/null && pwd -P || true)"; fi
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
+    backup="$(backup_move "$dst")"; mkdir -p "$dst"
+    if [ -n "$source_dir" ] && [ -d "$source_dir" ]; then cp -aL "$source_dir"/. "$dst"/
+    elif [ -d "$backup" ]; then cp -aL "$backup"/. "$dst"/
+    fi
   else mkdir -p "$dst"; fi
 }
 
