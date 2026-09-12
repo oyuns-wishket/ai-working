@@ -4,7 +4,32 @@
 
 CWD=$(pwd)
 CONTEXT=""
-AI_WORKING_ROOT="${AI_WORKING_ROOT:-$HOME/dev-oh/ai-working}"
+
+resolve_ai_working_root() {
+  if [ -n "${AI_WORKING_ROOT:-}" ] && [ -f "$AI_WORKING_ROOT/bootstrap.sh" ]; then
+    printf '%s' "$AI_WORKING_ROOT"
+    return 0
+  fi
+
+  local link raw resolved candidate
+  for link in "$HOME/.codex/AGENTS.md" "$HOME/.agents/skills/dev-protocol" "$HOME/.claude/skills/dev-protocol"; do
+    [ -L "$link" ] || continue
+    raw="$(readlink "$link")"
+    case "$raw" in
+      /*) resolved="$raw" ;;
+      *) resolved="$(cd "$(dirname "$link")" && cd "$(dirname "$raw")" 2>/dev/null && printf '%s/%s' "$PWD" "$(basename "$raw")" || true)" ;;
+    esac
+    [ -n "$resolved" ] || continue
+    candidate="$(dirname "$(dirname "$resolved")")"
+    if [ -f "$candidate/bootstrap.sh" ]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+AI_WORKING_ROOT="$(resolve_ai_working_root || true)"
 
 # Git 정보
 if git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
@@ -14,8 +39,8 @@ if git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
   CONTEXT="Git: branch=$BRANCH, uncommitted=$DIRTY files, last commit: $LAST_COMMIT"
 
   # Optional project→wiki registry hint. No wiki body, pull, network, or write.
-  WIKI_CONTEXT_SCRIPT="$AI_WORKING_ROOT/skills/project-wiki-context/scripts/wiki_context.py"
-  if [ -f "$WIKI_CONTEXT_SCRIPT" ]; then
+  WIKI_CONTEXT_SCRIPT="${AI_WORKING_ROOT:+$AI_WORKING_ROOT/skills/project-wiki-context/scripts/wiki_context.py}"
+  if [ -n "$WIKI_CONTEXT_SCRIPT" ] && [ -f "$WIKI_CONTEXT_SCRIPT" ]; then
     WIKI_CONTEXT=$(python3 "$WIKI_CONTEXT_SCRIPT" hook --project "$CWD" 2>/dev/null || true)
     [ -n "$WIKI_CONTEXT" ] && CONTEXT="$CONTEXT | $WIKI_CONTEXT"
   fi

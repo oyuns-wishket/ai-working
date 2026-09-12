@@ -13,11 +13,12 @@ Claude Code와 Codex가 같은 글로벌 규칙, 스킬, hook, workspace 기본�
 
 ## 설치
 
-기본 경로는 `~/dev-oh/ai-working`이다.
+clone이나 bootstrap 전에 사용할 사람이 checkout 위치를 먼저 정한다. 이미 쓰는 개발 폴더가 있으면 그 구조를 우선하고, 선호가 없을 때만 `~/ai-working`을 제안한다. 원작성자의 상위 폴더 이름을 복사하지 않는다.
 
 ```bash
-git clone https://github.com/oyuns-wishket/ai-working.git ~/dev-oh/ai-working
-cd ~/dev-oh/ai-working
+AI_WORKING_ROOT="$HOME/ai-working" # 원하는 절대경로로 변경 가능
+git clone https://github.com/oyuns-wishket/ai-working.git "$AI_WORKING_ROOT"
+cd "$AI_WORKING_ROOT"
 ./bootstrap.sh --dry-run
 ./bootstrap.sh
 ./bootstrap.sh --status
@@ -48,7 +49,7 @@ bootstrap은 다음을 수행한다.
 정본을 고친 머신에서 검증하고 commit/push한 뒤 다른 머신에서 실행한다.
 
 ```bash
-cd ~/dev-oh/ai-working
+cd "<처음 선택한 ai-working checkout 경로>"
 ./bootstrap.sh --pull
 ./bootstrap.sh --status
 ```
@@ -104,7 +105,7 @@ Skill은 Agent Skills 표준 frontmatter의 `name`, `description`을 포함해�
 
 ## 개인화
 
-다른 사람이 이 저장소를 자기 AI SSOT로 사용할 때는 fork한 뒤 `personal-ai-ssot` skill로 인터뷰한다. 사용하는 장비, AI 도구, 폴더와 파일 이름, 업무 흐름을 정하고 저장소 안의 사용자 고유 이름을 자기 값으로 바꾼다.
+다른 사람이 이 저장소를 자기 AI SSOT로 사용할 때는 bootstrap보다 먼저 `personal-ai-ssot` skill로 인터뷰한다. 사용하는 장비, AI 도구, checkout 위치, 폴더와 파일 이름, 업무 흐름을 정한 다음 fork 또는 새 정본을 그 위치에 만들고 연결한다.
 
 ```text
 skills/personal-ai-ssot/SKILL.md를 읽고 한 번에 한 질문씩 인터뷰해서
