@@ -48,6 +48,9 @@
 - Claude/Codex/global/workspace active symlink 55개가 public checkout을 가리키고 이전 SSOT 대상은 0개다. 나머지 symlink는 별도 marketplace skill이다.
 - 기존 memory 27개 파일을 machine-local real directory로 보존했다. 상대 memory symlink도 이동 전에 실제 대상을 고정하도록 회귀 테스트를 추가했다.
 - calendar 설정과 project context registry를 `~/.config/ai-working/` 아래 machine-local 설정으로 이관했고, connected project가 `wiki-bounded`로 resolve되는 것을 확인했다.
+- private GitHub 저장소는 archive했고, commit하지 않은 기존 로컬 변경은 `archive-ai-working-private*` 작업 트리에 그대로 보존했다.
+- 최종 독립 재감사는 보수적으로 9.7/10이었다. 현재 Mac, clean target, public CI의 필수 기준은 모두 통과했고 9점 미만 blocker는 없다.
+- 다른 Mac은 SSH timeout으로 이번 세션에서 실기 상태를 확인하지 못했다. 온라인이 되면 public main을 pull하고 bootstrap apply/status를 실행한다.
 
 ## ⚠️ DEVIATION
 - 이전 구현은 private overlay를 유지했으나 사용자의 명시적 정정과 맞지 않았다. 이번 작업에서 overlay를 제거하고 public-only로 교정한다.
