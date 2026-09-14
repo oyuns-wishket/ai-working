@@ -91,16 +91,18 @@ node --test tests/*.test.mjs
 
 Skill은 Agent Skills 표준 frontmatter의 `name`, `description`을 포함해야 한다. Claude 전용 도구명이 필요하면 의도를 먼저 쓰고 Codex에서 대응되는 native 기능을 사용하도록 설명한다.
 
-현재 포함된 26개 skill은 다음 영역을 다룬다.
+현재 포함된 25개 skill은 다음 영역을 다룬다.
 
 | 영역 | Skill |
 |---|---|
-| SSOT·환경 | `agent-environment`, `claude-setup`, `personal-ai-ssot`, `ssotify`, `sync-consortium` |
-| 개발 흐름 | `design-workflow`, `dev-protocol`, `feature-flow`, `multi-agent-dev`, `paseo-setup` |
+| SSOT·환경 | `agent-environment`, `personal-ai-ssot`, `ssotify` |
+| 개발 흐름 | `design-workflow`, `dev-protocol`, `feature-flow`, `multi-agent-dev`, `paseo-setup`, `systematic-debugging` |
 | 기획·검증 | `dev-review-deck`, `gen-spec`, `generate-spec`, `knowns`, `wiki-curator` |
 | 에이전트·연동 | `agent-bot-setup`, `external-consumer-sync`, `hermes-bot-setup`, `knowledge-wiki`, `online-channel-guide` |
 | 인프라·원격 | `customer-infra-ops`, `mac-file-sync`, `project-wiki-context`, `remote-setup`, `remote-ssh-edit` |
 | 개인 업무 | `calendar` |
+
+[스킬 통합 기준과 이전 이름 대응표](docs/skill-consolidation.md)를 참고한다. 환경 설치·동기화는 `agent-environment`, 개발 절차는 `dev-protocol`이 소유한다.
 
 ## 개인화
 

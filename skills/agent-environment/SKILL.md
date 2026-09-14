@@ -1,38 +1,29 @@
 ---
 name: agent-environment
-description: Use when the user asks to set up, sync, diagnose, or update the shared Claude Code and Codex environment across Macs, global rules, hooks, skills, AGENTS.md/CLAUDE.md, or Claude account switching with cswap. Triggers on "에이전트 환경", "Claude Codex 동기화", "공통 규칙", "bootstrap", "cswap", "클로드 계정 전환", "다른 맥 세팅", or "글로벌 룰".
+description: Set up, sync, or diagnose the shared Claude/Codex environment, global rules, hooks, skills, and cswap accounts across Macs. Includes former claude-setup and sync-consortium requests.
 ---
 
-# Agent environment — Claude × Codex
+# Agent environment
 
-Use the public `ai-working` checkout as the only version-controlled AI environment SSOT. Resolve its location from the installed skill link or current checkout and call it `$AI_WORKING_ROOT`; do not assume a particular username or parent directory. Provider credentials, TCC permissions, and other secrets remain machine-local configuration rather than a second policy or skill source.
+The public `ai-working` checkout owns shared policy and workflows. Resolve `AI_WORKING_ROOT` from the current checkout or installed skill symlink. Credentials, account choices, permissions and plugin selections stay machine-local.
 
 ## Choose the operation
 
-1. **Check or sync another Mac:** read `references/claude-codex-sync.md`, run `bootstrap.sh --status` first, then `bootstrap.sh --pull` only when needed. Report each resolved link.
-2. **Change a shared global rule or workflow:** edit only the canonical source under `ai-working/`. Never edit `~/.claude`, `~/.codex`, or an adapter copy as the source. Validate with `ai-working/bootstrap.sh --status`, then commit and push according to the current authorization.
-3. **Use or repair Claude account switching:** read `references/cswap.md`. Never print, commit, export, or paste OAuth tokens, API keys, Keychain data, or `cswap export` output.
-4. **Add a cross-agent skill:** author it at `ai-working/skills/<name>/` and run `ai-working/bootstrap.sh` to expose it to Claude and Codex. Keep secrets and customer-confidential values out of the skill; use documented environment variables or ignored local config for runtime values. Write `SKILL.md` agent-neutral and interpret platform-specific tool names through the global platform-translation rule.
+- **Install, sync or repair:** read [shared environment](references/claude-codex-sync.md). Inspect the checkout status and `bootstrap.sh --status`, then dry-run the needed update. Use `--pull` only when source updates are needed and the checkout can fast-forward safely. Apply from the canonical checkout, not a temporary task worktree. Inspect the real diff before replacing local customizations.
+- **Change global policy or a skill:** edit `global/CLAUDE.md` or `skills/<name>/` in this repository, validate, then run bootstrap. Use `ssotify` for substantial skill authoring/consolidation. Never make an agent-home copy the new source.
+- **Claude account switching:** read [cswap](references/cswap.md). Never print or export account tokens, Keychain contents or `cswap export` output.
+- **Hook or context efficiency:** read [hook behavior](../../docs/hook-behavior.md); run `node scripts/check_environment.mjs --project <path> --json`. For measured task comparisons use [task metrics](../../docs/task-metrics.md). Installation parity does not prove runtime behavior; cache-hit rate is not money saved.
+- **External assets or retired workflows:** read [shared assets](../../docs/agent-assets.md) and [skill ownership](../../docs/skill-consolidation.md). Review selected sources and conflicts before applying the local registry. Project adapters are a separate scope; never fan out across projects without a request.
 
-## Behavior diagnostics
+## Verify the actual resolution
 
-For hook/workflow efficiency checks, read [hook behavior](../../docs/hook-behavior.md). Run
-`node scripts/check_environment.mjs --project <project-path> --json` from the resolved SSOT root to inspect configured
-workspace matching and handoff sizes, then use the relevant behavioral tests. Bootstrap status establishes installation
-parity, not runtime correctness. Real workspace paths remain in machine-local `workspaces.json`.
-For task efficiency measurements, use [task metrics](../../docs/task-metrics.md): explicitly attach sessions and compare
-usage, elapsed wall time, retries, and verified outcomes. Do not equate cache-hit rate with savings or claim a model
-change is more efficient without comparable task results.
-
-## Invariants
-
-- Claude global policy imports `global/CLAUDE.md`; Codex global guidance links to that exact file.
-- Both agents read the same public source skills through links. Skills are authored under the `ai-working` root, never directly in an agent home.
-- Hooks, Keychain/TCC permissions, account credentials, and provider-only commands remain machine-local. Their policy intent belongs in the source only when it applies to both agents.
-- Before claiming the environment is synced, verify all `manifest.json` links and imports with `bootstrap.sh --status`.
+- Claude `~/.claude/CLAUDE.md` has a marker-managed native import of `global/CLAUDE.md`; unrelated wrapper content is preserved.
+- Codex `~/.codex/AGENTS.md` links to that same file. Removing OMC does not require removing Claude's native import wrapper.
+- Both home skill directories resolve each shared skill to the same whole source directory, including references/scripts.
+- Run `bootstrap.sh --status`. For changed hooks, verify native trust and lifecycle behavior as described in the shared-environment reference. Never claim an existing session has reloaded based only on filesystem checks.
 
 ## Optional orchestration removal
 
-Measure actual recent tool/skill calls separately from automatic hook activity before judging a plugin's value. Aggregate results without publishing transcripts or private state. Preserve needed skills through explicit shared source links and native worker contracts; plugin removal must not silently remove a workflow the user still uses.
+Compare recent explicit workflow use with automatic hook activity. Keep aggregates private and preserve required capabilities before removal. Use native uninstall with persistent-data preservation; replace a plugin-dependent statusline first. Do not kill existing sessions or delete project memory/wiki folders.
 
-For an authorized removal, use the provider's native uninstall procedure with persistent-data preservation, replace any plugin-dependent statusline first, and verify native plugin discovery afterward. Do not kill processes owned by existing sessions or delete project memory/wiki folders. Retired optional CLI packages or caches may remain until their sessions finish; report that boundary. A local runtime profile can set `omc_mode: "removed"` and `native_statusline: true` so bootstrap does not revive routing settings and uses the lightweight native display. The profile contains machine-local choices, not credentials.
+The local runtime profile supports `omc_mode: "removed"` and `native_statusline: true`. These configure adapters without making OMC a dependency. Inspect native discovery afterward and report any existing-session processes that remain.

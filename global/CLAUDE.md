@@ -104,7 +104,7 @@
 - Session hooks never edit, commit, or push HANDOFF. The agent updates it during task closeout and follows the existing commit/push authorization. Continue on the other Mac with `git pull`. (Per meaningful unit, not every turn.)
 
 ### Rule 13 — 개발
-- dev-protocol: 구체화→계획→실행. Claude: brainstorming·writing-plans·executing-plans; ChatGPT/Codex: native. Git worktree
+- Claude·Codex 모두 `dev-protocol` 하나로 구체화→계획→실행→검증→완료를 처리한다. 별도 계획·실행·worktree·완료 스킬을 연쇄 호출하지 않는다. 원인 불명 오류는 `systematic-debugging`을 추가한다.
 - 2+ 독립 lane·다중 모듈/앱·DB/권한/migration/연동은 `multi-agent-dev`; 단순 제외
 
 ### Project layout defaults (명시 요청 시에만)

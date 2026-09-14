@@ -1,6 +1,6 @@
 ---
 name: multi-agent-dev
-description: Analyze an ERP or business application project, reuse or create project-specific Claude/Codex workers, and run a lead-managed decompose→dispatch→review workflow with isolated Git worktrees for write workers. Use when the user says "multi-agent-dev", "멀티에이전트", "워커 돌려", "서브에이전트로 구현", "병렬 작업", "worktree 격리", or when a non-trivial ERP feature/fix spans multiple modules, DB/UI, migrations, permissions, data reconciliation, or external integrations. Skip parallel orchestration for trivial one-step changes whose coordination cost is higher than the benefit.
+description: Coordinate independent implementation or investigation lanes with native Claude/Codex workers, isolated write worktrees, and independent review. Use for multi-agent requests or changes spanning modules, data, permissions, or integrations.
 ---
 
 # multi-agent-dev — 적응형 ERP 멀티에이전트 개발
@@ -118,6 +118,8 @@ Worker에게 반환된 `worktree_path`를 명시하고 그 경로 밖의 파일�
 승인받아 생성한 `.agents/multi-agent-dev/workers/`, `.claude/agents/`, `.codex/agents/` 파일만 dirty이고 다른 변경이 없다면 `--allow-generated-worker-metadata`를 추가할 수 있다. 생성 결과의 `excluded_dirty_worker_metadata`를 사용자에게 알린다. 그 외 dirty path가 하나라도 있으면 계속 중단한다.
 
 ### 5. Dispatch
+
+예전 subagent-driven-development 요청도 이 절차로 수행한다. 작은 순차 작업에 Worker를 만들지 않고, 작업별 검토에서 요구사항 충족과 코드 품질을 함께 확인한다. 승인·완료 절차는 `dev-protocol` 한 곳에서 처리한다.
 
 플랫폼의 native subagent 호출을 사용한다. Orchestration plugin은 필수 의존성이 아니다. 세부 매핑은 `references/platform-adapters.md`를 따른다.
 

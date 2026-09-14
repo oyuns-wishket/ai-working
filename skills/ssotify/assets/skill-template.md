@@ -1,48 +1,18 @@
 ---
-name: <skill-name>            # kebab-case, 짧게 (예: remote-setup)
-description: Use when <상황>. Triggers on "<키워드1>", "<키워드2>", ... (한/영 풍부히). <AI/USER 분담 한 줄 — setup형이면>.
+name: <skill-name>
+description: <Specific repeated task and when it applies.>
 ---
 
-# <skill-name> — <한 줄 제목>
+# <Skill title>
 
-## Overview
-<무엇을, 왜. 2~4문장.>
+<Outcome and the non-obvious decisions this skill helps with.>
 
-> 고정값을 분리하면 `references/fixed-values.md`에 둔다. 실행 중 값이 필요하면 거기서 읽는다.
+## Procedure
 
-<!-- ===== 타입: setup (설치/환경설정) ===== -->
-## 이 스킬 사용법  (setup형)
-1. **역할/대상 판별**(여러 역할이면): <예: HOST/VIEWER>
-2. **[AI]/[USER] 규약**: [AI]=Claude 직접 실행(CLI/파일/검증), [USER]=GUI·권한·암호·앱이동. 각 [USER] 단계에 정확한 클릭경로.
-3. 각 단계 끝 **검증 게이트** 통과 후 다음.
+<Only the steps, inputs and boundaries needed for this task. Reuse known answers and existing authorization.>
 
-## ⭐ 핵심 (해결이 어려웠던 부분이 있으면 여기 비중 있게)
-<문제 본질 → 확정 사실 → 해결책 → 왜 다른 방법이 실패했는지 → 잔여 흠>
+## Verification
 
-## 단계 (Phase)
-**P-1. <단계명>** [AI] / [USER]
-- <명령 또는 클릭경로>
-- 검증: <구체 체크>
+<Observable evidence of success and relevant failure handling.>
 
-<!-- ===== 타입: workflow (반복 업무) ===== -->
-## 고정값 (정본)  (workflow형)
-| 항목 | 값 |
-|---|---|
-| <채널/도구/ID> | <값> |
-
-## 절차  (workflow형)
-1. <입력 매핑>
-2. <도구 호출 — 정확한 인자>
-예) `/<skill-name> <입력>` → `<출력>`
-
-<!-- ===== 타입: reference (지식 아카이빙) ===== -->
-## <주제> (reference형)
-| 항목 | 내용 | 출처/비고 |
-|---|---|---|
-
-## 검증 게이트  (setup/workflow)
-<완료를 확인하는 구체적 체크 1~N개>
-
-## 트러블슈팅  (실제 겪은 실패모드가 있으면)
-| 증상 | 원인 | 대응 |
-|---|---|---|
+<!-- Add references, executable scripts or output assets only when the actual workflow needs them. -->

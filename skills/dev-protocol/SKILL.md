@@ -1,6 +1,6 @@
 ---
 name: dev-protocol
-description: Use when starting or finishing implementation, design, or irreversible work. Clarify material unknowns, plan and execute within existing user authorization, isolate Git worktrees, record implementation decisions, verify results, and close out deployment in the same turn. Ask only for unresolved product/deployment choices or new destructive scope; safely clean completed task worktrees. Triggers on "dev-protocol", "인터뷰 해줘", "구현노트", "impl-notes", ambiguous implementation requests, design work, plan deviations, completing code-building work, or right after a verified dev/production deployment.
+description: Implement, plan, review, and finish authorized development work with project-specific verification and deployment boundaries. Use for code changes and implementation plans; skip read-only explanations and simple lookups.
 ---
 
 # dev-protocol — 구체화 → 계획 → 실행 → 완료
@@ -32,11 +32,14 @@ description: Use when starting or finishing implementation, design, or irreversi
 
 모든 비단순 개발을 아래 순서로 진행한다.
 
-1. **요구사항 구체화**: 설치되어 있고 작업에 적합하면 `superpowers:brainstorming`을 사용한다. 아니면 이 문서의 인터뷰를 native 방식으로 수행한다.
-2. **계획**: 적합하면 `writing-plans`를 사용한다. 아니면 목표, 대상 파일, 실행 단계, 검증을 포함한 native plan을 먼저 제시한다.
-3. **실행**: 적합하면 `executing-plans`를 사용한다. 아니면 승인된 plan을 native 방식으로 실행하고 상태를 갱신한다.
+1. **구체화**: 현재 요청·기존 답변·코드로 결과와 범위를 정한다. 결과를 바꾸는 미정 사항만 질문한다.
+2. **계획**: 변경 파일, 단계와 의존성, 수용 기준, 검증 명령을 정한다. 작은 수정은 짧게 기록하고, 여러 세션에 걸친 작업만 상세 계획으로 남긴다.
+3. **실행**: 승인된 범위를 수행하고 실측 증거로 검증한다. 구현 중 새 범위가 드러나면 그 차이만 설명한다.
 
-이름이 같은 skill이 없거나 단순한 작업에는 억지로 호출하지 않는다. native 방식도 동일한 gate와 산출물을 지켜야 한다.
+계획·실행·worktree·검증·branch 완료를 이유로 별도 generic skill을 연쇄 호출하지 않는다.
+테스트 설계나 코드 리뷰가 필요한 작업에서만 [검증과 리뷰](references/verification-review.md)를 읽는다.
+원인 불명 오류에는 `systematic-debugging`, 독립적인 병렬 lane에는 `multi-agent-dev`를 추가한다.
+예전 brainstorming/writing-plans/executing-plans 요청도 위 단계로 처리하며 새 승인 절차를 만들지 않는다.
 
 ## 프로젝트 workflow skill과의 관계
 
@@ -169,17 +172,8 @@ primary worktree, 다른 세션이 쓰는 경로, 미커밋·미병합 변경은
 
 ## 6. 운영배포 후 knowns wiki closeout
 
-운영배포를 승인받아 검증까지 성공한 경우에만, HANDOFF 뒤 `knowns`를 정확히 한 번 실행한다. PR까지만 또는 개발서버까지만 진행했거나 운영배포가 실패·보류되면 wiki를 묻지 않는다. 문서 반영 후 task worktree 정리는 §5.4를 따른다.
-
-1. 설치된 `knowns/SKILL.md`를 끝까지 읽고 적용한다. 없으면 `wiki closeout 미실행`을 blocker로 남긴다.
-2. read-only 분석으로 후보, 연결, exact wiki write·검증·commit·push·배포 계획과 항목별 AI 추천을 만든다. `docs/handoff/HANDOFF.md`의 `## Wiki candidates` 적재분이 있으면 후보 입력에 포함한다.
-3. 모든 미정 질문을 한 번에 묶어 `추천대로 / 수정사항 일괄 입력 / wiki 스킵`으로 묻는다.
-4. `wiki 스킵`이면 `KNOWNS: skipped`로 전체 작업을 즉시 종료하고 다시 묻지 않는다.
-5. `추천대로`면 모든 항목을 AI 추천안으로 확정한다. 수정 답변이면 한 번의 답에 포함된 값을 반영한다.
-6. 이 한 번의 선택을 승인된 wiki 범위의 write·검증·commit·push·배포 승인으로 사용하고 추가 확인 없이 연속 실행한다.
-7. 현재 completion chain에 `KNOWNS:` 결과가 있으면 재호출하지 않는다.
-
-마지막 산출물은 `KNOWNS: ingested | no-op | skipped | blocked`다. wiki 관리 작업 자체는 `recursive-skip`한다.
+운영배포 검증에 성공한 경우에만 [운영 클로즈아웃](references/production-closeout.md)을 읽고 같은 턴에 실행한다.
+개발배포는 §5.6의 HANDOFF 후보 기록까지만 수행한다. PR·설정 관리·wiki 관리 자체에는 운영 클로즈아웃을 적용하지 않는다.
 
 ## Gate 위반 복구
 

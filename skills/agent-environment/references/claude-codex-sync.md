@@ -37,7 +37,7 @@ Resolve `AI_WORKING_ROOT` from the installed skill symlink or the current checko
 - Every source skill individually linked into `~/.claude/skills/` and `~/.agents/skills/`. `link_skill` never touches a destination that resolves to the same physical path as the source.
 - Workspace guidance declared in `manifest.json`.
 - One shared governance manifest rendered for both platforms, with provider event adapters.
-- Lean Claude runtime profile: preserve external UI hooks, skip automatic OMC keyword/skill routing, and migrate only already-canonical local preferences.
+- Machine-local runtime profile: preserve unrelated UI hooks, apply the selected native status display and optional plugin choices, and migrate only already-canonical local preferences.
 
 ## Machine-local integrations
 
@@ -60,4 +60,10 @@ Use `scripts/sync_agent_assets.py` for explicit home/project skill and instructi
 
 OMC is optional. The shared multi-agent workflow uses native Claude/Codex subagents and bounded task contracts. With `omc_mode: "removed"`, the local profile disables any lingering OMC plugin entry and removes its skip-hook environment setting. `native_statusline: true` replaces an OMC status display with the linked `scripts/statusline.mjs`; custom unrelated status commands are preserved. It shows only model, project directory and native context usage when supplied, without network, filesystem scans or cost estimates.
 
-External skills can stay useful after a plugin's automatic startup hook is disabled. Register only selected source directories and required companion workflows in the local asset registry, then link both platforms with `sync_agent_assets.py`. Resolve old plugin-prefixed names to the actual shared skill; translate role templates to native workers. Never re-enable an unwanted startup plugin merely to resolve a role alias.
+External domain skills may remain registered from their original sources. Generic development workflow roles are consolidated under `dev-protocol`, `multi-agent-dev`, `ssotify` and `systematic-debugging`; see [skill ownership](../../../docs/skill-consolidation.md). Do not restore retired Superpowers entrypoints just to satisfy an old skill name. Preserve the external source cache for existing sessions. Each Mac keeps its own external registry, so pulling public Git alone does not retire external links on that Mac.
+
+## Fresh machine and hook checks
+
+Read the repository README and bootstrap implementation for current dependencies; install only missing prerequisites. Keep existing provider settings/plugins, and use the native application for login or OS permissions that require the user. No orchestration plugin is required.
+
+Run bootstrap dry-run, apply, then status. The repository hook tests exercise harmless inputs and blocked-operation fixtures without touching live databases. Run `node --test tests/*.test.mjs` for behavioral verification instead of attempting a real migration as a hook test. Startup issue/disk context is optional, so its absence alone is not a failure.
