@@ -1,6 +1,6 @@
 ---
 name: design-workflow
-description: Design and improve web interfaces around user tasks, existing design systems, responsive behavior, accessibility, and perceived performance. Use for frontend screens, components, styling, dashboards, landing pages, interactive 3D websites, redesigns, and visual audits; also covers standalone decks and visual reports. Select purpose-specific tools only when needed, preserving real-user interviews and visual-direction/comp approval for new designs. Skip logic-only changes and ordinary tool explanations.
+description: Use for frontend screens, components, styling, ERP, commerce and consumer websites, charts, dashboards, landing pages, AI-assisted 3D modeling for websites, redesigns, and visual audits; also standalone decks and visual reports. Skip logic-only changes and ordinary tool explanations.
 ---
 
 # Design Workflow
@@ -21,7 +21,19 @@ description: Design and improve web interfaces around user tasks, existing desig
 
 모호한 요청에만 [mode-selection.md](references/mode-selection.md)를 읽는다. 기존 요청·답변·정본으로 확정 가능한 사실은 다시 묻지 않는다. 작은 작업을 새 제품 인터뷰로 확대하지 않는다.
 
-모드와 별도로 [experience-routing.md](references/experience-routing.md)에서 **주 목적**을 고른다: 업무 UI, 데이터 대시보드, 홍보·콘텐츠, 3D 체험. 혼합 사이트는 페이지/구간별로 분류한다. 한 구간의 3D·모션이 모든 페이지의 기본값이 되지 않게 한다. 목적 선택은 시각 방향 승인을 대신하지 않는다.
+모드와 별도로 [experience-routing.md](references/experience-routing.md)에서 **주 목적**을 고른다: 업무 UI, 커머스, B2C, 데이터 대시보드, 홍보·콘텐츠, 3D 체험. 혼합 사이트는 페이지/구간별로 분류한다. 한 구간의 3D·모션 강도를 모든 페이지에 적용하지 않는다. 목적 선택은 시각 방향 승인을 대신하지 않는다.
+
+## 웹 도구와 협업 기본값
+
+| 요청/대상 | 실행 규칙 | 필요한 참조 |
+|---|---|---|
+| 웹 UI 작성·수정 | Motion을 기본 도구로 상태·전환을 설계한다. 새 모션 방향은 실제 동작 시안으로 고르고 승인된 패턴은 재사용한다 | [motion-design.md](references/motion-design.md) |
+| 애니메이션·인터랙션 연출 추가 | Anime.js 설치·버전·기존 사용을 확인하고 요청한 연출에 연결한다. 없으면 로컬 설치하며 Motion과 대상 속성을 나눈다 | motion design + [tooling.md](references/tooling.md) |
+| 차트 작성·디자인 변경 | Bklit UI를 기본 경로로 적용하고 새 표현은 같은 데이터의 동작 시안으로 선택한다 | [data-surfaces.md](references/data-surfaces.md) |
+| 3D 웹 제작, 모델링 경험 없음 | AI가 모델 확보·제작·수정·시각 검수·export·웹 통합을 맡는다. 사용자는 원하는 모습과 정확도를 판단한다 | [ai-assisted-3d.md](references/ai-assisted-3d.md) |
+| 외부 서비스/프리미엄 기능 사용 | 서비스별 실제 free/paid 권한으로 제작부터 전달까지 가능한 경로를 선택한다 | [tool-capabilities.md](references/tool-capabilities.md) |
+
+사용자의 명시 선택·프로젝트의 강제 계약이 우선이다. 비호환 framework, 필요한 기능 부재, 실측 성능 문제는 근거와 대안을 제시한다. 기존 의존성이 없거나 작업이 ERP라는 이유로 기본 모션·차트 경로를 생략하지 않는다. 도구 사용을 위해 framework를 이관하거나 사용하지 않는 패키지를 설치하지 않는다. `audit`는 계속 읽기 전용이며 정적 덱에는 앱 모션 패키지를 강제하지 않는다.
 
 ## 신규·리브랜딩 절대 게이트
 
@@ -36,6 +48,8 @@ description: Design and improve web interfaces around user tasks, existing desig
 필수 게이트가 비면 해당 source write를 멈추고 누락된 질문 하나를 제시한다. `ㄱㄱ`, `알아서`는 아직 보여주지 않은 방향·시안의 승인이 아니다. 모델·reviewer·subagent가 사용자 대신 승인하지 않는다. 기존 승인 범위의 가역적 수정에는 같은 승인을 재요청하지 않는다.
 
 시안·기술 검증용 코드는 분리된 임시 경로에서 만들고 제품 소스에 반영하지 않는다. 동적 사이트의 시안에는 시작/중간/끝 상태 또는 짧은 동작 미리보기를 포함하되 **서로 다른 composition 세 개**라는 기준을 유지한다. 시안의 샘플 데이터·대체 모델은 명시한다.
+
+모션·차트가 포함된 시안은 클릭·필터·스크롤을 직접 비교할 수 있게 만든다. 신규 디자인의 세 시안 안에 함께 넣어 별도 3×3 선택을 만들지 않는다. 3D는 같은 시안에서 모델의 여러 각도와 재질·조명을 검수한다. 새 모션/차트 패턴만 추가하는 scoped 작업은 해당 범위의 동작 비교와 선택만 기록하고 제품 인터뷰·시각 세계관을 다시 시작하지 않는다.
 
 세 시안은 같은 핵심 콘텐츠·대표 데이터를 사용해 구조 차이를 비교할 수 있게 한다. 웹 시안은 실제 stack에서 구현 가능한 반응형 구조와 주요 상태를 보여준다. HTML로 보여줄 때는 로컬 서버의 응답을 확인한 접근 가능한 URL을 제공하고 해당 작업의 서버를 종료 시 정리한다. 이미 승인된 디자인을 작은 변경 때문에 다시 세 시안으로 만들지 않는다.
 
@@ -62,7 +76,7 @@ description: Design and improve web interfaces around user tasks, existing desig
 
 ### 3. 필요한 도구만 선택·준비
 
-[tooling.md](references/tooling.md)를 따른다. **기존 stack → 브라우저/CSS → 기존 라이브러리 → 검증된 추가 의존성** 순서로 판단한다. 도구 후보는 설치 목록이 아니다. 기능·호환성·라이선스·운영 비용은 채택 시 공식 자료로 다시 확인한다.
+[tooling.md](references/tooling.md)를 따른다. 실제 stack과 설치 상태를 확인한 뒤 위 기본 도구 정책에 맞게 재사용·설치·연결한다. 외부 서비스는 필요한 [기능 권한](references/tool-capabilities.md)을 확인한다. 유료 사용자는 이용 가능한 포함 기능을 활용하고, 무료 사용자는 결과물의 다운로드·상업 이용·웹 전달까지 가능한 무료 경로를 사용한다. 구독 여부만으로 모든 기능·API·추가 과금이 허용된다고 간주하지 않는다.
 
 디자인 보조 스킬은 모드와 부족한 역량에 맞게 선택하고 설치 스크립트의 dry-run을 확인한 뒤 승인된 범위에서 적용한다. 방향/시안 제작에 보조 도구가 필요하면 2단계 중 준비해도 되지만 게이트를 건너뛰지 않는다. 실제 앱 의존성은 구현 잠금 해제 뒤 프로젝트 package manager로 설치한다. `audit`는 설치하지 않는다.
 
@@ -79,6 +93,7 @@ description: Design and improve web interfaces around user tasks, existing desig
 - 구조와 주요 축 → 정보 위계·타이포 → 간격·밀도 → 상태·반응 → 장식 순으로 다듬는다. 그리드에 맞는 숫자뿐 아니라 글자·아이콘의 시각적 정렬도 확인한다.
 - 승인된 방향을 화면에 구현한다. 임의의 카드 중첩·gradient·glow·거대한 제목·bounce를 기본값으로 넣지 않는다. 의도된 브랜드 표현은 근거로 유지한다.
 - 입력·hover·focus·active·disabled·loading 상태는 **컴포넌트에 해당하는 것만** 구현한다. 명확한 피드백과 오류 복구를 제공하고 실제 성공 전에 성공 표시를 만들지 않는다.
+- 모션과 차트는 선택된 동작·데이터·토큰을 실제 코드에 연결한다. 3D는 AI가 제작 원본과 웹 자산을 준비하고 실제 브라우저로 옮겨 확인한다. 패키지 설치·외부 사이트 링크·모델 파일 생성만으로 구현 완료를 보고하지 않는다.
 - 기능 계약 변경이 필요하면 영향과 기존 승인 범위를 대조해 `dev-protocol`에 기록한다.
 
 ### 6. 실제 검증과 한 번의 개선 검토
@@ -99,5 +114,6 @@ description: Design and improve web interfaces around user tasks, existing desig
 - 기존 디자인/기능 계약을 보존하거나 승인된 변경으로 기록했다.
 - 정렬·가독성·반응형·관련 UI 상태와 핵심 과업을 실제 화면에서 확인했다.
 - 채택한 도구의 역할·근거·비용/호환성 제약과 목적별 검증 결과를 남겼다.
+- 관련 모션·차트 동작 선택/기존 승인, 3D 시각 검수·웹 전달과 사용한 기능 권한의 근거가 있다. 개인 계정 정보는 공유 정본에 넣지 않는다.
 - build/lint/test·detector·브라우저 검증의 실행 결과와 누락이 구분된다.
 - Claude와 Codex가 같은 정본을 참조하며 정본에 새 결정이 반영됐다.

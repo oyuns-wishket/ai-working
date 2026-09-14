@@ -10,9 +10,18 @@ Use this section inside the task implementation note. Do not mark a gate complet
 - Existing user request/approval and design source:
 - Required gate set: full (new/rebrand/world replacement/full representative-screen replacement) | scoped (small-feature/preserving refactor) | none (audit)
 
-For scoped work, mark the four new-design sections below `N/A` with a reason and record confirmed scope, relevant UI states, acceptance criteria, and existing design authority here. Do not demand new product answers or three comps for a preserved small feature. A visual-world or full representative-screen replacement requires the full gate set. Audit remains locked and does not create this file.
+For scoped work, mark the four new-design sections below `N/A` with a reason and record confirmed scope, relevant UI states, acceptance criteria, and existing design authority here. Preserve approved patterns without new product interviews or full-page comps. A new motion/chart direction still needs the scoped interactive comparison below. A visual-world or full representative-screen replacement requires the full gate set. Audit remains locked and does not create this file.
 
 - Scoped acceptance evidence:
+
+## Relevant experience evidence
+
+Fill only changed experiences; combine with full comps when required rather than adding serial approval rounds.
+
+- Motion: task/brand recommendation, three interactive variants and user decision OR reused approved preset:
+- Charts: Bklit route/compatibility exception, same-data interactive variants and decision OR approved pattern:
+- 3D: actual model multi-angle/scene review, user feedback, agent editing/export/web plan; label any placeholder:
+- External capability: used free/included-paid operation, evidence/date, delivery rights/hosting and unresolved prerequisite (no personal account data):
 
 ## Product interview
 
@@ -37,6 +46,7 @@ For scoped work, mark the four new-design sections below `N/A` with a reason and
 
 - [ ] Exactly three comps inside the selected world were shown together
 - Comp paths or URLs:
+- Relevant direct interactions (click/filter/scroll/replay) and mobile alternative:
 - User decision: `approve | combine | revise | reject`
 - User answer:
 - Adopt:

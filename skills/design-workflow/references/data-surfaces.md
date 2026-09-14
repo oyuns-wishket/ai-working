@@ -10,17 +10,27 @@
 - 추세는 선, 항목 비교는 막대, 정확한 값·검색·업무 처리는 표가 출발점이다. 목표/분모가 없는데 장식용 gauge를 넣지 않는다. 복잡한 차트는 사용자의 판단을 더 쉽게 할 때만 선택한다.
 - 단위·축·범례·tooltip·색의 의미를 일관되게 한다. 축 절단과 집계/샘플링으로 의미가 달라지면 명시한다. 색 외에 label/pattern을 제공한다.
 
-## 후보 선택
+## 차트 작업의 기본 경로
+
+차트 작성·디자인 변경에는 **Bklit UI를 기본 도구로 적용**한다. 기존 Bklit source가 있으면 재사용하고 없으면 [tooling.md](tooling.md)에 따라 필요한 chart component를 로컬에 추가한다. package.json만 보지 말고 shadcn registry·생성된 소스도 확인한다.
+
+새 차트 표현은 같은 대표 데이터와 지표로 **동작 시안 세 개**를 함께 보여주고 AI 추천·사용자 선택을 기록한다. 축·범례·tooltip·필터·업데이트 동작과 모바일을 직접 비교한다. 예: 간결한 업무형 / KPI와 추세 중심 / 비교·탐색 중심. 의미에 맞는 chart type은 먼저 결정하고 세 안을 채우려고 부적절한 원형·선·막대를 섞지 않는다.
+
+신규 화면에서는 메인 skill의 세 composition 안에 이 비교를 통합한다. 기존 화면에서 새로운 차트 방향만 추가하면 해당 영역만 비교한다. 이미 승인된 chart 패턴의 작은 수정은 선택을 재요청하지 않고 재사용 근거와 변경 상태를 확인한다.
+
+Bklit은 React/shadcn 기반이다. 비React, 프로젝트의 명시적 다른 엔진 계약, 필수 기능 부재 또는 대표 데이터 실측 성능 문제가 있으면 근거와 대안을 보여주고 필요한 결정만 받는다. 기존 다른 엔진이 있다는 사실만으로 Bklit 검토를 생략하거나 앱 전체의 차트를 일괄 교체하지 않는다. 차트 추가가 필요 없는 단순 숫자 표시에는 이 경로를 강제하지 않는다.
+
+## 호환성과 대안
 
 | 후보 | 검토할 상황 | 범위·제약 | 공식 근거 |
 |---|---|---|---|
 | 기존 표·차트 / HTML·CSS | KPI·작은 비교, 이미 구현된 시각화 | 새 의존성 없이 가능 여부 먼저 확인 | 프로젝트 소스·실행 화면 |
-| Bklit UI | React/shadcn 환경에서 차트의 시각 완성도를 높일 때 | 컴포넌트와 Studio의 배포/라이선스를 구분; 도입 전 실제 소스·접근성 검증 | [Docs](https://bklit.com/docs), [source/licenses](https://github.com/bklit/bklit-ui) |
+| Bklit UI | 호환되는 차트 작업의 기본값 | 무료 chart source와 별도 Studio 권한을 구분; 데이터·접근성 검증 | [Docs](https://bklit.com/docs), [source/licenses](https://github.com/bklit/bklit-ui) |
 | Recharts | React에서 조합형 SVG 차트가 맞을 때 | 설치 버전의 API·키보드 지원과 데이터량을 확인; 기존 chart wrapper 우선 | [API](https://recharts.github.io/en-US/api/), [accessibility](https://github.com/recharts/recharts/blob/main/storybook/stories/API/Accessibility.mdx) |
 | Apache ECharts | 확대·탐색·다양한 차트가 실제로 필요할 때 | 대표 데이터로 성능 측정; ARIA·텍스트 요약·패턴을 명시 설정/확인 | [Examples](https://echarts.apache.org/examples/en/index.html), [accessibility](https://echarts.apache.org/handbook/en/best-practices/aria/) |
 | TanStack Table | 정렬·필터·페이지 처리 등 복잡한 업무 표 | headless 로직이다. markup·디자인·접근성은 직접 구현; 가상화는 별도 선택 | [Overview](https://tanstack.com/table/v8/docs/overview) |
 
-표의 도구를 한꺼번에 넣지 않는다. 새 차트가 필요하면 기존 engine을 우선하고, 두 engine이 꼭 필요할 때만 중복 비용을 기록한다. headless 도구·차트 컴포넌트·데이터 수집 시스템을 혼동하지 않는다.
+표의 도구를 한꺼번에 넣지 않는다. Bklit 기본 경로 또는 확인한 예외에 맞는 도구를 선택하고 두 engine이 필요하면 범위와 중복 비용을 기록한다. headless 표 로직·차트 컴포넌트·데이터 수집 시스템을 혼동하지 않는다. [tool-capabilities.md](tool-capabilities.md)에 따라 유료 Studio 이용 여부와 chart 코드의 라이선스를 각각 확인한다.
 
 ## 직접 검증
 

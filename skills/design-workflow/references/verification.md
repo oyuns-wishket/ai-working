@@ -1,5 +1,7 @@
 # Verification
 
+For `audit`, preserve the main skill's read-only boundary: inspect existing source, running screens and already available detectors. Do not install tools, run package-fetching commands below, or write project artifacts; report unavailable checks as gaps. The implementation sequence below applies when changes are authorized.
+
 ## Gate order
 
 ### 1. Project checks
@@ -72,6 +74,8 @@ Compare the result against:
 - density and layout rules
 - explicit anti-pattern list
 - small-feature scope guard
+- interactive motion/chart choice or reused approved pattern
+- actual 3D asset review and selected external capabilities, when relevant
 
 ### 6. Final evidence
 
@@ -89,8 +93,10 @@ Report:
 
 Apply only the selected purpose's checks from [data-surfaces.md](data-surfaces.md) or [motion-and-3d.md](motion-and-3d.md). Ordinary forms do not need a 3D performance audit.
 
-- Data: reconcile representative source totals with cards/charts/tables; test filter consistency and relevant missing/error states. Screenshots do not prove numerical correctness.
-- Motion/3D: test forward/back scroll, resize, restored scroll, route re-entry, mobile, reduced motion, and asset failure/fallback. Static screenshots do not prove animation behavior or frame performance.
+- Data: verify Bklit implementation or documented exception against the chosen same-data preview; reconcile source totals with cards/charts/tables and test filters/missing/error states. Screenshots do not prove numerical correctness.
+- Motion: use [motion-design.md](motion-design.md); run the approved representative task, continuous input, keyboard/touch, reduced motion and route cleanup. Check actual imports/use, not package presence alone.
+- 3D: use [ai-assisted-3d.md](ai-assisted-3d.md); verify editable source and real exported asset, multi-angle appearance/parts/materials/clips, and actual web integration. Test forward/back scroll, resize, restored scroll, route re-entry, mobile, reduced motion, and asset failure/fallback. A generated model or static screenshot is not a completed website.
+- External capabilities: distinguish user-reported plan, current official documentation and actual successful access. Confirm output rights/attribution, required format, hosting and decoder/runtime requests match the chosen path; no accidental paid API or restricted/free export assumption.
 - Work UI: complete the main task with keyboard and pointer; verify feedback, preserved input, and recovery from failure.
 - Marketing/content: check reading order, working CTA, accessible HTML content, relevant title/description and image/font loading. Do not create an SEO migration outside the requested scope.
 

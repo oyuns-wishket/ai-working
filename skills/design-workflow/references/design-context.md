@@ -38,6 +38,10 @@ Use `assets/DESIGN.template.md`. Keep decisions concrete:
 - radius, border, elevation
 - navigation and component patterns
 - interaction states and motion
+- page-task/brand motion recommendation, interactive choices or reused approved presets from [motion-design.md](motion-design.md)
+- for charts, Bklit route or documented compatibility exception and same-data interaction choice
+- for assisted 3D, agent-owned creation/edit/export route, actual model review and verified web delivery
+- for external tools, sanitized free/included-paid capability evidence and delivery rights from [tool-capabilities.md](tool-capabilities.md); no personal account information
 - responsive transformations
 - accessibility constraints
 - explicit anti-patterns
