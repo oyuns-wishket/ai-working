@@ -16,7 +16,7 @@ description: Bootstrap the ai-working Claude Code governance setup on a Mac, inc
 | workspace 규칙 | `workspaces/`와 `manifest.json` | bootstrap이 선언된 대상에 연결 |
 | **`~/.claude/hooks/*`** | 저장소 루트 **`hooks/`** | bootstrap이 복사 |
 | 프로젝트 템플릿 | ai-working `templates/` | git pull, 신규 프로젝트에 opt-in |
-| `~/.claude/CLAUDE.md` (OMC) | OMC 소유 | 각 맥 OMC가 재생성. **건드리지 않음** |
+| `~/.claude/CLAUDE.md` | 공통 정책 import wrapper | bootstrap이 관리 블록을 갱신하고 그 밖의 사용자 내용을 보존 |
 
 ## 선행
 - [AI] 현재 checkout이나 설치된 skill link에서 `AI_WORKING_ROOT`를 찾은 뒤 `git -C "$AI_WORKING_ROOT" pull --ff-only`로 최신화한다.

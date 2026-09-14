@@ -18,13 +18,24 @@ def plan(home, repo):
     settings_snapshot = settings_path.read_bytes() if settings_path.exists() else None
     settings = json.loads(settings_snapshot) if settings_snapshot is not None else {}
     original = json.dumps(settings, sort_keys=True)
-    if profile.get('lean_omc', True):
+    if profile.get('omc_mode') == 'removed':
+        settings.setdefault('env', {}).pop('OMC_SKIP_HOOKS', None)
+        for name in list(settings.get('enabledPlugins', {})):
+            if name.split('@', 1)[0] == 'oh-my-claudecode':
+                settings['enabledPlugins'][name] = False
+    elif profile.get('lean_omc', True):
         env = settings.setdefault('env', {})
         skip = [s.strip() for s in env.get('OMC_SKIP_HOOKS', '').split(',') if s.strip()]
         for name in ['keyword-detector', 'skill-injector', 'pre-tool-use', 'post-tool-use']:
             if name not in skip:
                 skip.append(name)
         env['OMC_SKIP_HOOKS'] = ','.join(skip)
+    if profile.get('native_statusline', False):
+        status = settings.get('statusLine')
+        command = status.get('command', '') if isinstance(status, dict) else ''
+        desired = 'node "$HOME/.claude/statusline.mjs"'
+        if status is None or command == desired or 'omc-hud' in command:
+            settings['statusLine'] = {'type': 'command', 'command': desired}
     # Only explicitly selected local integrations; no vendor/account IDs in SSOT.
     for name in profile.get('disabled_claude_plugins', []):
         if name in settings.get('enabledPlugins', {}):

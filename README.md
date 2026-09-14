@@ -123,6 +123,7 @@ skills/personal-ai-ssot/SKILL.md를 읽고 한 번에 한 질문씩 인터뷰해
 | `pre-tool.sh` | 승인 범위를 검증한 DB 변경의 실행 표시 확인 |
 | `session-entry.mjs` | Git 정보와 최대 8 KiB HANDOFF를 한 번 제공 |
 | `handoff-sync.sh` | 비활성 호환 진입점; 파일 수정·commit·push 없음 |
+| `scripts/statusline.mjs` | 선택적 모델·프로젝트·컨텍스트 사용률 표시; 외부 플러그인 불필요 |
 
 매 편집 lint·문서 알림은 기본 등록에서 제외한다. 필요한 검증은 작업 완료 시 실행한다. 열린 이슈·디스크 시작 조회는 각각 `AI_WORKING_STARTUP_ISSUES=1`, `AI_WORKING_STARTUP_DISK=1`로 선택한다.
 

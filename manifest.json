@@ -2,14 +2,44 @@
   "version": 2,
   "description": "Public ai-working SSOT links for Claude, Codex, and the default project workspace.",
   "links": [
-    { "repo": "global/CLAUDE.md", "target": "~/.codex/AGENTS.md", "type": "file", "note": "Claude와 Codex가 동일한 글로벌 규칙을 읽는다." },
-    { "repo": "workspaces/project-root/CLAUDE.md", "target": "~/aidp/CLAUDE.md", "type": "file", "note": "기본 프로젝트 워크스페이스 규칙." },
-    { "repo": "workspaces/project-root/erp-domain.md", "target": "~/aidp/erp-domain.md", "type": "file", "note": "여러 ERP 프로젝트가 공유하는 일반 도메인 규칙." }
+    {
+      "repo": "global/CLAUDE.md",
+      "target": "~/.codex/AGENTS.md",
+      "type": "file",
+      "note": "Claude와 Codex가 동일한 글로벌 규칙을 읽는다."
+    },
+    {
+      "repo": "workspaces/project-root/CLAUDE.md",
+      "target": "~/aidp/CLAUDE.md",
+      "type": "file",
+      "note": "기본 프로젝트 워크스페이스 규칙."
+    },
+    {
+      "repo": "workspaces/project-root/erp-domain.md",
+      "target": "~/aidp/erp-domain.md",
+      "type": "file",
+      "note": "여러 ERP 프로젝트가 공유하는 일반 도메인 규칙."
+    },
+    {
+      "repo": "scripts/statusline.mjs",
+      "target": "~/.claude/statusline.mjs",
+      "type": "file",
+      "note": "Minimal native Claude status display; no orchestration plugin dependency."
+    }
   ],
   "imports": [
-    { "into": "~/.claude/CLAUDE.md", "import_repo": "global/CLAUDE.md", "marker": "AI-WORKING", "note": "기존 파일을 보존하고 관리 블록만 갱신한다." }
+    {
+      "into": "~/.claude/CLAUDE.md",
+      "import_repo": "global/CLAUDE.md",
+      "marker": "AI-WORKING",
+      "note": "기존 파일을 보존하고 관리 블록만 갱신한다."
+    }
   ],
   "local_directories": [
-    { "target": "~/.claude/projects/__USER_SLUG__/memory", "mode": "preserve-real-directory", "note": "개인 메모리는 공개 Git에 넣지 않고 장비 로컬 실디렉토리로 보존한다." }
+    {
+      "target": "~/.claude/projects/__USER_SLUG__/memory",
+      "mode": "preserve-real-directory",
+      "note": "개인 메모리는 공개 Git에 넣지 않고 장비 로컬 실디렉토리로 보존한다."
+    }
   ]
 }

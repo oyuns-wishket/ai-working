@@ -119,7 +119,7 @@ Worker에게 반환된 `worktree_path`를 명시하고 그 경로 밖의 파일�
 
 ### 5. Dispatch
 
-플랫폼에 맞는 native subagent/OMC 호출을 사용한다. 세부 매핑은 `references/platform-adapters.md`를 따른다.
+플랫폼의 native subagent 호출을 사용한다. Orchestration plugin은 필수 의존성이 아니다. 세부 매핑은 `references/platform-adapters.md`를 따른다.
 
 각 Worker prompt에 반드시 포함한다.
 

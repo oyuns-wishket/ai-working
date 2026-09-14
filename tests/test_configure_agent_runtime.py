@@ -43,6 +43,30 @@ class RuntimeProfileTests(unittest.TestCase):
             runtime.apply_changes(home, runtime.plan(home, home))
             self.assertIn('unique preference', wrapper.read_text())
 
+class OmcRetirementTests(unittest.TestCase):
+    def test_retired_omc_is_not_reenabled_and_only_its_status_is_replaced(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            (home / '.claude').mkdir()
+            (home / '.config/ai-working').mkdir(parents=True)
+            (home / 'global').mkdir()
+            (home / 'global/CLAUDE.md').write_text('shared')
+            profile = home / '.config/ai-working/runtime-profile.json'
+            profile.write_text(json.dumps({'omc_mode': 'removed', 'native_statusline': True}))
+            settings = home / '.claude/settings.json'
+            settings.write_text(json.dumps({'env': {'KEEP': 'value', 'OMC_SKIP_HOOKS': 'old'}, 'enabledPlugins': {'oh-my-claudecode@omc': True, 'other': True}, 'statusLine': {'type': 'command', 'command': 'sh /example/hud/omc-hud-cache.sh'}}))
+            runtime.apply_changes(home, runtime.plan(home, home))
+            current = json.loads(settings.read_text())
+            self.assertNotIn('OMC_SKIP_HOOKS', current['env'])
+            self.assertEqual(current['env']['KEEP'], 'value')
+            self.assertFalse(current['enabledPlugins']['oh-my-claudecode@omc'])
+            self.assertTrue(current['enabledPlugins']['other'])
+            self.assertEqual(current['statusLine']['command'], 'node "$HOME/.claude/statusline.mjs"')
+            self.assertEqual(runtime.plan(home, home), [])
+            current['statusLine'] = {'type': 'command', 'command': 'custom-status'}
+            settings.write_text(json.dumps(current))
+            self.assertEqual(runtime.plan(home, home), [])
+
 
 if __name__ == '__main__':
     unittest.main()

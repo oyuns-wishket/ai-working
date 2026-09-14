@@ -70,3 +70,9 @@ Changing a Codex hook definition can invalidate native trust. Run `python3 scrip
 `~/.config/ai-working/runtime-profile.json` optionally controls `lean_omc` and an explicit `disabled_claude_plugins` list. Bootstrap preserves unrelated settings, skips OMC keyword/skill auto-routing, and removes its old unconditional wrapper block with backups. It removes a local Interaction Principles section only when the same body is already canonical. OMC's own wiki/memory hooks do not all honor these skip tokens; they are separate from the configured project knowledge registry and require their own scoped review. Superpowers startup has no individual skip flag; disabling its plugin is an explicit local profile choice, never a cache edit.
 
 External app status hooks are preserved. Native UI definitions whose registration index changes may require trust restoration; match the exact reviewed command and previously trusted native hash rather than accepting every installed hook.
+
+## Removing optional orchestration
+
+A selected local `omc_mode: "removed"` prevents OMC routing settings from being restored and disables any lingering plugin entry. Native plugin uninstall is a separate reviewed operation; bootstrap does not delete plugin registries, caches, memory or project data. The optional `native_statusline` display reads Claude's supplied JSON only and does not call a plugin, shell command or network API. Existing sessions can retain old MCP processes until they end; no cross-session process termination is performed.
+
+Use shared native subagent contracts for exploration, implementation and independent review. Read-only instructions supplied to a general-purpose worker are a behavioral contract, not an OS-enforced sandbox; use explicit native tool restrictions when enforcement is needed. Specialized LSP/AST plugin capabilities are not claimed to be identical to shell/code-search substitutes.

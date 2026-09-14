@@ -1,7 +1,7 @@
 # My Global Rules (ai-working public SSOT)
 
 > This is the canonical, tool-neutral source for my personal global rules. Claude imports it from `~/.claude/CLAUDE.md`; Codex reads this exact file through `~/.codex/AGENTS.md`.
-> Separate from the OMC orchestration layer, it holds my **personal global rules** that apply on every machine.
+> It holds my **personal global rules** for every machine and works with native agents without an orchestration plugin.
 > On every machine, edit this file → commit/push → pull on the other machine. The two agents then receive the same updated rules; do not maintain divergent copies.
 
 <!-- Personal, project-agnostic rules only. Repo rules go in each repo's CLAUDE.md; workspace rules in workspaces/. -->
@@ -25,6 +25,7 @@
 - **One workflow source:** reusable workflows live in `skills/<name>/SKILL.md` (open Agent Skills standard — the same file works on both platforms). `ai-working/bootstrap.sh` links the public set into `~/.claude/skills/` and `~/.agents/skills/`. No adapters, no copies.
 - **Skill and agent-rule authoring rule (both agents):** never create canonical instructions directly in an agent home (`~/.claude/skills`, `~/.codex/skills`, `~/.agents/skills`). Author every reusable personal/global skill in `ai-working/skills/<name>/` and every cross-agent global rule in `ai-working/global/CLAUDE.md`, then run `ai-working/bootstrap.sh`. Team distribution repositories may mirror selected public skills, but `ai-working` remains this environment's SSOT.
 - **Platform translation:** use the active agent's native mechanism for user input, commands, and lifecycle events (for example, Claude's `AskUserQuestion` vs. Codex's normal user prompt). When a skill names a platform-specific tool, interpret it as your platform's equivalent instead of skipping the step. Do not weaken the underlying rule just because one platform lacks the same hook or command.
+- **External workflow references:** when a shared external skill retains a plugin-prefixed skill name, resolve the corresponding installed shared skill by its actual name and source. For plugin-only role names, use an available native subagent with the supplied role/task template; preserve its read/write and permission boundaries. A missing optional plugin is not a reason to reinstall an orchestration layer. `dev-protocol` remains the approval/workflow authority.
 - **Keep local-only setup local:** permissions, credentials, GUI/TCC steps, provider-specific hooks, and OMC internals are adapters/configuration—not shared policy. Document their behavioral intent here only when it applies to both agents.
 - **Cross-Mac update:** there is no hidden background copy. After editing this repo, commit/push it; on the other Mac pull this repo. Both Claude and Codex then resolve the new SSOT without a second manual sync.
 

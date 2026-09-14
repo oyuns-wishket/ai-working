@@ -25,7 +25,7 @@ description: Use when the user wants to sync, apply, or pull the public ai-worki
 
 ## 동작 원리
 - `manifest.json`의 매핑대로 Claude 메모리/워크스페이스 문서, Codex 글로벌 `~/.codex/AGENTS.md`, Codex 워크플로 어댑터를 레포로 심볼릭 링크.
-- `~/.claude/CLAUDE.md`(OMC 소유)에는 마커로 감싼 `@import` 한 줄만 멱등 주입 → 레포의 `global/CLAUDE.md`를 끌어옴.
+- `~/.claude/CLAUDE.md` 공통 정책 wrapper에는 마커로 감싼 `@import` 한 줄만 멱등 주입 → 레포의 `global/CLAUDE.md`를 끌어옴.
 - 멱등: 이미 올바르면 건너뜀. 원본 실파일은 `~/.claude/backups/`로 백업 후 교체(삭제 안 함).
 
 ## 주의

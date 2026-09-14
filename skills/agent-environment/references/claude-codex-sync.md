@@ -55,3 +55,9 @@ MCP registrations, account tokens, trust levels, TCC permissions, and provider-s
 After an authorized hook sync, inspect `python3 scripts/codex_hook_trust.py --ensure-instructions`, then apply the reviewed exact definitions with `--apply --ensure-instructions`. This queries the installed native app-server and verifies trust again; it does not start model calls or execute hooks. Disabled and unknown hooks are preserved. Unsupported CLI APIs are reported instead of guessing trust hashes.
 
 Use `scripts/sync_agent_assets.py` for explicit home/project skill and instruction parity. Dry-run first; inspect conflicts, then apply authorized non-conflicting adapters and check again. Source paths and plugin choices remain in local configuration. Provider-bundled internals, conversation logs, generated caches and private memories are not shared policy.
+
+## Native workflow profile
+
+OMC is optional. The shared multi-agent workflow uses native Claude/Codex subagents and bounded task contracts. With `omc_mode: "removed"`, the local profile disables any lingering OMC plugin entry and removes its skip-hook environment setting. `native_statusline: true` replaces an OMC status display with the linked `scripts/statusline.mjs`; custom unrelated status commands are preserved. It shows only model, project directory and native context usage when supplied, without network, filesystem scans or cost estimates.
+
+External skills can stay useful after a plugin's automatic startup hook is disabled. Register only selected source directories and required companion workflows in the local asset registry, then link both platforms with `sync_agent_assets.py`. Resolve old plugin-prefixed names to the actual shared skill; translate role templates to native workers. Never re-enable an unwanted startup plugin merely to resolve a role alias.

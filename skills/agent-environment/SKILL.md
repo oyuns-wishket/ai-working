@@ -30,3 +30,9 @@ change is more efficient without comparable task results.
 - Both agents read the same public source skills through links. Skills are authored under the `ai-working` root, never directly in an agent home.
 - Hooks, Keychain/TCC permissions, account credentials, and provider-only commands remain machine-local. Their policy intent belongs in the source only when it applies to both agents.
 - Before claiming the environment is synced, verify all `manifest.json` links and imports with `bootstrap.sh --status`.
+
+## Optional orchestration removal
+
+Measure actual recent tool/skill calls separately from automatic hook activity before judging a plugin's value. Aggregate results without publishing transcripts or private state. Preserve needed skills through explicit shared source links and native worker contracts; plugin removal must not silently remove a workflow the user still uses.
+
+For an authorized removal, use the provider's native uninstall procedure with persistent-data preservation, replace any plugin-dependent statusline first, and verify native plugin discovery afterward. Do not kill processes owned by existing sessions or delete project memory/wiki folders. Retired optional CLI packages or caches may remain until their sessions finish; report that boundary. A local runtime profile can set `omc_mode: "removed"` and `native_statusline: true` so bootstrap does not revive routing settings and uses the lightweight native display. The profile contains machine-local choices, not credentials.

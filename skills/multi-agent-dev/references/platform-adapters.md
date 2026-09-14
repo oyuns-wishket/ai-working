@@ -2,18 +2,14 @@
 
 Skill의 역할 이름은 agent-neutral이다. 현재 플랫폼의 native mechanism으로 번역한다.
 
-## Claude + OMC
+## Claude native subagents
 
-- OMC 전역 역할이 프로젝트 역량을 충족하면 namespaced agent를 재사용한다.
-  - 탐색: `oh-my-claudecode:explore`
-  - 구현: `oh-my-claudecode:executor`
-  - 리뷰: `oh-my-claudecode:code-reviewer`
-  - 검증: `oh-my-claudecode:verifier`
-  - DB/보안/테스트: 해당 OMC specialist
-- 프로젝트 `.claude/agents/*.md`가 더 구체적이면 프로젝트 Worker를 우선한다.
-- OMC `/team`이 프로젝트 Worker를 자동 치환한다고 가정하지 않는다. 필요한 agent name을 명시한다.
-- Claude Worker에는 `effort` override를 생성하지 않아 Lead 설정을 상속시킨다.
-- OMC native team worktree mode의 활성 여부를 추측하지 않는다. 이 Skill의 worktree manager가 경로를 만든 경우 Worker cwd를 명시적으로 그 경로로 고정한다.
+- Use native subagents directly; no orchestration plugin is required.
+- Use `Explore` for bounded read-only discovery when available, and `general-purpose` for implementation or an independently scoped review/verification task. Pass repository guidance explicitly to read-only built-ins that do not inherit it. A role is a task contract, not a requirement for a same-named plugin agent.
+- Reuse a more specific project `.claude/agents/*.md` worker when its capability and restrictions fit. Do not rewrite project workers during global environment maintenance.
+- The lead passes the task, working directory, allowed files, read/write scope and required evidence. Give reviewers the raw diff and acceptance criteria; they must not edit the implementation they review. This is a workflow restriction, not an OS sandbox claim; when enforced read-only access is needed, use a native agent with an explicit read-tool allowlist or a read-only sandbox.
+- Prefer existing native agent types; if unavailable, use a separate native session with the same contract. Do not install a plugin merely to satisfy an old role name.
+- Claude workers inherit the lead effort. Pin write workers to their assigned isolated worktree; never assume a plugin created one.
 
 ## Codex
 
