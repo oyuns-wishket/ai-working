@@ -40,6 +40,7 @@ description: Implement, plan, review, and finish authorized development work wit
 테스트 설계나 코드 리뷰가 필요한 작업에서만 [검증과 리뷰](references/verification-review.md)를 읽는다.
 원인 불명 오류에는 `systematic-debugging`, 독립적인 병렬 lane에는 `multi-agent-dev`를 추가한다.
 예전 brainstorming/writing-plans/executing-plans 요청도 위 단계로 처리하며 새 승인 절차를 만들지 않는다.
+Docker/DB 자원을 띄우거나 HTML을 제공하거나 새 프로젝트 레이아웃을 명시 요청받았을 때만 [로컬 운영과 관례](references/local-operations.md)의 해당 절차를 읽는다. Migration 실행 표시가 필요하면 같은 문서의 migration 절차를 확인한다.
 
 ## 프로젝트 workflow skill과의 관계
 
