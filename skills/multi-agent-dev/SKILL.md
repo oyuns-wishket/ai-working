@@ -127,6 +127,7 @@ Worker에게 반환된 `worktree_path`를 명시하고 그 경로 밖의 파일�
 
 - repo와 worktree 절대경로
 - 담당 task와 수정 허용 범위
+- Lead가 연결한 대표/관련 이슈와 이번 Worker의 수용 기준. Worker는 이슈를 중복 생성하거나 전체 이슈를 독자적으로 종료하지 않는다.
 - 읽어야 할 프로젝트 규칙·ERP 문서
 - Lead가 route한 task-relevant canonical wiki 문서 경로(없으면 `repo-only`)와 repo/runtime 우선순위
 - 금지된 작업과 승인 gate
@@ -154,7 +155,8 @@ Worker 완료를 그대로 성공으로 간주하지 않는다.
 4. FAIL이면 해당 Worker만 최대 3회 재실행한다. 이후에도 실패하면 남은 위험과 선택지를 사용자에게 에스컬레이션한다.
 5. Worker commit과 merge/cherry-pick은 현재 사용자 commit 승인 규칙을 따른다.
 6. Lead 통합 workspace에서 프로젝트가 요구하는 lint, test, build와 DB/보안 gate를 실제 실행한다.
-7. DB migration 적용, 외부 write, 배포, push의 승인 판단은 `dev-protocol`의 승인과 질문·§5.3을 따른다. 현재 요청이 이미 포함한 단계는 재질문하지 않고, 새 파괴적 변경·미승인 운영 범위·범위 밖 외부 write만 추가 확인한다.
+7. Lead는 통합 결과를 연결 이슈의 수용 기준과 대조하고 `dev-protocol` §5.7에서 상태를 갱신한다. Worker의 완료만으로 전체 이슈를 닫지 않는다.
+8. DB migration 적용, 외부 write, 배포, push의 승인 판단은 `dev-protocol`의 승인과 질문·§5.3을 따른다. 현재 요청이 이미 포함한 단계는 재질문하지 않고, 새 파괴적 변경·미승인 운영 범위·범위 밖 외부 write만 추가 확인한다.
 
 ### 7. 정리
 

@@ -43,6 +43,8 @@ gh pr merge (feat→develop) ──> develop에 통합
 → 켜졌는지 확인: `supabase branches list`(linked repo) 또는 Supabase 대시보드 Branches 탭.
 
 ## 에이전트 절차 (작업할 때마다 — [AI])
+
+먼저 `dev-protocol`의 이슈 시작 절차로 대표 이슈와 완료 시점을 연결한다. PR 본문에는 실제 처리 범위를 명시하고, develop 통합과 운영 승격 모두 같은 이슈 연결을 유지한다. 배포 검증이 완료 조건이면 미리 자동 종료를 걸지 않고 검증 후 §5.7에서 종료한다. 구체적 GitHub 연결 방식은 [이슈 생명주기](../dev-protocol/references/issue-lifecycle.md)를 따른다.
 1. **브랜치**: `git checkout develop && git pull` → `git checkout -b feat/<간단명>` (**develop 기준**). main 직접 X.
 2. **작업**: 코드 변경. DB 스키마 바꾸면 `supabase migration new <name>`로 마이그레이션 파일 추가(브랜치가 자동 적용).
 3. **PR 열기**: `gh pr create --base develop --fill` → **여기서 플랫폼이 자동으로** Supabase 프리뷰 DB브랜치 + Vercel 프리뷰 URL 생성. PR 코멘트에 URL·DB 정보가 달림.
