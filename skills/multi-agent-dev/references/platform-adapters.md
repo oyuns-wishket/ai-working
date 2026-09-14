@@ -41,11 +41,8 @@ native subagent 기능이 없으면 독립 CLI session이나 플랫폼의 team �
 
 ## Approval boundary
 
-Worker 생성 승인은 agent 파일 작성 승인이지 commit/push 승인이 아니다. 다음은 각각 별도 gate다.
-
-- Worker branch commit
-- Lead branch merge/cherry-pick
-- DB migration apply
-- 외부 시스템 write
-- deployment
-- push/PR merge
+승인 판단의 정본은 `dev-protocol`의 승인과 질문 및 §5.3이다. Worker 파일 생성만 승인받은 경우에는
+commit/push·배포까지 확대하지 않는다. 반대로 사용자가 구체화된 `PR까지`, `개발서버 배포`, `운영까지`를
+승인했다면 그 범위에 필요한 Worker commit, Lead 통합, push, merge, 비파괴적 migration을 단계마다
+재확인하지 않는다. 실제 dry-run·검증과 프로젝트의 merge 담당자 규칙은 유지한다.
+새 파괴적 변경, 미승인 운영 범위, 범위 밖 외부 write만 정확한 영향과 함께 추가 확인한다.

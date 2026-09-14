@@ -64,8 +64,7 @@ cd "<처음 선택한 ai-working checkout 경로>"
 ai-working/
 ├── global/
 │   ├── CLAUDE.md
-│   ├── governance-hooks.json
-│   └── codex-governance-hooks.json
+│   └── governance-hooks.json  # one definition, native runtime adapters
 ├── hooks/
 ├── skills/
 │   └── <name>/SKILL.md
@@ -121,16 +120,22 @@ skills/personal-ai-ssot/SKILL.md를 읽고 한 번에 한 질문씩 인터뷰해
 | `block-dangerous.sh` | 위험한 shell 명령 차단 |
 | `preview-db-guard.mjs` | 보호 branch와 production DB 오접속 방지 |
 | `dev-resource-guard.mjs` | local DB/Docker 자원 점검과 세션 소유 자원 정리 |
-| `pre-tool.sh`, `post-tool.sh` | 작업 전후 정책 안내 |
-| `session-start.sh`, `session-context.sh` | 세션 시작 시 bounded context 제공 |
-| `handoff-sync.sh` | 존재하는 HANDOFF 갱신 지원 |
+| `pre-tool.sh` | 승인 범위를 검증한 DB 변경의 실행 표시 확인 |
+| `session-entry.mjs` | Git 정보와 최대 8 KiB HANDOFF를 한 번 제공 |
+| `handoff-sync.sh` | 비활성 호환 진입점; 파일 수정·commit·push 없음 |
+
+매 편집 lint·문서 알림은 기본 등록에서 제외한다. 필요한 검증은 작업 완료 시 실행한다. 열린 이슈·디스크 시작 조회는 각각 `AI_WORKING_STARTUP_ISSUES=1`, `AI_WORKING_STARTUP_DISK=1`로 선택한다.
 
 Hook 설정은 기존 Claude/Codex 설정 전체를 덮지 않는다. ai-working이 관리하는 hook command만 현재 manifest로 교체하고 다른 도구의 hook은 보존한다.
+
+설치 연결과 실제 동작 점검은 구분한다. [Hook 동작·복수 workspace 설정](docs/hook-behavior.md)에서
+로컬 설정과 회귀 검증 절차를 확인한다. [작업별 측정](docs/task-metrics.md)은 명시적으로 연결한 세션의
+사용량·시간·검증 결과를 machine-local 상태로 기록한다.
 
 ## 필요한 도구
 
 - `git`
-- `node`
+- `node`, `python3`, `jq`
 - macOS 또는 Linux의 표준 shell 도구
 
 각 skill이 요구하는 선택 도구는 해당 `SKILL.md`에 적는다.

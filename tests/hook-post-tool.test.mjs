@@ -72,3 +72,28 @@ test("dev-protocol gate detection in post-tool.sh", () => {
 
   fs.rmSync(home, { recursive: true, force: true })
 })
+
+test("configured roots drive the actual branch hook without matching sibling directories", t => {
+  const home = makeHome()
+  t.after(() => fs.rmSync(home, { recursive: true, force: true }))
+  const configDir = path.join(home, ".config", "ai-working")
+  fs.mkdirSync(configDir, { recursive: true })
+  fs.writeFileSync(path.join(configDir, "workspaces.json"), JSON.stringify({
+    schema_version: 1, workspace_roots: ["~/first", "~/second"], excluded_roots: ["~/second/policy"],
+  }))
+  const env = { ...process.env, HOME: home, XDG_CONFIG_HOME: path.join(home, ".config") }
+  delete env.AI_WORKING_PROJECTS_ROOT
+  delete env.AI_WORKING_WORKSPACES_CONFIG
+  for (const [name, expected] of [["first/app", true], ["second/app", true], ["second-else/app", false], ["second/policy", false]]) {
+    const repo = path.join(home, name)
+    fs.mkdirSync(repo, { recursive: true })
+    execFileSync("git", ["init", "-q", "-b", "main", repo])
+    const file = path.join(repo, "main.py")
+    fs.writeFileSync(file, "value = 1\n")
+    const output = execFileSync("/bin/sh", [script], {
+      env, encoding: "utf8", input: JSON.stringify({ session_id: "test", tool_input: { file_path: file } }),
+    })
+    assert.equal(output.includes("[브랜치]"), expected, name)
+    assert.equal(output.includes("[dev-protocol]"), expected, name)
+  }
+})

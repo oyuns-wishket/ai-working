@@ -43,6 +43,9 @@ description: Use when starting or finishing implementation, design, or irreversi
 저장소에 브랜치·PR·배포 절차를 고정한 skill이 있으면 그 절차를 따른다. 이 문서는 요구사항, 승인, 구현노트, 이탈, 완료를 소유하고 프로젝트 skill은 브랜치, 머지, 배포 mechanics를 소유한다. 두 문서가 같은 승인 대상을 다뤄도 사용자에게 두 번 묻지 않는다.
 
 저장소의 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/`, `.claude/skills/`를 먼저 확인한다.
+기존 HANDOFF는 현재 `Next actions`, `Open items & blockers`, `Decisions & context`만 제한된 분량으로 읽는다.
+설치된 `hooks/handoff-context.mjs` 또는 ai-working 정본의 같은 helper로 발췌할 수 있다.
+잘린 내용·완료 이력은 이번 task에 필요할 때 원본의 해당 부분만 추가 조회하며, 전체 파일을 자동 주입하지 않는다.
 
 프로젝트가 전용 시작·PR·배포 skill을 제공하면 그 절차를 읽고 이 공통 프로토콜과 함께 적용한다. 전용 skill 이름이나 고객별 배포 경로를 이 공통 문서에 하드코딩하지 않는다.
 
@@ -102,6 +105,15 @@ worktree 생성 전 기준 branch, 새 branch 이름, 경로를 확인한다. �
 ## 다음에 참고
 - (재발 가능한 함정·패턴)
 ```
+
+## 작업별 측정
+
+ai-working의 `scripts/task_metrics.py`를 사용할 수 있는 비단순 구현 작업은 시작 시 task를 기록하고,
+자신과 Worker의 로그를 확실히 식별할 수 있을 때만 `--session-log`로 연결한다. CWD나 시간대가 같다는
+이유로 다른 세션을 묶지 않는다. 로그를 모르면 usage를 `unknown`으로 남기고 작업은 계속한다.
+완료 시 실제 검증 결과로 `finish`하고, 재시도 횟수는 확인한 경우만 기록한다. 소요 시간은 대기까지
+포함한 경과 시간이며 과금액·집중 작업 시간이 아니다. 단순 조회·문구 교체에는 새 측정 절차를 강제하지 않는다.
+명령과 저장 경계는 [작업별 측정](../../docs/task-metrics.md)을 필요할 때 읽는다.
 
 ## 5. 완료 절차
 

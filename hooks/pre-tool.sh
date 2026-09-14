@@ -1,5 +1,5 @@
 #!/bin/sh
-. "$HOME/.claude/hooks/lib.sh"
+. "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/lib.sh"
 payload="$(cat)"
 tool="$(printf '%s' "$payload" | jq -r '.tool_name // empty' 2>/dev/null)"
 cmd="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null)"
@@ -17,7 +17,7 @@ case "$tool" in
       if printf '%s' "$cmd" | grep -qE -- '--dry-run'; then :
       elif printf '%s' "$cmd" | grep -qE '^[[:space:]]*CONFIRMED=1[[:space:]]'; then :
       else
-        deny "Rule 1: DB 마이그레이션은 비가역. ① '<명령> --dry-run'(가능시)으로 diff 확인 → ② 사용자 승인 → ③ 'CONFIRMED=1 <명령>'으로 실행."
+        deny "Rule 1: '<명령> --dry-run'(지원 시)으로 대상·diff를 확인하고 기존 승인 범위와 대조한 뒤 'CONFIRMED=1 <명령>'으로 실행. 같은 범위의 기존 승인은 재사용한다(dev-protocol). 새 파괴적 변경·미승인 운영 범위만 추가 확인한다."
       fi
     fi
     ;;

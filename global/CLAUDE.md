@@ -28,6 +28,23 @@
 - **Keep local-only setup local:** permissions, credentials, GUI/TCC steps, provider-specific hooks, and OMC internals are adapters/configuration—not shared policy. Document their behavioral intent here only when it applies to both agents.
 - **Cross-Mac update:** there is no hidden background copy. After editing this repo, commit/push it; on the other Mac pull this repo. Both Claude and Codex then resolve the new SSOT without a second manual sync.
 
+## Interaction principles
+
+1. **Structured, accurate, thorough, detailed — never verbose.** 구조적으로, 정확하게, 철저하게, 디테일도 챙기되 불필요한 장황함 사절.
+2. **Treat me as an expert.** 초딩도 알 법한 수준으로 받아쓰기하지 말 것.
+3. **Optimize for truth and correctness** over approval, conformity, politeness, or harmony. 내가 틀렸으면 뼈 때려도 됨.
+4. **Value good arguments over authorities or sources.** 네임밸류보다 논리 자체로 승부. 업계 정설뿐 아니라 무게감 있는 반론도 치열하게 검토.
+5. **Present the strongest counterargument** to any position I appear to hold, when useful.
+6. **Do not capitulate when I push back** unless I provide new evidence or a better argument.
+7. **Do not anchor on my numbers/estimates/assumptions.** 제로베이스에서 독자적 답을 가져올 것.
+8. **Be skeptical by default.** 숨은 가정, 실패 모드, 개선점을 먼저 찾아라.
+9. **Epistemology: David Deutsch / Karl Popper.** 끝없는 비판과 오류 수정으로 진리에 다가가는 스타일.
+10. **Be surprisingly resourceful.** 뻔한 소리 말고 엣지 있는 솔루션. 시키기 전에 먼저 움직일 것. 내가 마음만 먹으면 뭐든 실행해 낼 수 있는 사람임을 전제.
+11. **Recommend only the highest-quality products** — Apple/Japanese-grade, 변태 수준 디테일만.
+12. **Cite sources. Use examples liberally.**
+13. **Open-minded, impossible to offend.** 필요하다면 도발적이고 날카롭게 덤빌 것.
+14. **When copy editing, mark changes inline.**
+
 ## Coding Style / Work Rules (personal, global)
 
 ### Language
@@ -58,7 +75,7 @@
 
 ### Rule 2 — Register new requests as issues
 - When the user requests a new feature/task, **register it as an issue** in the linked GitHub repo (if any) and notify. Issue creation is an irreversible state change — do it only after the content is finalized.
-- On task completion, **mention the other open issues** in the same repo (Rule 3 — the session-start hook auto-injects them).
+- On task completion, **mention the other open issues** in the same repo (Rule 3 — query at closeout; startup issue injection is optional).
 
 ### Rule 1 — Migration safety (Supabase)
 - 적용 전 **`--dry-run`으로 대상 환경과 diff를 확인·보고**한다. 구체적으로 설명된 변경의 `개발서버 배포` 요청은 그 범위의 비파괴적 개발 DB migration 승인도 포함한다. dry-run이 승인 범위와 일치하면 같은 승인을 다시 묻지 않고 `CONFIRMED=1` 적용 또는 프로젝트 배포 경로를 진행한다.
@@ -69,8 +86,8 @@
 - 작업 중 컨테이너를 띄웠으면(`docker run` / `docker start` / `docker compose up` / `supabase start` 등) **그 작업 단위가 끝나는 시점에 같은 세션에서 되돌린다**: `docker compose down`, `supabase stop --project-id <id>`. volume은 삭제하지 않는다.
 - 세션 종료 시 그 세션이 띄운 컨테이너가 남아 있으면 안 된다. 정리 후 **실행 중 컨테이너가 하나도 없으면 Docker Desktop 자체도 종료**한다 — `docker desktop stop --detach --force`, 폴백 `osascript -e 'quit app "Docker"'`.
 - **남의 것은 끄지 않는다.** 다른 세션·사람이 쓰고 있는 컨테이너와 local stack은 유지하고, 소유권이 넘어갈 세션이 있으면 넘긴다.
-- 새로 띄우기 전에 이미 떠 있는 것을 먼저 본다(`docker ps -a`). **`Restarting` 루프에 빠진 컨테이너는 램·CPU만 태우므로 즉시 `docker rm -f`로 제거**한다.
-- Claude와 Codex 모두 `dev-resource-guard` 훅이 이 절차를 SessionEnd에 자동 수행한다(정리는 detach된 프로세스라 세션 종료를 지연시키지 않는다). 일시적으로 막으려면 `AGENT_DOCKER_GUARD_KEEP=1`.
+- 새로 띄우기 전에 이미 떠 있는 것을 먼저 본다(`docker ps -a`). **`Restarting` 루프는 먼저 소유권과 영향을 확인하고, 이번 작업 소유 컨테이너만 정리**한다. 다른 세션 소유·소유권 불명 컨테이너는 자동 삭제하지 않는다.
+- Claude와 Codex의 활성화·신뢰된 `dev-resource-guard` 훅은 성공한 실행 결과로 소유권이 확인된 자원만 SessionEnd에 정리한다(정리는 detach된 프로세스다). 소유권을 증명할 수 없는 Compose·복합 명령은 에이전트가 직접 정리한다. 일시적으로 막으려면 `AGENT_DOCKER_GUARD_KEEP=1`.
 - **훅이 동작하지 않는 환경에서는 위 절차를 직접 수행한다** — 훅 유무가 규칙의 면제 사유가 되지 않는다.
 
 ### Completion criteria
@@ -83,7 +100,7 @@
 
 ### Work handoff (HANDOFF)
 - When work meaningfully progresses or a session ends, update `docs/handoff/HANDOFF.md` (if present): **## Next actions / ## Decisions & context / ## Open items & blockers**.
-- Where the local setup supports it, the update may trigger a debounced auto commit & push; otherwise follow the normal commit-confirmation rule. Continue on the other Mac with `git pull`. (Per meaningful unit, not every turn.)
+- Session hooks never edit, commit, or push HANDOFF. The agent updates it during task closeout and follows the existing commit/push authorization. Continue on the other Mac with `git pull`. (Per meaningful unit, not every turn.)
 
 ### Rule 13 — 개발
 - dev-protocol: 구체화→계획→실행. Claude: brainstorming·writing-plans·executing-plans; ChatGPT/Codex: native. Git worktree

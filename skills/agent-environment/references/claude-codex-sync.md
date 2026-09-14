@@ -36,7 +36,8 @@ Resolve `AI_WORKING_ROOT` from the installed skill symlink or the current checko
 - Codex `~/.codex/AGENTS.md` → `global/CLAUDE.md`.
 - Every source skill individually linked into `~/.claude/skills/` and `~/.agents/skills/`. `link_skill` never touches a destination that resolves to the same physical path as the source.
 - Workspace guidance declared in `manifest.json`.
-- Claude governance hooks.
+- One shared governance manifest rendered for both platforms, with provider event adapters.
+- Lean Claude runtime profile: preserve external UI hooks, skip automatic OMC keyword/skill routing, and migrate only already-canonical local preferences.
 
 ## Machine-local integrations
 
@@ -48,3 +49,9 @@ MCP registrations, account tokens, trust levels, TCC permissions, and provider-s
 - A new skill under `skills/` becomes discoverable by both agents on every Mac after `bootstrap.sh` — no per-skill registration.
 - Never put tokens, `~/.claude.json`, Keychain contents, `cswap` account exports, or machine-only launchd/TCC state in this repo.
 - A hook may enforce a rule on one platform; the rule itself remains global policy. Do not claim a hook is shared merely because the intent is shared.
+
+## Runtime readiness and assets
+
+After an authorized hook sync, inspect `python3 scripts/codex_hook_trust.py --ensure-instructions`, then apply the reviewed exact definitions with `--apply --ensure-instructions`. This queries the installed native app-server and verifies trust again; it does not start model calls or execute hooks. Disabled and unknown hooks are preserved. Unsupported CLI APIs are reported instead of guessing trust hashes.
+
+Use `scripts/sync_agent_assets.py` for explicit home/project skill and instruction parity. Dry-run first; inspect conflicts, then apply authorized non-conflicting adapters and check again. Source paths and plugin choices remain in local configuration. Provider-bundled internals, conversation logs, generated caches and private memories are not shared policy.

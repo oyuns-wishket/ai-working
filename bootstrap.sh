@@ -25,7 +25,19 @@ done
 
 case "$TARGET_ROOT" in /*) ;; *) echo "--target-root는 절대경로여야 합니다: $TARGET_ROOT" >&2; exit 2 ;; esac
 command -v node >/dev/null || { echo "node가 필요합니다 (manifest 파싱)." >&2; exit 1; }
+command -v python3 >/dev/null || { echo "python3가 필요합니다 (runtime profile)." >&2; exit 1; }
 [ -f "$MANIFEST" ] || { echo "manifest.json 없음: $MANIFEST" >&2; exit 1; }
+# Refuse malformed configuration before changing any links or installed files.
+node - "$TARGET_ROOT/.claude/settings.json" "$TARGET_ROOT/.codex/hooks.json" <<'NODE'
+const fs = require('fs');
+for (const file of process.argv.slice(2)) {
+  if (!fs.existsSync(file)) continue;
+  try {
+    const value = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error();
+  } catch { console.error('Invalid existing JSON; preserving configuration:', file); process.exit(1); }
+}
+NODE
 
 c_ok="\033[32m"; c_skip="\033[90m"; c_act="\033[36m"; c_warn="\033[33m"; c_err="\033[31m"; c_off="\033[0m"
 say(){ printf "%b%s%b\n" "$1" "$2" "$c_off"; }
@@ -180,13 +192,13 @@ copy_hooks(){
   done
 }
 render_hook_config(){
-  local current="$1" desired="$2"
-  node - "$current" "$desired" "$HOOK_NAMES" <<'NODE'
+  local current="$1" desired="$2" platform="${3:-Claude}"
+  node - "$current" "$desired" "$HOOK_NAMES" "$platform" <<'NODE'
 const fs = require("fs")
-const [currentPath, desiredPath, namesText] = process.argv.slice(2)
+const [currentPath, desiredPath, namesText, platform] = process.argv.slice(2)
 const names = new Set(namesText.split(",").filter(Boolean))
 const legacyNames = new Set([...names, "preview-db-guard.mjs"])
-const read = (file, fallback) => { try { return JSON.parse(fs.readFileSync(file, "utf8")) } catch { return fallback } }
+const read = (file, fallback) => { try { return JSON.parse(fs.readFileSync(file, "utf8")) } catch (error) { if (error.code === 'ENOENT') return fallback; throw error } }
 const current = read(currentPath, {})
 const desired = read(desiredPath, { hooks: {} })
 const managed = command => typeof command === "string" && [...legacyNames].some(name => command.includes(`/.claude/hooks/${name}`))
@@ -199,14 +211,24 @@ for (const event of Object.keys(hooks)) {
   }).filter(Boolean)
   if (!hooks[event].length) delete hooks[event]
 }
-for (const [event, records] of Object.entries(desired.hooks || {})) hooks[event] = [...(hooks[event] || []), ...records]
+for (const [event, sourceRecords] of Object.entries(desired.hooks || {})) {
+  const records = structuredClone(sourceRecords)
+  if (platform === "Codex") for (const record of records) {
+    if (event === "SessionEnd") record.matcher = "other"
+    for (const hook of record.hooks || []) {
+      if (event === "SessionStart") hook.additionalContextLimit = 10000
+      if (event === "UserPromptSubmit") hook.additionalContextLimit = 1200
+    }
+  }
+  hooks[event] = [...(hooks[event] || []), ...records]
+}
 current.hooks = hooks
 process.stdout.write(`${JSON.stringify(current, null, 2)}\n`)
 NODE
 }
 sync_hook_manifest(){
   local source="$1" target="$2" label="$3" rendered current_norm backup; [ -f "$source" ] || return
-  rendered="$(render_hook_config "$target" "$source")"
+  rendered="$(render_hook_config "$target" "$source" "$label")"
   current_norm="$(node -e 'const fs=require("fs");try{process.stdout.write(JSON.stringify(JSON.parse(fs.readFileSync(process.argv[1],"utf8")),null,2)+"\n")}catch{}' "$target")"
   if [ "$current_norm" = "$rendered" ]; then say "$c_skip" "  = $label hook manifest 최신"; ok=$((ok+1)); return; fi
   if [ "$STATUS" = 1 ]; then say "$c_warn" "  ! $label hook manifest 갱신 필요"; problems=$((problems+1)); return; fi
@@ -217,7 +239,19 @@ sync_hook_manifest(){
 
 say "$c_act" "▶ hook"; copy_hooks
 sync_hook_manifest "$REPO_DIR/global/governance-hooks.json" "$(target_path '~/.claude/settings.json')" Claude
-sync_hook_manifest "$REPO_DIR/global/codex-governance-hooks.json" "$(target_path '~/.codex/hooks.json')" Codex
+sync_hook_manifest "$REPO_DIR/global/governance-hooks.json" "$(target_path '~/.codex/hooks.json')" Codex
+
+# The profile is reusable behavior; plugin choices and all local values stay local.
+runtime_plan="$(python3 "$REPO_DIR/scripts/configure_agent_runtime.py" --home "$TARGET_ROOT" --repo "$REPO_DIR")"
+runtime_count="$(printf '%s' "$runtime_plan" | node -e 'let s="";process.stdin.on("data",x=>s+=x).on("end",()=>console.log(JSON.parse(s).changes.length))')"
+if [ "$runtime_count" = 0 ]; then
+  say "$c_skip" "  = 공통 runtime profile 최신"; ok=$((ok+1))
+elif [ "$STATUS" = 1 ]; then
+  say "$c_warn" "  ! runtime profile 갱신 필요"; problems=$((problems+1))
+else
+  record_change "  → 공통 runtime profile 적용 ($runtime_count files)"
+  [ "$DRY" = 1 ] || python3 "$REPO_DIR/scripts/configure_agent_runtime.py" --home "$TARGET_ROOT" --repo "$REPO_DIR" --apply
+fi
 
 if [ -L "$REPO_DIR/private" ]; then
   case "$(readlink "$REPO_DIR/private")" in

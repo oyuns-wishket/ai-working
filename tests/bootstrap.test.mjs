@@ -48,6 +48,15 @@ test("empty home supports dry-run and the full idempotent lifecycle", () => {
   assert.match(run(target), /변경 0개/)
   assert.equal(fs.readlinkSync(path.join(target, ".codex", "AGENTS.md")), path.join(repo, "global", "CLAUDE.md"))
   assert.equal(fs.lstatSync(memoryPath(target)).isDirectory(), true)
+  const claude = JSON.parse(fs.readFileSync(path.join(target, '.claude/settings.json')))
+  const codex = JSON.parse(fs.readFileSync(path.join(target, '.codex/hooks.json')))
+  assert.deepEqual(hookCommands(claude).sort(), hookCommands(codex).sort())
+  for (const command of hookCommands(claude)) {
+    assert.doesNotMatch(command, /handoff-sync|post-edit-context|post-tool\.sh/)
+  }
+  assert.equal(claude.hooks.SessionStart.length, 1)
+  assert.equal(codex.hooks.SessionEnd[0].matcher, 'other')
+  assert.equal(codex.hooks.SessionEnd[0].hooks[0].timeout, 3)
 
   fs.rmSync(target, { recursive: true, force: true })
 })
@@ -157,4 +166,18 @@ test("status is read-only and fails when installation is missing", () => {
   assert.notEqual(result.status, 0)
   assert.equal(fs.readdirSync(target).length, 0)
   fs.rmSync(target, { recursive: true, force: true })
+})
+
+test('malformed existing configuration aborts before any installation writes', t => {
+  const target = fs.mkdtempSync(path.join(os.tmpdir(), 'ai-working-invalid-'))
+  t.after(() => fs.rmSync(target, { recursive: true, force: true }))
+  fs.mkdirSync(path.join(target, '.claude'))
+  const file = path.join(target, '.claude/settings.json')
+  fs.writeFileSync(file, '{"env":{"KEEP":"value"}, invalid')
+  const result = spawnSync('/bin/bash', [script, '--target-root', target], { cwd: repo, encoding: 'utf8' })
+  assert.notEqual(result.status, 0)
+  assert.match(result.stderr, /Invalid existing JSON/)
+  assert.equal(fs.readFileSync(file, 'utf8'), '{"env":{"KEEP":"value"}, invalid')
+  assert.deepEqual(fs.readdirSync(target), ['.claude'])
+  assert.deepEqual(fs.readdirSync(path.join(target, '.claude')), ['settings.json'])
 })

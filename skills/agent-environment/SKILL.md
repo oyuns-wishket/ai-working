@@ -14,6 +14,16 @@ Use the public `ai-working` checkout as the only version-controlled AI environme
 3. **Use or repair Claude account switching:** read `references/cswap.md`. Never print, commit, export, or paste OAuth tokens, API keys, Keychain data, or `cswap export` output.
 4. **Add a cross-agent skill:** author it at `ai-working/skills/<name>/` and run `ai-working/bootstrap.sh` to expose it to Claude and Codex. Keep secrets and customer-confidential values out of the skill; use documented environment variables or ignored local config for runtime values. Write `SKILL.md` agent-neutral and interpret platform-specific tool names through the global platform-translation rule.
 
+## Behavior diagnostics
+
+For hook/workflow efficiency checks, read [hook behavior](../../docs/hook-behavior.md). Run
+`node scripts/check_environment.mjs --project <project-path> --json` from the resolved SSOT root to inspect configured
+workspace matching and handoff sizes, then use the relevant behavioral tests. Bootstrap status establishes installation
+parity, not runtime correctness. Real workspace paths remain in machine-local `workspaces.json`.
+For task efficiency measurements, use [task metrics](../../docs/task-metrics.md): explicitly attach sessions and compare
+usage, elapsed wall time, retries, and verified outcomes. Do not equate cache-hit rate with savings or claim a model
+change is more efficient without comparable task results.
+
 ## Invariants
 
 - Claude global policy imports `global/CLAUDE.md`; Codex global guidance links to that exact file.

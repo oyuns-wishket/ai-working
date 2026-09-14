@@ -1,11 +1,12 @@
 #!/bin/sh
-. "$HOME/.claude/hooks/lib.sh"
+hook_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+. "$hook_dir/lib.sh"
 payload="$(cat)"
 cwd="$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)"
 [ -n "$cwd" ] && cd "$cwd" 2>/dev/null
 out=""
 # Rule 3 — open issues (read-only)
-if in_git_repo && has_gh_remote; then
+if [ "${AI_WORKING_STARTUP_ISSUES:-0}" = 1 ] && in_git_repo && has_gh_remote; then
   issues="$(run_guarded 6 gh issue list --state open --limit 10 2>/dev/null)"
   [ -n "$issues" ] && out="$out
 [열린 이슈]
@@ -15,13 +16,19 @@ fi
 # 동기화는 사용자가 명시적으로 git pull. 여기선 현재 HANDOFF.md만 읽어 주입.)
 if in_git_repo; then
   hf="$(git rev-parse --show-toplevel 2>/dev/null)/docs/handoff/HANDOFF.md"
-  [ -f "$hf" ] && out="$out
-[인계 HANDOFF.md]
-$(cat "$hf")"
+  if [ -f "$hf" ]; then
+    handoff=""
+    if command -v node >/dev/null 2>&1 && [ -f "$hook_dir/handoff-context.mjs" ]; then
+      handoff="$(run_guarded 3 node "$hook_dir/handoff-context.mjs" "$hf")"
+    fi
+    [ -n "$handoff" ] || handoff="[인계 생략] source: docs/handoff/HANDOFF.md — bounded reader unavailable; read relevant sections on demand."
+    out="$out
+$handoff"
+  fi
 fi
 # Rule 9 — disk guard (하루 1회만 du; 매 세션 전체 재귀스캔 비용 제거)
 dstamp="$HOME/.claude/.disk-stamp"
-if [ ! -f "$dstamp" ] || [ -n "$(find "$dstamp" -mtime +1 2>/dev/null)" ]; then
+if [ "${AI_WORKING_STARTUP_DISK:-0}" = 1 ] && { [ ! -f "$dstamp" ] || [ -n "$(find "$dstamp" -mtime +1 2>/dev/null)" ]; }; then
   : > "$dstamp"
   big="$(run_guarded 5 du -sg "$HOME/.claude/projects" 2>/dev/null | awk '$1>=14{print}')"
   [ -n "$big" ] && out="$out

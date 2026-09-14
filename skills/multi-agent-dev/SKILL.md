@@ -152,7 +152,7 @@ Worker 완료를 그대로 성공으로 간주하지 않는다.
 4. FAIL이면 해당 Worker만 최대 3회 재실행한다. 이후에도 실패하면 남은 위험과 선택지를 사용자에게 에스컬레이션한다.
 5. Worker commit과 merge/cherry-pick은 현재 사용자 commit 승인 규칙을 따른다.
 6. Lead 통합 workspace에서 프로젝트가 요구하는 lint, test, build와 DB/보안 gate를 실제 실행한다.
-7. DB migration 적용, 외부 write, 배포, push는 각각의 별도 승인 절차를 지킨다.
+7. DB migration 적용, 외부 write, 배포, push의 승인 판단은 `dev-protocol`의 승인과 질문·§5.3을 따른다. 현재 요청이 이미 포함한 단계는 재질문하지 않고, 새 파괴적 변경·미승인 운영 범위·범위 밖 외부 write만 추가 확인한다.
 
 ### 7. 정리
 

@@ -9,6 +9,7 @@ const RECENT_SESSION_MS = 45 * 60 * 1000
 const DOCKER_BUSY_MS = 5 * 60 * 1000
 const DOCKER_PENDING_TTL_MS = 10 * 60 * 1000
 const SAFE_NAME = /^[a-zA-Z0-9_.-]+$/
+const CONTAINER_ID = /^[a-f0-9]{64}$/
 
 function readStdin() {
   return new Promise((resolve) => {
@@ -177,7 +178,7 @@ function formatContext(snapshot, session) {
     )
   } else {
     lines.push(
-      "RESOURCE_OK: local Supabase는 동시에 한 stack만 실행하고, AI가 띄운 컨테이너와 유휴 Docker Desktop은 SessionEnd에서 자동 정리된다.",
+      "RESOURCE_OK: local Supabase는 동시에 한 stack만 실행하고, 소유권이 확인된 컨테이너와 유휴 Docker Desktop은 SessionEnd에서 자동 정리된다. 그 외 자원은 세션에서 직접 정리한다.",
     )
   }
   return lines.join("\n")
@@ -230,18 +231,70 @@ function touchesDocker(command) {
   return /\b(docker|docker-compose|supabase)\b/i.test(command)
 }
 
-// `docker run` 직전 스냅샷과 이후 실행 목록의 차집합이 이 세션이 띄운 컨테이너다.
-function reconcileDocker(input, containers) {
+// A successful tool result and immutable IDs establish ownership. A before/after
+// name difference alone cannot distinguish another session's concurrent work.
+function inspectContainer(target) {
+  if (!SAFE_NAME.test(target)) return null
+  const output = run("docker", ["inspect", "--format", '{{.Id}} {{.Name}} {{.State.Running}} {{index .Config.Labels "com.supabase.cli.project"}}', target])
+  const match = output.match(/^([a-f0-9]{64}) \/?([a-zA-Z0-9_.-]+) (true|false)(?: (.*))?$/)
+  return match ? { id: match[1], name: match[2], running: match[3] === "true", supabaseProject: match[4] || null } : null
+}
+
+function simpleCommand(command) {
+  // Compound commands, substitutions, redirects and wrappers need explicit
+  // manual cleanup. Do not guess which command produced the observed output.
+  return !/[\n;&|`$<>]/.test(command) && !/["'\\]/.test(command)
+}
+
+function successfulResult(input) {
+  const response = input.tool_response
+  if (!response || typeof response !== "object" || response.interrupted || response.isError || response.error) return false
+  const exitCode = response.exit_code ?? response.exitCode
+  return exitCode === undefined || exitCode === 0
+}
+
+function scopedContainers(names, projectId) {
+  return names.filter((name) => name.startsWith("supabase_") && name.endsWith(`_${projectId}`))
+    .map(inspectContainer).filter((container) => container?.running && container.supabaseProject === projectId)
+}
+
+function confirmOwnership(input, command) {
   const session = readJson(sessionFile(input))
   const pending = session?.dockerPending
-  if (!pending) return session
-  const before = new Set(pending.before || [])
-  const fresh = containers.filter((name) => !before.has(name) && SAFE_NAME.test(name))
-  const owned = [...new Set([...(session.dockerOwned || []), ...fresh])]
-  const expired = Date.now() - Number(pending.at || 0) > DOCKER_PENDING_TTL_MS
-  return updateSession(input, {
-    dockerOwned: owned,
-    dockerPending: expired ? null : pending,
+  if (!pending || pending.command !== command ||
+      (pending.toolUseId && pending.toolUseId !== input.tool_use_id)) return
+  updateSession(input, { dockerPending: null })
+  if (Date.now() - Number(pending.at || 0) > DOCKER_PENDING_TTL_MS) return
+  // Native Codex exposes raw tool text without an exit code. A sole immutable
+  // ID from run/create, resolved by inspect below, is attributable evidence;
+  // arbitrary text cannot prove that docker start or Supabase succeeded.
+  const nativeContainerId = pending.kind === "run" && typeof input.tool_response === "string"
+    && CONTAINER_ID.test(input.tool_response.trim())
+  if (!successfulResult(input) && !nativeContainerId) return
+
+  if (pending.kind === "supabase") {
+    const containers = scopedContainers(runningContainers(), pending.projectId)
+    if (!containers.some((container) => container.name === `supabase_db_${pending.projectId}`)) return
+    updateSession(input, {
+      root: pending.root, projectId: pending.projectId, owns: true,
+      ownershipVersion: 2, supabaseContainerIds: containers.map((container) => container.id),
+    })
+    return
+  }
+
+  let confirmed = []
+  if (pending.kind === "run") {
+    const output = typeof input.tool_response === "string" ? input.tool_response.trim()
+      : String(input.tool_response.stdout ?? input.tool_response.output ?? "").trim()
+    if (!CONTAINER_ID.test(output)) return
+    const container = inspectContainer(output)
+    if (container && !pending.before.includes(container.name)) confirmed = [container.id]
+  } else if (pending.kind === "start") {
+    confirmed = (pending.targets || []).filter((id) => inspectContainer(id)?.running)
+  }
+  updateSession(input, {
+    ownershipVersion: 2,
+    dockerOwned: [...new Set([...(session.ownershipVersion === 2 ? session.dockerOwned || [] : []), ...confirmed])],
   })
 }
 
@@ -290,7 +343,7 @@ function buildCleanupScript({ containers, supabase, quitApp }) {
   if (quitApp) {
     // 남은 컨테이너가 정말 하나도 없을 때만 Docker Desktop(VM 포함)을 내린다.
     steps.push(
-      `sleep 2; if [ -z "$(docker ps -q 2>/dev/null)" ]; then docker desktop stop --detach --force >/dev/null 2>&1 || osascript -e 'quit app "Docker"' >/dev/null 2>&1; fi`,
+      `sleep 2; remaining=$(docker ps -q 2>/dev/null) && if [ -z "$remaining" ]; then docker desktop stop --detach --force >/dev/null 2>&1 || osascript -e 'quit app "Docker"' >/dev/null 2>&1; fi`,
     )
   }
   return steps.join("; ")
@@ -299,44 +352,48 @@ function buildCleanupScript({ containers, supabase, quitApp }) {
 function cleanupSession(input) {
   const file = sessionFile(input)
   const session = readJson(file)
+  if (session?.ownershipVersion !== 2) {
+    removeFile(file)
+    return
+  }
   const containers = runningContainers()
 
-  const pending = session?.dockerPending
-  const before = new Set(pending?.before || [])
-  const owned = [
-    ...new Set([
-      ...(session?.dockerOwned || []),
-      ...(pending ? containers.filter((name) => !before.has(name)) : []),
-    ]),
-  ].filter((name) => SAFE_NAME.test(name))
-
+  // Legacy name-based markers and unconfirmed pending commands cannot authorize
+  // cleanup. In particular, never claim containers just because they appeared.
+  const owned = session?.ownershipVersion === 2
+    ? (session.dockerOwned || []).filter((id) => CONTAINER_ID.test(id)) : []
   removeFile(file)
 
-  const running = new Set(containers)
   const claimedElsewhere = new Set(
     otherRecentSessions(file).flatMap(({ value }) => value.dockerOwned || []),
   )
-  const toStop = owned.filter((name) => running.has(name) && !claimedElsewhere.has(name))
+  const toStop = owned.filter((id) => !claimedElsewhere.has(id) && inspectContainer(id)?.running)
 
   let supabase = null
-  if (session?.owns && SAFE_NAME.test(session.projectId || "")) {
+  if (session?.ownershipVersion === 2 && session.owns && SAFE_NAME.test(session.projectId || "")) {
     const observers = supabaseObservers(session.projectId, file)
     if (observers.length) {
-      // 같은 stack을 보고 있던 다른 세션에 소유권을 넘기고 stop하지 않는다.
       const nextOwner = observers[0]
-      writeJson(nextOwner.file, { ...nextOwner.value, owns: true })
-    } else if (supabaseStacksOf(containers).includes(session.projectId)) {
-      supabase = { root: session.root, projectId: session.projectId }
+      writeJson(nextOwner.file, {
+        ...nextOwner.value, owns: true, ownershipVersion: 2,
+        supabaseContainerIds: session.supabaseContainerIds,
+      })
+    } else {
+      const current = scopedContainers(containers, session.projectId).map((container) => container.id).sort()
+      const expected = [...(session.supabaseContainerIds || [])].filter((id) => CONTAINER_ID.test(id)).sort()
+      if (expected.length && JSON.stringify(current) === JSON.stringify(expected)) {
+        supabase = { root: session.root, projectId: session.projectId }
+      }
     }
   }
 
   const supabaseContainerCount = supabase
-    ? containers.filter((name) => name.endsWith(`_${supabase.projectId}`)).length
+    ? session.supabaseContainerIds.length
     : 0
   const remaining = containers.length - toStop.length - supabaseContainerCount
   const keepApp = process.env.AGENT_DOCKER_GUARD_KEEP === "1"
   const quitApp =
-    !keepApp && dockerEngineUp() && remaining <= 0 && !dockerBusyElsewhere(file)
+    !keepApp && (toStop.length > 0 || supabase !== null) && dockerEngineUp() && remaining <= 0 && !dockerBusyElsewhere(file)
 
   if (!toStop.length && !supabase && !quitApp) return
   detach(buildCleanupScript({ containers: toStop, supabase, quitApp }))
@@ -345,20 +402,32 @@ function cleanupSession(input) {
 async function main() {
   const input = await readStdin()
   const event = String(input.hook_event_name || "")
-  if (!["UserPromptSubmit", "PreToolUse", "SessionEnd"].includes(event)) return
+  if (!["UserPromptSubmit", "PreToolUse", "PostToolUse", "SessionEnd"].includes(event)) return
+
+  // Missing session identity must never share an ownership marker with another turn.
+  if (!input.session_id && event !== "UserPromptSubmit") return
 
   if (event === "SessionEnd") {
     cleanupSession(input)
     return
   }
 
+  const tool = String(input.tool_name || "")
+  const command = String(input.tool_input?.command || input.tool_input?.cmd || "")
+  // Unrelated tool calls must not execute Docker or OS memory probes.
+  if (event !== "UserPromptSubmit" && (tool !== "Bash" || !touchesDocker(command))) return
+  if (event === "PostToolUse") {
+    confirmOwnership(input, command)
+    return
+  }
+
   const cwd = path.resolve(input.cwd || process.cwd())
   const project = findSupabaseProject(cwd)
   const snapshot = resourceSnapshot()
-  let session = reconcileDocker(input, snapshot.containers)
+  let session = readJson(sessionFile(input))
 
   if (event === "UserPromptSubmit") {
-    if (project && snapshot.stacks.includes(project.projectId)) {
+    if (input.session_id && project && snapshot.stacks.includes(project.projectId)) {
       session = recordSupabase(input, project, false)
     }
     process.stdout.write(
@@ -372,14 +441,20 @@ async function main() {
     return
   }
 
-  const tool = String(input.tool_name || "")
-  const command = String(input.tool_input?.command || input.tool_input?.cmd || "")
-  if (tool !== "Bash" || !touchesDocker(command)) return
-
   updateSession(input, { dockerTouchedAt: Date.now() })
 
   if (isDockerStartCommand(command)) {
-    updateSession(input, { dockerPending: { at: Date.now(), before: snapshot.containers } })
+    let pending = null
+    if (simpleCommand(command) && /^\s*docker\s+(run|create)\s+/.test(command)) {
+      pending = { kind: "run", before: snapshot.containers }
+    } else if (simpleCommand(command) && /^\s*docker\s+start\s+([a-zA-Z0-9_.-]+\s*)+$/.test(command)) {
+      const targets = command.trim().split(/\s+/).slice(2).map(inspectContainer)
+        .filter((container) => container && !container.running).map((container) => container.id)
+      pending = { kind: "start", targets }
+    }
+    updateSession(input, { dockerPending: pending ? {
+      ...pending, at: Date.now(), command, toolUseId: input.tool_use_id,
+    } : null })
     return
   }
 
@@ -399,9 +474,13 @@ async function main() {
     return
   }
 
-  if (!snapshot.stacks.includes(project.projectId)) {
-    recordSupabase(input, project, true)
-    updateSession(input, { dockerPending: { at: Date.now(), before: snapshot.containers } })
+  // Only the plain, cwd-scoped start has an unambiguous target. Flags such as
+  // --workdir can select another project and are intentionally not auto-owned.
+  if (!snapshot.stacks.includes(project.projectId) && /^\s*supabase\s+start\s*$/.test(command)) {
+    updateSession(input, { dockerPending: {
+      kind: "supabase", at: Date.now(), command, toolUseId: input.tool_use_id,
+      root: project.root, projectId: project.projectId,
+    } })
   }
 }
 
