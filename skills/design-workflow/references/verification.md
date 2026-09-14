@@ -84,3 +84,20 @@ Report:
 - intentional findings and reasons
 - untested states and why
 - plan deviations
+
+## Purpose-specific acceptance
+
+Apply only the selected purpose's checks from [data-surfaces.md](data-surfaces.md) or [motion-and-3d.md](motion-and-3d.md). Ordinary forms do not need a 3D performance audit.
+
+- Data: reconcile representative source totals with cards/charts/tables; test filter consistency and relevant missing/error states. Screenshots do not prove numerical correctness.
+- Motion/3D: test forward/back scroll, resize, restored scroll, route re-entry, mobile, reduced motion, and asset failure/fallback. Static screenshots do not prove animation behavior or frame performance.
+- Work UI: complete the main task with keyboard and pointer; verify feedback, preserved input, and recovery from failure.
+- Marketing/content: check reading order, working CTA, accessible HTML content, relevant title/description and image/font loading. Do not create an SEO migration outside the requested scope.
+
+## Final quality review
+
+Use [web-quality.md](web-quality.md). Compare the same route, viewport, data and state against the approved comp or existing design authority. Check shared alignment axes, typography, spacing, numerical formatting, and primary action clarity. Include narrow content-failure widths, long text and zoom where relevant, not only two convenient screenshot sizes.
+
+Record one representative user action → visible response → completion result. For performance-sensitive changes, record device/network/cache conditions and measured before/after results. Core Web Vitals field thresholds and lab observations are different evidence; do not claim field INP from a Lighthouse load test.
+
+Fix observed in-scope issues, rerun affected checks, then finish when acceptance criteria pass. Do not loop indefinitely for arbitrary aesthetic scores. If a required check cannot run, disclose the exact gap; a screenshot or source review is not a substitute. Keep optional polish separate from blocking defects and preserve user-approved intentional findings.

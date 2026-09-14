@@ -14,6 +14,22 @@
 - References adopted:
 - References rejected:
 
+## Web experience decisions
+
+Fill only relevant fields; link existing decisions instead of duplicating them.
+
+- Primary purpose and affected routes/sections:
+- Core user task and visible completion condition:
+- Existing components/tools reused:
+- Additional tools and why existing tools are insufficient:
+- Official documentation/version/license checked:
+- Alignment axes and information density:
+- Mobile transformation and keyboard behavior:
+- Loading, failure recovery, and reduced-motion behavior:
+- Performance measurement conditions and target:
+- For data: metric/period/unit/source and comparison checks:
+- For 3D: asset source, render engine, animation owner, fallback:
+
 ## Color
 
 | Token | Value | Usage | Contrast evidence |

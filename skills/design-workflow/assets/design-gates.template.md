@@ -6,6 +6,13 @@ Use this section inside the task implementation note. Do not mark a gate complet
 
 - Mode: `new | rebrand | refactor | small-feature | audit`
 - Application source writes: `locked | unlocked`
+- Primary purpose and scope:
+- Existing user request/approval and design source:
+- Required gate set: full (new/rebrand/world replacement/full representative-screen replacement) | scoped (small-feature/preserving refactor) | none (audit)
+
+For scoped work, mark the four new-design sections below `N/A` with a reason and record confirmed scope, relevant UI states, acceptance criteria, and existing design authority here. Do not demand new product answers or three comps for a preserved small feature. A visual-world or full representative-screen replacement requires the full gate set. Audit remains locked and does not create this file.
+
+- Scoped acceptance evidence:
 
 ## Product interview
 
@@ -37,5 +44,5 @@ Use this section inside the task implementation note. Do not mark a gate complet
 
 ## Implementation unlock
 
-- [ ] Every required gate above is complete
+- [ ] Every gate required for the selected mode is complete; any N/A has a valid scoped-work reason
 - Implementation unlocked: `yes | no`

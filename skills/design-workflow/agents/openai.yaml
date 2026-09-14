@@ -1,4 +1,4 @@
 interface:
   display_name: "Design Workflow"
-  short_description: "인터뷰와 시안 승인 후 프로젝트 디자인을 구현·검증합니다"
-  default_prompt: "$design-workflow를 사용해 인터뷰부터 시작하고 시안을 승인받은 뒤 이 프로젝트의 UI를 구현해 주세요."
+  short_description: "웹 목적에 맞는 도구와 정렬·반응형·사용감을 설계하고 검증합니다"
+  default_prompt: "$design-workflow로 기존 디자인과 사용자 과업을 확인하고, 변경 모드와 웹사이트 목적에 맞게 필요한 승인·도구 선택·구현·검증을 진행해 주세요."

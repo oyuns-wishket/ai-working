@@ -17,6 +17,7 @@ Ask only values that cannot be discovered:
 - What job is the user completing?
 - Who is the primary user and what is their expertise?
 - Is this a brand/marketing surface or a product/work surface?
+- What must a person understand or finish on this specific page? Which purpose in [experience-routing.md](experience-routing.md) matches it?
 - Which current behavior or identity must remain?
 - Which result would make the change unsuccessful?
 
@@ -41,18 +42,12 @@ Use `assets/DESIGN.template.md`. Keep decisions concrete:
 - accessibility constraints
 - explicit anti-patterns
 - small-feature scope guard when applicable
+- selected experience purpose and tools, with reuse, compatibility, and fallback decisions
+- observable task acceptance criteria, rather than invented satisfaction scores
 
-## Principles
+## Web quality
 
-- Use one dominant visual anchor per screen.
-- Build hierarchy in this order: whitespace, weight, size, color, decoration.
-- Keep body line-height around 1.4–1.6 and headings around 1.1–1.25 unless the font needs different metrics.
-- Use no more than two intentional font families. Validate Korean glyph coverage and mixed-script rhythm.
-- Maintain WCAG AA contrast by default: 4.5:1 for normal text, 3:1 for large text and relevant UI boundaries.
-- Never communicate state by color alone.
-- Use purpose-driven motion; provide reduced-motion behavior.
-- Keep touch targets at least 44×44 CSS px where mobile interaction applies.
-- Choose breakpoints based on content failure, not named devices alone.
+Use [web-quality.md](web-quality.md) for alignment, typography, density, interaction feedback, responsive behavior, and performance. Preserve the existing scale and brand before proposing new values. Read only the selected purpose's specialist reference; these recommendations do not replace product or comp approval.
 
 ## Existing design-system migration
 

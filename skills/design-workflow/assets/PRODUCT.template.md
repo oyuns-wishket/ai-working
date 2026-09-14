@@ -23,6 +23,8 @@
 - User can:
 - Business outcome:
 - Experience outcome:
+- Representative task: user action → visible response → completion condition:
+- Primary website purpose: work UI | data dashboard | marketing/content | interactive 3D
 
 ## Constraints
 

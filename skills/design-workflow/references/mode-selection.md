@@ -41,10 +41,11 @@
 
 - 사용자 flow, route, API, analytics event, permission을 acceptance criterion에 보존 대상으로 적는다.
 - DOM 구조 변경이 테스트나 접근성에 미치는 영향을 확인한다.
+- DOM 변경량만으로 새 시각 세계관이라고 판단하지 않는다. 기존 chart의 숫자/범례 정리나 브랜드를 유지한 모션 축소는 보존형이다. 대표 화면의 composition 자체를 전면 교체하는 경우에는 본문의 full 게이트를 따른다.
 
 ### Small feature
 
-- 인접 화면 2개 이상에서 typography, spacing, color, radius, state pattern을 추출한다.
+- 대상과 가능한 인접 패턴 두 개에서 typography, spacing, color, radius, state pattern을 추출한다. 패턴이 하나뿐이면 그것을 따르고 부재를 기록한다. 작은 수정을 위해 없는 화면을 만들지 않는다.
 - 새 token은 기존 token으로 표현할 수 없을 때만 추가한다.
 - 공통 component 변경은 해당 메뉴 밖 영향 범위를 캡처하고 검증한다.
 

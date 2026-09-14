@@ -1,203 +1,103 @@
 ---
 name: design-workflow
-description: Analyze an existing web/app project or a standalone visual deliverable, establish or preserve its product and design context, and implement frontend UI, small features, visual refactors, redesigns, rebranding, or presentation decks with mandatory real-user interview, visual-direction, comp approval, and verification gates in Claude Code and Codex. Use for any frontend or visual-output work — screens, components, styling — and for deliverables that are themselves visual artifacts. Triggers on "디자인 작업", "UI 개선", "프론트엔드", "화면 개발", "컴포넌트 개발", "리팩토링", "리브랜딩", "새 디자인", "메뉴 개발", "페이지 디자인", "디자인 시스템", "발표덱", "슬라이드", "제안서", "리포트", "대시보드", "랜딩페이지", "AI 티 제거", "Taste Skill", "Impeccable", "design audit", "redesign", "rebrand", "deck", "slide", "presentation". The team plugin bundles dev-protocol and installs only necessary project-local design tools.
+description: Design and improve web interfaces around user tasks, existing design systems, responsive behavior, accessibility, and perceived performance. Use for frontend screens, components, styling, dashboards, landing pages, interactive 3D websites, redesigns, and visual audits; also covers standalone decks and visual reports. Select purpose-specific tools only when needed, preserving real-user interviews and visual-direction/comp approval for new designs. Skip logic-only changes and ordinary tool explanations.
 ---
 
 # Design Workflow
 
-프로젝트마다 다른 기존 디자인과 업무 맥락을 먼저 읽고, 필요한 범위만 설계·구현·검증한다. 새 제품, 전면 리브랜딩, 기존 UI 리팩토링, 메뉴 하나 같은 소규모 기능을 같은 게이트로 처리하되 서로 다른 변경 강도를 적용한다.
+웹사이트를 사용하는 사람이 **목적을 이해하고, 필요한 정보를 찾고, 다음 행동을 쉽게 완료**하도록 설계한다. 시각 완성도는 정렬·타이포·정보 위계·일관성으로, 체감 품질은 즉각적인 피드백·안정된 레이아웃·명확한 상태·빠른 반응으로 만든다. 만족도 향상을 실측 없이 단정하지 않는다.
 
-**적용 대상은 시각 결정이 들어가는 모든 작업이다.** 애플리케이션 프론트엔드(화면·컴포넌트·스타일·레이아웃)뿐 아니라, 발표덱·제안서·리포트·대시보드·랜딩처럼 **산출물 자체가 시각물인 작업**도 포함한다. 앱 소스가 아니라는 이유로 게이트를 낮추지 않는다 — 아래 절대 게이트와 모드 체계를 동일하게 적용하고, 검증 항목만 산출물 형태에 맞게 치환한다.
+정본은 `ai-working/skills/design-workflow/`다. Claude/Codex가 같은 소스를 읽는다. 웹 개발을 기본 경로로 하고, 덱·시각 리포트는 요청 시 [standalone-visuals.md](references/standalone-visuals.md)를 추가로 읽는다. 일반 도구 설명이나 로직 전용 변경에는 디자인 게이트를 적용하지 않는다.
 
-이 스킬의 유일한 SSOT는 `ai-working/skills/design-workflow/`다. 에이전트 홈이나 플러그인에 복사본이 있더라도 이 공개 정본을 수정하고 bootstrap으로 다시 연결한다.
+## 작업 분류: 변경 모드와 사이트 목적
+
+| 모드 | 기준 | 보존·승인 범위 |
+|---|---|---|
+| `new` | 새 제품·신규 랜딩·디자인 정본 없음 | 제품 인터뷰 → 디자인 인터뷰 → 3방향 선택 → 3시안 승인 |
+| `rebrand` | 브랜드·색·서체·톤 전면 변경 | 신규와 같은 게이트, 기존 기능·데이터 보존 |
+| `refactor` | 기존 UI 구조·위계 개선 | 기존 정체성·동작 보존; 새 시각 세계관 또는 대표 화면 전면 교체는 신규 게이트 |
+| `small-feature` | 메뉴·모달·탭·폼·좁은 화면 변경 | 기존 토큰·컴포넌트 재사용, 해당 범위와 상태만 확인 |
+| `audit` | 진단·개선안만 요청 | 읽기 전용; source write·설치·issue/commit 금지 |
+
+모호한 요청에만 [mode-selection.md](references/mode-selection.md)를 읽는다. 기존 요청·답변·정본으로 확정 가능한 사실은 다시 묻지 않는다. 작은 작업을 새 제품 인터뷰로 확대하지 않는다.
+
+모드와 별도로 [experience-routing.md](references/experience-routing.md)에서 **주 목적**을 고른다: 업무 UI, 데이터 대시보드, 홍보·콘텐츠, 3D 체험. 혼합 사이트는 페이지/구간별로 분류한다. 한 구간의 3D·모션이 모든 페이지의 기본값이 되지 않게 한다. 목적 선택은 시각 방향 승인을 대신하지 않는다.
 
 ## 신규·리브랜딩 절대 게이트
 
-`new`와 `rebrand`는 아래 순서를 바꾸거나 합치지 않는다.
+`new`, `rebrand`, 시각 세계관 교체 또는 대표 화면 전면 교체형 `refactor`는 다음 순서를 지킨다.
 
-1. **제품 인터뷰**: 사용자, 구매·사용 목적, 제품의 차별점, 성공·실패 기준을 한 질문씩 확인한다. 새 `PRODUCT.md`를 쓰기 전에 실제 사용자 답변을 최소 한 번 받는다.
-2. **디자인 방향 인터뷰**: 브랜드 성격, reference·anti-reference, 정보 밀도, 우선 platform, 접근성 목표를 확인한다. 사용자가 “생각한 디자인이 없다”고 해도 이 단계를 생략하지 않는다.
-3. **시각 세계관 선택**: 제품 사실에 맞는 서로 다른 방향 세 개를 이름·핵심 장면·palette·typography·layout 원리와 함께 제시한다. 사용자가 하나를 선택하거나, 세 방향을 본 뒤 명시적으로 선택을 위임할 때까지 기다린다.
-4. **고해상도 시안 세 개**: 선택된 세계관 안에서 composition·density·hierarchy가 다른 high-fidelity comp를 정확히 세 개 만든다. 세 개를 한 번에 보여주고 `승인 / 조합 / 수정 / 폐기` 결정을 받는다.
-5. **구현 잠금 해제**: 승인된 방향과 comp, 채택·비채택 요소를 구현노트의 gate evidence에 기록한 뒤에만 application source를 수정한다.
+1. **제품 인터뷰**: 사용자·핵심 과업·차별점·성공/실패 기준을 한 질문씩 확인한다. 새 `PRODUCT.md`를 쓰기 전에 실제 사용자 답변을 최소 한 번 받는다.
+2. **디자인 방향 인터뷰**: 브랜드 성격, reference/anti-reference, 밀도, 우선 platform, 접근성 목표를 확인한다. “생각한 디자인 없음”도 생략 사유가 아니다.
+3. **시각 방향 세 개**: 이름·핵심 장면·palette·typography·layout 원리가 다른 방향을 제시한다. 사용자의 선택 또는 선택지를 본 뒤의 명시적 위임을 기다린다.
+4. **고해상도 시안 정확히 세 개**: 선택된 방향 안에서 composition·density·hierarchy가 다른 시안을 함께 보여주고 `승인 / 조합 / 수정 / 폐기` 결정을 받는다. 같은 레이아웃의 색상 변경만으로 세 개를 채우지 않는다.
+5. **구현 잠금 해제**: 선택·채택/비채택 요소·승인 근거를 [gate template](assets/design-gates.template.md)에 기록한 뒤 application source를 수정한다.
 
-필수 gate가 하나라도 비어 있으면 **STOP하고 다음 질문 하나만 제시한 뒤 사용자 응답을 기다린다.** `ㄱㄱ`, `진행해`, `알아서`, `테스트니까 해봐`는 아직 보여주지 않은 방향이나 시안의 승인이 아니다. 모델, subagent, reviewer가 사용자를 대신해 방향이나 comp를 고를 수 없다. 사용자의 선택 위임은 선택지를 실제로 보여준 뒤에만 유효하다.
+필수 게이트가 비면 해당 source write를 멈추고 누락된 질문 하나를 제시한다. `ㄱㄱ`, `알아서`는 아직 보여주지 않은 방향·시안의 승인이 아니다. 모델·reviewer·subagent가 사용자 대신 승인하지 않는다. 기존 승인 범위의 가역적 수정에는 같은 승인을 재요청하지 않는다.
 
-`assets/design-gates.template.md`를 구현노트에 복사해 gate evidence를 남긴다. `refactor`에서 새 visual world를 만들거나 대표 화면을 전면 교체하면 같은 gate를 적용한다. `small-feature`는 기존 정본을 보존하되 범위·상태·수용 기준을 확인하며, `audit`는 read-only로 끝낸다.
+시안·기술 검증용 코드는 분리된 임시 경로에서 만들고 제품 소스에 반영하지 않는다. 동적 사이트의 시안에는 시작/중간/끝 상태 또는 짧은 동작 미리보기를 포함하되 **서로 다른 composition 세 개**라는 기준을 유지한다. 시안의 샘플 데이터·대체 모델은 명시한다.
 
-## 핵심 원칙
+세 시안은 같은 핵심 콘텐츠·대표 데이터를 사용해 구조 차이를 비교할 수 있게 한다. 웹 시안은 실제 stack에서 구현 가능한 반응형 구조와 주요 상태를 보여준다. HTML로 보여줄 때는 로컬 서버의 응답을 확인한 접근 가능한 URL을 제공하고 해당 작업의 서버를 종료 시 정리한다. 이미 승인된 디자인을 작은 변경 때문에 다시 세 시안으로 만들지 않는다.
 
-- 장식보다 제품 목적, 사용자 과업, 정보 위계를 먼저 고정한다.
-- 기존 프로젝트에서는 디자인 시스템과 동작을 기본값으로 보존한다.
-- 디자인 변경과 기능 변경을 분리한다. 리브랜딩이 아닌 작업에서 비즈니스 로직을 함께 재작성하지 않는다.
-- 전역 스킬을 설치하지 않는다. 실제 Git 프로젝트 루트에 Claude와 Codex용 프로젝트 로컬 스킬만 설치한다.
-- 스크린샷이나 코드 한쪽만 보지 않는다. 소스, 렌더링 화면, 반응형 상태를 함께 확인한다.
-- 자동 검사 결과를 맹목적으로 고치지 않는다. 브랜드 의도와 기존 정본이 우선이며 intentional finding은 근거를 남긴다.
+## 실행 순서
 
-## 모드 선택
+### 0. 규칙·범위·잠금 확인
 
-| 모드 | 선택 조건 | 기본 변경 강도 | Taste Skill |
-|---|---|---|---|
-| `new` | 새 제품·신규 랜딩·디자인 정본 없음 | 높음 | `design-taste-frontend` |
-| `rebrand` | 브랜드 정체성·색·서체·톤 전면 변경 | 높음 | `redesign-existing-projects` |
-| `refactor` | 기존 기능을 유지한 UI 구조·위계 개선 | 중간 | `redesign-existing-projects` |
-| `small-feature` | 메뉴, 모달, 탭, 폼, 한 페이지 등 좁은 기능 | 낮음 | 기본 설치 안 함 |
-| `audit` | 진단·보고만 요청 | 읽기 전용 | 설치 안 함 |
+- 실제 Git 루트와 `AGENTS.md`, `CLAUDE.md`, 중첩 규칙, HANDOFF, 기존 제품·디자인 정본을 확인한다. 다중 프로젝트 workspace 루트에 설치하지 않는다.
+- 구현에는 설치된 `dev-protocol`을 함께 적용한다. 경로를 현재 환경에서 찾고, plugin 번들에만 있다고 가정하지 않는다. 사용자 승인 범위·worktree·구현노트·배포는 그 스킬을 따른다. Git×Supabase×Vercel이면 해당 프로젝트의 `feature-flow`를 적용한다.
+- dirty 파일을 보존한다. 모드·범위·주 목적·유지할 계약을 한 줄로 알린다. `audit`는 구현노트나 정본 파일도 만들지 않고 결과를 대화로 보고한다. 사용자가 별도 보고서 저장을 요청하면 그 문서만 저장한다.
+- 구현 작업은 gate template을 사용한다. `small-feature`와 보존형 `refactor`의 신규 전용 게이트는 근거와 함께 `N/A`로 표시한다. 가짜 답변·체크 표시로 채우지 않는다.
 
-경계와 대표 예시는 [`references/mode-selection.md`](references/mode-selection.md)를 읽는다. 요청이 여러 모드에 걸치면 가장 좁은 모드로 시작하고 확장 승인을 받는다.
+### 1. 현재 화면과 사용자 과업 조사
 
-### 앱이 아닌 시각 산출물(발표덱·제안서·리포트)
+[project-audit.md](references/project-audit.md)를 읽는다. stack·버전·토큰·공통 UI와 실제 화면을 함께 확인한다. 핵심 과업 하나를 시작부터 완료까지 따라가며 마찰을 찾는다. 작은 변경은 대상과 존재하는 인접 패턴만 조사한다; 없는 화면이나 문서를 억지로 만들지 않는다.
 
-별도 모드를 만들지 않는다. 산출물 상태로 위 모드에 매핑하고 **같은 게이트를 그대로 통과한다.**
+기존 화면의 정렬·밀도·반응형·상태·console/network 기준선을 남긴다. 새 프로젝트는 기준선 없음으로 기록한다. `audit`는 관찰·검사 결과·추론을 구분해 영향순으로 보고하고 종료한다.
 
-| 상황 | 모드 |
-|---|---|
-| 새 덱·새 리포트·기존 디자인 정본 없음 | `new` |
-| 브랜드·톤을 통째로 갈아엎는 덱 개편 | `rebrand` |
-| 기존 덱·리포트의 위계·레이아웃 개선 | `refactor` |
-| 기존 덱에 슬라이드·섹션 몇 개 추가 | `small-feature` |
-| 기존 덱 진단·개선안만 요청 | `audit` |
+### 2. 요구·경험·디자인 방향 확정
 
-- `new`·`rebrand`면 제품(=덱의 목적·청중·핵심 메시지·성공 기준) 인터뷰, 디자인 방향 인터뷰, 시각 세계관 3개, 대표 슬라이드 high-fidelity comp 3개 승인을 **생략하지 않는다.** comp는 전체 덱이 아니라 대표 슬라이드(표지 + 핵심 본문 슬라이드) 기준으로 만들고, 승인된 방향으로 나머지를 전개한다.
-- 산출물이 Git 프로젝트 밖이면 `dev-protocol`의 worktree·브랜치 요구는 해당 없음으로 기록하고, 구현노트와 gate evidence는 산출물 디렉토리에 남긴다.
-- `PRODUCT.md`/`DESIGN.md` 대신 덱 디렉토리의 정본 문서(예: `DECK.md`)에 목적·청중·메시지·palette·typography·slide grid를 기록한다.
+[design-context.md](references/design-context.md)와 선택한 목적의 참조를 읽는다. 발견할 수 없는 제품 결정만 질문한다. 기술 도구 이름보다 원하는 경험을 묻는다: “모델 회전인가, 부품 분해인가, 형태 변형인가”, “이 숫자로 어떤 결정을 하는가”.
 
-## 실행 절차
+기존 `PRODUCT.md`·`DESIGN.md`가 우선이다. 새 정본은 각 승인 시점에 [PRODUCT](assets/PRODUCT.template.md)·[DESIGN](assets/DESIGN.template.md) 템플릿을 채운다. 작은 작업은 기존 정본/구현노트의 해당 부분만 보완한다. 신규 게이트가 필요한 경우 앞의 순서대로 인터뷰·방향·시안을 완료한다.
 
-### 0. 프로젝트와 작업 규칙 고정
+### 3. 필요한 도구만 선택·준비
 
-1. `git rev-parse --show-toplevel`로 실제 프로젝트 루트를 확인한다. 다중 프로젝트 workspace 루트에는 설치하거나 디자인 파일을 만들지 않는다. Git 프로젝트가 아닌 단독 산출물(덱·리포트)이면 그 산출물 디렉토리를 작업 루트로 고정하고 상위 디렉토리를 오염시키지 않는다.
-2. 프로젝트의 `CLAUDE.md`, `AGENTS.md`, `.claude/rules/`, impl-note, HANDOFF, 기획·브랜드 문서를 읽는다.
-3. 구현이면 이 plugin에 함께 포함된 `dev-protocol`을 끝까지 읽고 함께 적용한다. 설치본에서 `dev-protocol`을 찾을 수 없으면 plugin이 불완전한 상태이므로 구현을 시작하지 말고 재설치를 안내한다. Git + Supabase + Vercel 프로젝트면 `feature-flow`를 적용한다.
-4. 기존 dirty 파일을 사용자 작업으로 간주하고 보존한다. 자동 stash, reset, overwrite를 하지 않는다.
-5. 사용자 요청과 발견한 자료로 모드를 선택해 한 줄로 알린다. 질문 수는 발견 가능한 사실에 맞춰 줄이되, 위 절대 게이트가 요구하는 실제 사용자 답변과 승인은 생략하지 않는다.
-6. 구현노트에 `assets/design-gates.template.md`의 gate evidence를 만들고 현재 잠금 상태를 기록한다.
+[tooling.md](references/tooling.md)를 따른다. **기존 stack → 브라우저/CSS → 기존 라이브러리 → 검증된 추가 의존성** 순서로 판단한다. 도구 후보는 설치 목록이 아니다. 기능·호환성·라이선스·운영 비용은 채택 시 공식 자료로 다시 확인한다.
 
-### 1. As-is 증거 수집
+디자인 보조 스킬은 모드와 부족한 역량에 맞게 선택하고 설치 스크립트의 dry-run을 확인한 뒤 승인된 범위에서 적용한다. 방향/시안 제작에 보조 도구가 필요하면 2단계 중 준비해도 되지만 게이트를 건너뛰지 않는다. 실제 앱 의존성은 구현 잠금 해제 뒤 프로젝트 package manager로 설치한다. `audit`는 설치하지 않는다.
 
-[`references/project-audit.md`](references/project-audit.md)를 읽고 다음을 수집한다.
+### 4. 구현 계획과 수용 기준
 
-- 제품 목적, 핵심 사용자, 주요 과업
-- 프레임워크, package manager, 스타일링 방식, 공통 UI 패키지
-- 기존 `PRODUCT.md`, `DESIGN.md`, 디자인 토큰, 테마, 폰트, 로고
-- 레이아웃 shell, navigation, 대표 컴포넌트와 상태
-- Playwright 기준 스크린샷: 대표 desktop/mobile 화면
-- 접근성·반응형·브라우저 console·overflow 기준선
-- Impeccable source/URL scan 기준선(설치 없이 `npx` 실행 가능)
+변경/제외 화면, 보존할 기능·데이터·권한·URL·이벤트, 재사용할 컴포넌트, 필요한 UI 상태, 실행할 검증 명령을 정한다. [web-quality.md](references/web-quality.md)를 웹 품질 기준으로 사용한다.
 
-`audit` 모드에서는 여기서 보고서를 만들고 파일이나 외부 상태를 변경하지 않는다.
+중요한 과업에 대해 **사용자 행동 → 보이는 반응 → 완료 조건**을 짧게 적는다. 예: 기간 필터 변경 → 선택 상태와 조회 상태 표시 → 카드·차트·표에 같은 기간 반영. 이번 목적에 필요한 성능·데이터·3D 기준만 추가한다. 범위 밖 개선은 후속 항목으로 남긴다.
 
-### 2. 필요한 도구만 프로젝트 로컬 설치
+### 5. 구현·정렬·사용감 다듬기
 
-[`references/tooling.md`](references/tooling.md)를 읽는다. 먼저 dry-run을 실행한다.
+- `Implementation unlocked: yes`와 모드에 필요한 근거를 확인한다.
+- 기존 토큰·공통 컴포넌트·semantic HTML을 우선한다. 프레임워크를 React로 가정하지 않는다.
+- 구조와 주요 축 → 정보 위계·타이포 → 간격·밀도 → 상태·반응 → 장식 순으로 다듬는다. 그리드에 맞는 숫자뿐 아니라 글자·아이콘의 시각적 정렬도 확인한다.
+- 승인된 방향을 화면에 구현한다. 임의의 카드 중첩·gradient·glow·거대한 제목·bounce를 기본값으로 넣지 않는다. 의도된 브랜드 표현은 근거로 유지한다.
+- 입력·hover·focus·active·disabled·loading 상태는 **컴포넌트에 해당하는 것만** 구현한다. 명확한 피드백과 오류 복구를 제공하고 실제 성공 전에 성공 표시를 만들지 않는다.
+- 기능 계약 변경이 필요하면 영향과 기존 승인 범위를 대조해 `dev-protocol`에 기록한다.
 
-```bash
-python3 <skill-root>/scripts/setup_design_tools.py \
-  --project <repo> \
-  --mode <mode> \
-  --json
-```
+### 6. 실제 검증과 한 번의 개선 검토
 
-출력된 대상, 명령, 생성 예상 파일을 확인한 뒤 구현 범위가 승인돼 있으면 `--apply`를 추가한다.
+[verification.md](references/verification.md)를 따른다. build/lint/test, source/URL detector, 브라우저 desktop/mobile, 핵심 과업 직접 조작과 목적별 검증을 실행한다. 자동 검사는 사용자 평가를 대신하지 않는다.
 
-```bash
-python3 <skill-root>/scripts/setup_design_tools.py \
-  --project <repo> \
-  --mode <mode> \
-  --apply \
-  --json
-```
+동일 조건의 전후 화면을 비교하고 발견된 범위 내 문제를 수정한다. 수정한 부분과 영향받는 검증만 반복한다. 해결되지 않은 중요한 실패가 있으면 완료로 표시하지 않는다. 미실행 항목·환경 제약·의도된 예외는 명시한다.
 
-- `new`, `rebrand`, `refactor`: 선택한 Taste Skill + Impeccable을 `.claude/skills/`와 `.agents/skills/`에 설치한다.
-- `small-feature`, `audit`: Impeccable만 준비한다. 기존 스타일을 벗어날 근거가 있을 때만 Taste Skill을 명시적으로 추가한다.
-- 기존 설치가 한쪽 provider에만 있거나 내용이 다르면 자동 덮어쓰지 말고 diff와 선택지를 제시한다.
-- 설치된 스킬은 full agent permissions로 동작할 수 있으므로 `SKILL.md`와 생성 diff를 검토한다.
-- 새 세션 전이라 자동 발견되지 않으면 설치된 `SKILL.md`를 현재 세션에서 직접 읽고 적용한다.
-- tooling 설치와 read-only audit은 구현 승인이 아니다. `new`·`rebrand`에서는 도구를 준비한 뒤 설치된 Impeccable의 `init` → `new-work` → `visualize` 흐름을 따라 절대 게이트를 완료한다.
+### 7. 완료·인계
 
-### 3. 제품·디자인 정본 확정
+사용자 관점으로 **무엇이 쉬워졌는지, 확인할 화면/URL, 실제 검증 결과, 남은 한계**를 보고한다. 사용자 피드백 없이 “만족도 최고”나 임의 점수를 붙이지 않는다. 승인된 미리보기와 실제 결과의 차이를 짧게 설명한다.
 
-[`references/design-context.md`](references/design-context.md)를 읽는다.
-
-1. 기존 `PRODUCT.md`, `DESIGN.md`, 디자인 시스템 문서가 있으면 그것을 우선한다.
-2. 없으면 제품 인터뷰 답변을 받은 뒤 `assets/PRODUCT.template.md`를 채우고, 시각 세계관이 선택된 뒤에만 `assets/DESIGN.template.md`를 채운다.
-3. `small-feature`에서는 정본을 새로 발명하지 않는다. 발견된 컴포넌트·토큰·패턴을 좁게 문서화하고 해당 기능의 scope guard를 남긴다.
-4. 레퍼런스가 필요하면 URL·스크린샷을 요청하고, 채택할 요소와 채택하지 않을 요소를 분리한다.
-5. 색상·서체·모션은 취향 표현만 남기지 말고 제품 목적과 접근성 근거를 함께 기록한다.
-
-### 4. 변경 계획과 수용 기준
-
-다음을 구현 전에 확정한다.
-
-- 변경 화면과 제외 화면
-- 유지할 기능, 데이터, 권한, URL, 이벤트 계약
-- 재사용할 기존 컴포넌트와 새로 만들 최소 컴포넌트
-- desktop/mobile 상태와 loading/empty/error/disabled/focus 상태
-- 디자인 전후 비교 기준
-- 실행할 lint, test, build, Playwright, detector 명령
-
-`small-feature`는 관련 메뉴/컴포넌트와 직접 필요한 공통 토큰만 수정한다. 전역 shell, 전체 palette, typography를 함께 바꾸지 않는다.
-
-`new`·`rebrand`와 visual-world 교체형 `refactor`에서는 계획 확정만으로 구현을 시작하지 않는다. 세 comp를 함께 보여준 뒤 받은 사용자 결정을 gate evidence에 기록해야 한다.
-
-### 5. 구현
-
-0. 구현노트의 `Implementation unlocked`가 `yes`인지 확인한다. `no`이거나 증거가 비어 있으면 source write를 중단하고 누락된 gate로 돌아간다.
-1. 기존 토큰과 공통 컴포넌트를 먼저 재사용한다.
-2. 단순 파생값은 렌더 중 계산하고 React 안정 참조 규칙 등 프로젝트 규칙을 따른다.
-3. 시각 위계는 여백 → 굵기 → 크기 → 색 → 장식 순으로 조정한다.
-4. 카드 중첩, 의도 없는 gradient/glow, 낮은 대비, bounce, 과도한 radius 같은 상투 패턴을 피한다.
-5. 모든 interactive element에 hover, focus-visible, active, disabled, loading 상태를 제공한다.
-6. 기능 동작을 바꿔야 하면 디자인 범위와 분리해 계획 이탈로 기록하고 보수적으로 처리한다.
-
-### 6. 이중 검증
-
-[`references/verification.md`](references/verification.md)를 읽고 아래 순서로 검증한다.
-
-1. 프로젝트 lint·test·build
-2. `npx --yes impeccable@3.4.0 detect <source-target>`
-3. 실행 URL 대상 detector
-4. Playwright desktop/mobile screenshot과 console/network 오류
-5. keyboard navigation, focus visibility, contrast, touch target, overflow
-6. 변경 전후 비교와 `PRODUCT.md`/`DESIGN.md` 일치 여부
-
-detector exit code `2`는 실행 실패가 아니라 finding 존재다. 각 finding을 수정, 의도된 예외, 범위 밖으로 분류하고 근거를 남긴다.
-
-lint·test·build가 없는 단독 산출물은 해당 항목을 그냥 생략하지 않고 아래로 치환해 실제 결과를 남긴다.
-
-- 렌더 검증: 산출물 디렉토리를 로컬 HTTP 서버로 서빙해 브라우저에서 전 슬라이드·전 섹션을 확인한다. 사용자가 다른 기기에 있을 수 있으므로 `open`에만 의존하지 않고 접근 가능한 URL을 전달한다.
-- 투사·인쇄 비율(16:9 등)과 실제 발표 환경 해상도에서의 가독성
-- 텍스트 overflow, 폰트 fallback, 이미지·차트 누락, 페이지 넘김 깨짐
-- 대비·최소 글자 크기 등 접근성 기준
-
-### 7. 완료와 인계
-
-- 변경 파일, 화면, 검증 결과, 남은 intentional finding을 보고한다.
-- 구현노트의 `⚠️ DEVIATION`을 리뷰한다.
-- 퀴즈를 만들거나 별도 closeout 절차를 복제하지 않는다. 간단 완료 보고, 조건부 배포 범위 선택,
-  worktree 정리, HANDOFF, 운영배포 후 `knowns`는 최신 `dev-protocol`의 완료 절차를 그대로 따른다.
-- commit/push는 프로젝트 승인·브랜치 규칙을 따른다.
-- 실제 운영 배포를 검증한 경우에만 `dev-protocol`의 조건에 따라 `knowns`를 한 번 실행한다. 로컬 작업, preview, 개발 배포, 단독 시각 산출물에는 실행하지 않는다.
+디자인 결정은 기존 정본에 남긴다. commit/push·배포·HANDOFF·worktree 정리·운영 후 knowns는 `dev-protocol`에 위임한다. 로컬 변경이나 preview를 운영배포로 간주하지 않는다.
 
 ## 완료 기준
 
-- 선택한 모드와 실제 diff 강도가 일치한다.
-- `new`·`rebrand`는 제품 인터뷰, 디자인 인터뷰, 세 방향 선택, 세 comp 승인, implementation unlock의 실제 사용자 증거가 구현노트에 남아 있다.
-- Claude와 Codex가 같은 프로젝트 디자인 정본과 설치 스킬을 읽을 수 있다.
-- 기존 동작·데이터·권한 계약이 보존됐거나 승인된 변경으로 기록됐다.
-- desktop/mobile과 핵심 UI 상태가 검증됐다.
-- lint·test·build 및 detector의 실제 결과가 남아 있다.
-- 새 디자인 결정이 `PRODUCT.md`/`DESIGN.md` 또는 기존 정본에 반영됐다.
-
-## 트러블슈팅
-
-| 증상 | 원인 | 대응 |
-|---|---|---|
-| 한 에이전트에서만 스킬이 보임 | provider 한쪽만 설치 | 두 경로 diff 후 `setup_design_tools.py` 계획을 다시 확인 |
-| 스킬 설치 뒤 현재 세션에서 안 보임 | 세션 시작 시 discovery | 설치된 `SKILL.md`를 직접 읽거나 새 세션에서 재개 |
-| 작은 메뉴 작업이 전체 리브랜딩으로 번짐 | 모드·scope guard 누락 | `small-feature`로 되돌리고 전역 토큰 변경을 제외 |
-| 기존 디자인과 새 파일이 충돌 | 정본 우선순위 미확정 | 기존 문서를 우선하고 차이를 제안 형태로 분리 |
-| detector가 종료 코드 2를 반환 | finding 존재 | 실패로 오인하지 말고 finding을 분류 |
-| URL 검사가 실행되지 않음 | 앱/브라우저 의존성 미준비 | source scan을 먼저 완료하고 실제 dev URL·브라우저를 준비 |
-| 인터뷰 없이 구현이 시작됨 | 짧은 착수 응답을 승인으로 확대 해석 | 추가 write를 멈추고 미승인 초안으로 표시한 뒤 누락된 gate부터 다시 진행 |
-| comp를 내부 reviewer가 선택함 | 사용자 승인 gate를 대리 판단 | 세 comp를 사용자에게 함께 제시하고 실제 선택 또는 선택지 제시 후 명시적 위임을 받음 |
+- 모드·목적·범위와 diff가 일치하고 필요한 실제 사용자 승인 근거가 있다.
+- 기존 디자인/기능 계약을 보존하거나 승인된 변경으로 기록했다.
+- 정렬·가독성·반응형·관련 UI 상태와 핵심 과업을 실제 화면에서 확인했다.
+- 채택한 도구의 역할·근거·비용/호환성 제약과 목적별 검증 결과를 남겼다.
+- build/lint/test·detector·브라우저 검증의 실행 결과와 누락이 구분된다.
+- Claude와 Codex가 같은 정본을 참조하며 정본에 새 결정이 반영됐다.

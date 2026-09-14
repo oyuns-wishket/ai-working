@@ -37,7 +37,9 @@ Capture at least:
 - desktop viewport
 - mobile viewport when responsive behavior is in scope
 
-For a small feature, inspect the target plus two adjacent screens/components. For rebrand/refactor, inspect representative flows rather than every route.
+For a small feature, inspect the target plus up to two available adjacent patterns. Do not invent missing screens. For rebrand/refactor, inspect representative flows rather than every route. For a new product, record that there is no existing UI baseline.
+
+Follow one relevant user task end to end. Note where the user must guess, wait without feedback, repeat input, or recover from errors. Select a primary purpose through [experience-routing.md](experience-routing.md); keep specialist inspection bounded to that purpose.
 
 ## Runtime evidence
 
@@ -54,6 +56,8 @@ Do not confuse an existing runtime bug with a design regression. Record baseline
 ## Audit output
 
 Use `assets/design-audit.template.md` when a durable report is useful. Classify every item:
+
+In read-only audit mode, report in conversation unless the user requested a saved report. Use already available detectors only; do not install tools or create project configuration. Missing tooling is a coverage limitation, not permission to mutate the project.
 
 - `observed`: directly seen in source or browser
 - `detector`: produced by Impeccable

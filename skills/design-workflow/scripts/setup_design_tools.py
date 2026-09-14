@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shlex
@@ -60,18 +61,39 @@ def run(command: list[str], cwd: Path) -> dict[str, object]:
     return evidence
 
 
+def skill_fingerprint(directory: Path) -> dict[str, str]:
+    """Compare installed skill contents, ignoring local runtime caches."""
+    ignored = {".git", "__pycache__", ".DS_Store"}
+    return {
+        path.relative_to(directory).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(directory.rglob("*"))
+        if path.is_file() and not ignored.intersection(path.relative_to(directory).parts)
+    }
+
+
 def skill_state(project: Path, skill: str) -> dict[str, object]:
     paths = {
         "claude": project / ".claude" / "skills" / skill,
         "codex": project / ".agents" / "skills" / skill,
     }
-    present = {provider: path.is_dir() for provider, path in paths.items()}
+    present = {provider: path.exists() or path.is_symlink() for provider, path in paths.items()}
+    valid = {
+        provider: (path / "SKILL.md").is_file()
+        and bool((path / "SKILL.md").read_text(errors="replace").strip())
+        for provider, path in paths.items()
+    }
+    invalid = any(present[key] and not valid[key] for key in paths)
+    mismatched = all(valid.values()) and (
+        skill_fingerprint(paths["claude"]) != skill_fingerprint(paths["codex"])
+    )
     return {
         "skill": skill,
         "paths": {provider: str(path) for provider, path in paths.items()},
         "present": present,
-        "complete": all(present.values()),
+        "complete": all(valid.values()) and not mismatched,
         "partial": any(present.values()) and not all(present.values()),
+        "invalid": invalid,
+        "mismatched": mismatched,
     }
 
 
@@ -79,6 +101,36 @@ def build_plan(args: argparse.Namespace) -> dict[str, object]:
     project = args.project.expanduser().resolve()
     if not project.is_dir():
         raise ValueError(f"Project directory does not exist: {project}")
+
+    if args.mode == "audit" and args.apply:
+        raise ValueError("Audit is read-only; --apply is not allowed")
+
+    git_result = subprocess.run(
+        ["git", "-C", str(project), "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+    )
+    if git_result.returncode != 0:
+        raise ValueError(f"Project is not inside a Git repository: {project}")
+    git_root = Path(git_result.stdout.strip()).resolve()
+    if git_root != project:
+        raise ValueError(
+            f"Pass the Git project root instead of a nested directory: {git_root}"
+        )
+
+    if args.mode == "audit":
+        return {
+            "project": str(project),
+            "git_root": str(git_root),
+            "mode": "audit",
+            "taste_skill": None,
+            "node": None,
+            "apply": False,
+            "states_before": [skill_state(project, "impeccable")],
+            "commands": [],
+            "expected_files": [],
+            "warnings": ["Audit is read-only; use available tools without installation."],
+        }
 
     node = shutil.which("node")
     npx = shutil.which("npx")
@@ -96,19 +148,6 @@ def build_plan(args: argparse.Namespace) -> dict[str, object]:
         required = ".".join(str(part) for part in MINIMUM_NODE)
         raise ValueError(f"Node.js {required}+ is required; found {node_output}")
 
-    git_result = subprocess.run(
-        ["git", "-C", str(project), "rev-parse", "--show-toplevel"],
-        capture_output=True,
-        text=True,
-    )
-    if git_result.returncode != 0:
-        raise ValueError(f"Project is not inside a Git repository: {project}")
-    git_root = Path(git_result.stdout.strip()).resolve()
-    if git_root != project:
-        raise ValueError(
-            f"Pass the Git project root instead of a nested directory: {git_root}"
-        )
-
     selected_skill = MODE_SKILLS[args.mode]
     if args.taste_skill == "none":
         selected_skill = None
@@ -125,6 +164,14 @@ def build_plan(args: argparse.Namespace) -> dict[str, object]:
         raise ValueError(
             f"Partial provider installation detected for: {names}. "
             "Review the Claude/Codex directories and reconcile them without overwrite."
+        )
+
+    conflicting = [state["skill"] for state in states if state["invalid"] or state["mismatched"]]
+    if conflicting:
+        names = ", ".join(str(name) for name in conflicting)
+        raise ValueError(
+            f"Invalid or differing provider installation detected for: {names}. "
+            "Review SKILL.md and the installed file diff without overwrite."
         )
 
     commands: list[dict[str, object]] = []
@@ -261,7 +308,7 @@ def main() -> int:
                 print(f"- {item['display']}")
         else:
             print("No installation commands are needed.")
-        if not args.apply:
+        if not args.apply and args.mode != "audit":
             print("Plan only. Re-run with --apply to install.")
     return 0
 
