@@ -28,7 +28,8 @@ Keep personal interaction preferences, shared development principles, authorizat
 - Local source resolution is checked after integration from the canonical checkout; wiki changes remain deferred to discussion.
 
 ## ⚠️ DEVIATION
-없음
+- Initial Linux CI failed the existing retired-handoff test with `spawnSync /bin/sh EPIPE`. The retired script deliberately exits without reading stdin; a parent writing its input pipe races with that exit. Local checks had passed.
+- Scope adjustment: supply the same JSON payload through a regular-file stdin descriptor in that test, preserving hook execution and repository-unchanged assertions. No runtime hook behavior changes. Validate the focused test and final CI rather than hiding the failure with retries.
 
 ## 다음에 참고
 A smaller UTF-8 file is not a measured reduction in model tokens or cost. Conditional references must be reached by explicit task triggers; moving content into another always-read file would not reduce context.

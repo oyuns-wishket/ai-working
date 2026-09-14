@@ -39,8 +39,17 @@ test("retired handoff hook never modifies or pushes a repository", t => {
   fs.mkdirSync(path.join(home, 'docs/handoff'), { recursive: true });
   fs.writeFileSync(path.join(home, 'docs/handoff/HANDOFF.md'), 'unchanged\n');
   execFileSync('git', ['init', '-q'], { cwd: home });
+  const payload = path.join(home, 'hook-input.json');
+  fs.writeFileSync(payload, JSON.stringify({ cwd: home }));
   const before = execFileSync('git', ['status', '--porcelain'], { cwd: home, encoding: 'utf8' });
-  execFileSync('/bin/sh', [path.resolve('hooks/handoff-sync.sh')], { cwd: home, input: JSON.stringify({ cwd: home }) });
+  // The no-op may exit before Node writes a pipe. Keep stdin available without
+  // a parent writer racing the child exit (EPIPE on Linux).
+  const input = fs.openSync(payload, 'r');
+  try {
+    execFileSync('/bin/sh', [path.resolve('hooks/handoff-sync.sh')], { cwd: home, stdio: [input, 'pipe', 'pipe'] });
+  } finally {
+    fs.closeSync(input);
+  }
   assert.equal(fs.readFileSync(path.join(home, 'docs/handoff/HANDOFF.md'), 'utf8'), 'unchanged\n');
   assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: home, encoding: 'utf8' }), before);
 });
