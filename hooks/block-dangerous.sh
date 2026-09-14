@@ -1,7 +1,7 @@
 #!/bin/bash
 # PreToolUse Hook: 파괴적 명령 차단 (best-effort — 완전 가드 아님. $()/heredoc/eval 우회 가능).
 # 보조 실수 방지 장치다. 쉘 해석기/권한 샌드박스를 대체하지 않는다.
-INPUT=$(cat /dev/stdin)
+INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 [ -z "$COMMAND" ] && exit 0
 
