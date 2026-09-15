@@ -236,7 +236,7 @@ class V2Tests(unittest.TestCase):
         self.assertIn("spacing-phrase", self.route("송장등록")["documents"][0]["selection_reasons"])
 
     def test_invalid_search_metadata_and_relations_are_rejected(self):
-        for values in (["term"] * 9, ["x" * 81], ["line\nbreak"], [False], ["term", "term"]):
+        for values in (["term"] * 9, ["x" * 81], ["line\nbreak"], ["delete\x7fcharacter"], [False], ["term", "term"]):
             with self.subTest(values=values):
                 self.add_note("bad.md", "shipping", aliases=values)
                 self.assertFalse(self.route()["documents"])
@@ -387,7 +387,9 @@ class V2Tests(unittest.TestCase):
     def test_section_terms_normalization_and_reserved_long_slugs(self):
         for row in ({"slug": "a" * 65, "title": "Long"},
                     {"slug": "orders", "title": "Orders", "terms": ["Task", " task "]},
-                    {"slug": "orders", "title": "Multi\nline"}):
+                    {"slug": "orders", "title": "Multi\nline"},
+                    {"slug": "orders", "title": "Delete\x7f"},
+                    {"slug": "orders", "title": "Orders", "terms": ["Delete\x7f"]}):
             self.sections([row])
             with self.assertRaises(M.ContextError):
                 self.route()

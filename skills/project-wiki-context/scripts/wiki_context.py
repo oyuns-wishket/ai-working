@@ -816,10 +816,10 @@ def validate_sections(value: object) -> list[dict]:
         seen.add(slug)
         for key, maximum in (("title", 80), ("description", 500)):
             text = section.get(key, "")
-            if not isinstance(text, str) or (key == "title" and not text.strip()) or len(text) > maximum or any(ord(c) < 32 for c in text):
+            if not isinstance(text, str) or (key == "title" and not text.strip()) or len(text) > maximum or any(ord(c) < 32 or ord(c) == 127 for c in text):
                 raise ValueError("invalid canonical section text")
         terms = section.get("terms", [])
-        if not isinstance(terms, list) or len(terms) > 8 or any(not isinstance(t, str) or not t.strip() or len(t) > 80 or any(ord(c) < 32 for c in t) for t in terms):
+        if not isinstance(terms, list) or len(terms) > 8 or any(not isinstance(t, str) or not t.strip() or len(t) > 80 or any(ord(c) < 32 or ord(c) == 127 for c in t) for t in terms):
             raise ValueError("invalid canonical section terms")
         if len(terms) != len({term.strip().casefold() for term in terms}):
             raise ValueError("duplicate canonical section terms")
@@ -1082,7 +1082,7 @@ def bounded_metadata_list(path: Path, key: str, maximum: int) -> list[str]:
             items.append(item)
     if (not isinstance(items, list) or len(items) > maximum
             or any(not isinstance(item, str) or not item.strip() or len(item) > 80
-                   or any(ord(char) < 32 for char in item) for item in items)
+                   or any(ord(char) < 32 or ord(char) == 127 for char in item) for item in items)
             or len({item.strip().casefold() for item in items}) != len(items)):
         raise ValueError(f"invalid metadata list:{key}")
     return items
