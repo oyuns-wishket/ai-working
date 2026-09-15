@@ -104,6 +104,8 @@ Skill은 Agent Skills 표준 frontmatter의 `name`, `description`을 포함해�
 
 [스킬 통합 기준과 이전 이름 대응표](docs/skill-consolidation.md)를 참고한다. 환경 설치·동기화는 `agent-environment`, 개발 절차는 `dev-protocol`이 소유한다.
 
+[design-workflow](skills/design-workflow/SKILL.md)는 도메인과 사용자 과업을 분석해 필요한 경우 쉬운 연출 이름·보완 요청문을 제안한다. UI 모션·차트와 [영상·스크롤 시퀀스·실시간 그래픽·게임형·혼합형](skills/design-workflow/references/graphics-production.md)을 기존 시안 과정에서 고르고, AI 제작부터 웹 전달까지 실제 무료·유료 기능에 맞춰 진행한다. 피드백은 원인을 확인해 디자인·구현 또는 재사용 지침을 개선한다.
+
 ## 개인화
 
 다른 사람이 이 저장소를 자기 AI SSOT로 사용할 때는 bootstrap보다 먼저 `personal-ai-ssot` skill로 인터뷰한다. 사용하는 장비, AI 도구, checkout 위치, 폴더와 파일 이름, 업무 흐름을 정한 다음 fork 또는 새 정본을 그 위치에 만들고 연결한다.

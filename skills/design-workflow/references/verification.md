@@ -91,7 +91,7 @@ Report:
 
 ## Purpose-specific acceptance
 
-Apply only the selected purpose's checks from [data-surfaces.md](data-surfaces.md) or [motion-and-3d.md](motion-and-3d.md). Ordinary forms do not need a 3D performance audit.
+Apply only the selected purpose's checks from [data-surfaces.md](data-surfaces.md), [graphics-production.md](graphics-production.md), or [motion-and-3d.md](motion-and-3d.md). Ordinary forms do not need a 3D performance audit. For graphics, verify the selected delivery path: video playback/seek, sequence decode/cache, real-time effects and inputs, game rules/reset, or section transitions in a hybrid. Compare the promised interaction and visual features with the actual web result; record adapted or missing features and resolve in-scope gaps. Static previews alone do not demonstrate an interactive or temporal experience.
 
 - Data: verify Bklit implementation or documented exception against the chosen same-data preview; reconcile source totals with cards/charts/tables and test filters/missing/error states. Screenshots do not prove numerical correctness.
 - Motion: use [motion-design.md](motion-design.md); run the approved representative task, continuous input, keyboard/touch, reduced motion and route cleanup. Check actual imports/use, not package presence alone.
@@ -107,3 +107,5 @@ Use [web-quality.md](web-quality.md). Compare the same route, viewport, data and
 Record one representative user action → visible response → completion result. For performance-sensitive changes, record device/network/cache conditions and measured before/after results. Core Web Vitals field thresholds and lab observations are different evidence; do not claim field INP from a Lighthouse load test.
 
 Fix observed in-scope issues, rerun affected checks, then finish when acceptance criteria pass. Do not loop indefinitely for arbitrary aesthetic scores. If a required check cannot run, disclose the exact gap; a screenshot or source review is not a substitute. Keep optional polish separate from blocking defects and preserve user-approved intentional findings.
+
+When the user is dissatisfied, use [feedback-improvement.md](feedback-improvement.md) to separate design preference, implementation/asset errors, performance limits, and demonstrated workflow defects. Repair the affected result under existing authorization; a global skill update needs evidence of a reusable instruction problem and applicable scope. Never report user satisfaction from automated checks alone.
