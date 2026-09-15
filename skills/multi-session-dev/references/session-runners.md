@@ -10,6 +10,7 @@
 4. subagent 모드 (in-process)
 5. hook·환경변수
 6. 세션 로그와 측정
+7. Lead 플랫폼 조건
 
 ## 1. 공통
 
@@ -83,3 +84,30 @@ runner는 lane 종료 시 transcript 경로를 찾아 `session_log`에 기록한
 - Codex: `~/.codex/sessions/YYYY/MM/DD/rollout-<ts>-<thread_id>.jsonl`.
 
 작업 측정을 쓰는 경우 이 경로를 `task_metrics.py add-session --session-log <platform>:<path>`에 넘긴다. 경로가 `null`이면 usage는 unknown으로 두고 계속한다.
+
+## 7. Lead 플랫폼 조건
+
+runner 스크립트는 Lead가 Claude든 Codex든 같지만, Lead 프로세스 자체의 sandbox가 lane 실행 가능 범위를 정한다. 아래는 macOS에서 실제 CLI로 Claude 쓰기 lane과 Codex 쓰기 lane을 함께 돌린 결과다(2026-09-15, Codex CLI 0.153.4, 비대화형 `codex exec`).
+
+| Lead | Lead sandbox | Claude lane | Codex lane | 막히는 지점 |
+|---|---|---|---|---|
+| Claude | 권한 확인 생략 모드 | 성공 | 성공 | 없음. 기본 조합 |
+| Codex | `workspace-write` 기본 | 실패 | 실패 | `.git`이 읽기 전용 보호라 worktree 생성 불가 |
+| Codex | `workspace-write` + `.git` 쓰기 + 네트워크 | 성공 | 실패 | 하위 Codex가 `~/.codex`에 쓰지 못해 시작 실패 |
+| Codex | 위 + `~/.codex` 쓰기 | 성공 | `blocked` | macOS sandbox는 sandbox 안에서 다시 적용할 수 없음 |
+| Codex | `danger-full-access` | 성공 | 성공 | 없음 |
+
+규칙:
+
+- Codex Lead로 Codex lane을 쓰려면 Lead를 Full access(`-s danger-full-access` 또는 대화형 Full access 모드)로 실행한다. 이는 Claude Lead의 권한 확인 생략과 같은 조건이다. lane의 제한은 그대로 유지된다. Codex lane은 자기 sandbox, Claude lane은 금지 도구 목록 안에서 돈다.
+- 중첩 sandbox를 피하려고 Codex lane의 sandbox를 끄지 않는다. 쓰기 lane은 sandbox 안에서 돈다는 규칙이 우선한다.
+- Codex Lead를 sandbox 안에 둬야 하면 Claude lane만 쓴다. 이때 Lead에 `-c 'sandbox_workspace_write.writable_roots=["<repo>/.git"]'`, `-c 'sandbox_workspace_write.network_access=true'`, `--add-dir <worktree_root와 state 경로>`가 필요하다. `.git` 쓰기 허용은 공식 문서에 없는 동작이며 git hook 보호를 푼다는 점을 사용자에게 알린다.
+- Lead 조건이 맞지 않으면 plan을 바꾸거나 Lead를 Claude로 옮긴다. 증상으로 판별한다.
+
+| 증상 | 의미 |
+|---|---|
+| `fatal: cannot lock ref 'refs/heads/msd/...': unable to create directory for .git/refs/...` | Lead sandbox가 `.git` 쓰기를 막음 |
+| Codex lane stderr `failed to initialize in-process app-server client: Operation not permitted` | Lead sandbox가 `~/.codex` 쓰기를 막음 |
+| Codex lane `blocked`, 결과에 `sandbox-exec: sandbox_apply: Operation not permitted` | sandbox 안의 Lead가 Codex lane을 띄움. 중첩 sandbox 불가 |
+
+비대화형 결과다. 대화형 Codex는 막힐 때 권한 상승을 물을 수 있지만 중첩 sandbox 제약은 승인으로 풀리지 않는다.

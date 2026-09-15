@@ -9,7 +9,7 @@ description: Run independent implementation and review lanes as isolated Claude 
 
 Lead 세션이 작업을 독립 lane으로 나누고, 읽기 전용 lane은 in-process subagent로, 쓰기 lane과 리뷰 lane은 별도 CLI 세션(`claude -p`, `codex exec`)으로 실행한다. 쓰기 lane마다 전용 worktree와 branch를 가진다. Lead가 lane branch를 자기 task branch에 순차 merge하고 통합 검증·리뷰를 거친 뒤 결과 계약을 호출자에게 돌려준다.
 
-Lead가 Claude든 Codex든 같은 스크립트를 쓴다. 승인·이슈·배포·HANDOFF는 이 스킬이 결정하지 않는다. 입력 계약에 없는 승인이 필요하면 `blocked`로 반환한다.
+Lead가 Claude든 Codex든 같은 스크립트를 쓴다. 단, macOS에서 Codex Lead가 Codex lane을 띄우려면 Lead가 Full access로 실행되어야 한다. sandbox 안의 Codex Lead는 Claude lane만 쓸 수 있다. 조건과 증상은 `references/session-runners.md` §7에 있다. 승인·이슈·배포·HANDOFF는 이 스킬이 결정하지 않는다. 입력 계약에 없는 승인이 필요하면 `blocked`로 반환한다.
 
 ## 고정값
 
@@ -55,7 +55,7 @@ Lead가 Claude든 Codex든 같은 스크립트를 쓴다. 승인·이슈·배포
 python3 scripts/lane_plan.py validate --plan <plan.json> --json
 ```
 
-사용자에게 다음 표를 보여준다. 세션을 띄우기 전 마지막 확인점이다.
+세션을 띄우기 전에 다음 표를 사용자에게 보여준다. 표의 범위가 입력 계약으로 이미 승인된 범위 안이면 답을 기다리지 않고 바로 실행한다. 승인 범위 밖의 쓰기 경로, 새 Worker 파일 생성, 입력 계약에 없는 commit·자원 사용이 표에 들어갈 때만 그 차이를 확인한다.
 
 | lane | 모드 | 플랫폼/모델 | 읽기/쓰기 | 소유 경로 | 의존 | 수용 기준 |
 |---|---|---|---|---|---|---|
@@ -132,3 +132,6 @@ clean이고 target에 포함된 worktree만 제거한다. dirty·미통합·bloc
 | conflicted lane | 소유권 밖 파일 수정 또는 공유 파일 | 파일 목록 확인 후 Lead가 해결하거나 rebase 재실행 |
 | 이전 task의 worktree가 남음 | Lead 비정상 종료 | `session_runner.py status`로 확인, 검토 후 cleanup |
 | `claude`/`codex` not found | PATH 또는 alias 문제 | `configure.py set --binary claude=<path>` |
+| worktree 생성 시 `cannot lock ref ... .git/refs` | sandbox 안의 Codex Lead가 `.git` 쓰기 불가 | Lead를 Full access로 실행하거나 Claude Lead 사용. `session-runners.md` §7 |
+| Codex lane `failed to initialize in-process app-server client` | sandbox 안의 Codex Lead가 `~/.codex` 쓰기 불가 | 같은 대응 |
+| Codex lane `blocked`, `sandbox_apply: Operation not permitted` | sandbox 안의 Lead가 Codex lane을 띄워 중첩 sandbox 발생 | Lead를 Full access로 실행. lane sandbox는 끄지 않는다 |

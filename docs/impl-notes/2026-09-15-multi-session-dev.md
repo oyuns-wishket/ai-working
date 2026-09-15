@@ -175,3 +175,16 @@ skills/multi-session-dev/
   - hook: `-p` 세션에서 글로벌 SessionStart/PreToolUse hook이 prompt 없이 통과(lane이 정상 종료). Codex lane은 글로벌 규칙과 `dev-protocol` 문서를 스스로 읽음.
 - 미실측: `codex exec resume <thread_id>` 옵션 호환. 문서에 "실측 범위만 신뢰, 실패 시 `--follow-up` 새 세션" 명시.
 - 비용: smoke 전체 Claude 약 $0.6 (sonnet, 3 세션). Codex는 구독 계정이라 cost 미보고.
+
+## Follow-up (2026-09-15): Codex Lead 실측과 문구 정리
+
+- 사용자 요청: Codex를 Lead로 한 스모크 테스트, 이후 Codex Lead 조건 문서화와 계획 표 확인 문구 정리를 SSOT에 반영.
+- 실측 결과 (macOS, Codex CLI 0.153.4, 비대화형, Claude 쓰기 lane + Codex 쓰기 lane):
+  - `workspace-write` 기본: worktree 생성 실패. `.git` 읽기 전용 보호.
+  - `.git` writable_roots + network_access: Claude lane 완료, Codex lane은 `~/.codex` 쓰기 불가로 시작 실패.
+  - 위 + `~/.codex` writable: Codex lane `blocked`, `sandbox-exec: sandbox_apply: Operation not permitted`. 중첩 sandbox 불가.
+  - `danger-full-access`: 두 lane 완료, 병합 2건, 검증, cleanup 완료. Lead 요약이 아니라 git log·파일·worktree·lane 상태로 직접 확인.
+- 반영: `session-runners.md` §7 Lead 플랫폼 조건, `SKILL.md` 개요와 트러블슈팅 3행.
+- 계획 표 문구: "마지막 확인점"은 이미 승인한 범위를 다시 묻게 만들 수 있어, 승인 범위 안이면 바로 실행하고 범위 밖 차이만 확인하도록 수정.
+- 미실측: Codex sandbox 환경변수로 Lead 상태를 판별하는 방법. 실측 시점에 Codex API가 429를 반환해 확인하지 못했고, 문서에는 실제 관찰한 오류 문구만 판별 기준으로 적었다.
+- 범위 밖으로 남긴 것: 전역 규칙 표의 "독립 lane 둘 이상·다중 모듈·DB/권한/migration/연동 작업" 나열 문구. 사용자 요청 범위가 아니어서 수정하지 않았다.
