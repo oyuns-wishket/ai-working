@@ -8,7 +8,7 @@
 
 ## 1. Machine-local config
 
-기본 위치는 `~/.config/multi-agent-dev/config.json`이다. 절대경로는 이 파일에만 저장하고 Git에 commit하지 않는다.
+기본 위치는 `~/.config/multi-session-dev/config.json`이다. 절대경로는 이 파일에만 저장하고 Git에 commit하지 않는다.
 
 ```json
 {
@@ -34,7 +34,7 @@
 
 ## 2. Project Worker spec
 
-정본은 `<repo>/.agents/multi-agent-dev/workers/<name>.json`이다.
+정본은 `<repo>/.agents/multi-session-dev/workers/<name>.json`이다.
 
 ```json
 {

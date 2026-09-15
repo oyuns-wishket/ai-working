@@ -17,7 +17,7 @@ from configure import default_config_path, load_config
 
 SLUG_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 GENERATED_WORKER_PREFIXES = (
-    ".agents/multi-agent-dev/workers/",
+    ".agents/multi-session-dev/workers/",
     ".claude/agents/",
     ".codex/agents/",
 )
@@ -46,7 +46,7 @@ def git_root(project: Path) -> Path:
 
 def default_state_root() -> Path:
     root = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local" / "state"))
-    return root / "multi-agent-dev"
+    return root / "multi-session-dev"
 
 
 def repo_id(repo: Path) -> str:
@@ -117,25 +117,35 @@ def resolve_worktree_root(args: argparse.Namespace) -> Path:
     return Path(value).expanduser().resolve(strict=False)
 
 
-def command_create(args: argparse.Namespace) -> int:
-    validate_slug(args.session, "session")
-    validate_slug(args.worker, "worker")
-    repo = git_root(Path(args.repo).expanduser())
+def create_worktree(
+    repo: Path,
+    session: str,
+    worker: str,
+    *,
+    base_ref: str = "HEAD",
+    worktree_root: Path,
+    state_root: Path,
+    allow_generated_worker_metadata: bool = False,
+) -> dict[str, Any]:
+    """Create an isolated worktree and branch for one write worker/lane.
+
+    Raises RuntimeError when the Lead workspace is dirty or the target exists.
+    """
+    validate_slug(session, "session")
+    validate_slug(worker, "worker")
+    repo = git_root(repo)
     dirty = dirty_paths(repo)
-    metadata_exception = (
-        args.allow_generated_worker_metadata and only_generated_worker_metadata(dirty)
-    )
+    metadata_exception = allow_generated_worker_metadata and only_generated_worker_metadata(dirty)
     if dirty and not metadata_exception:
-        raise SystemExit(
+        raise RuntimeError(
             "Lead workspace is dirty; refusing to create a worker worktree. "
             f"Dirty paths: {', '.join(dirty)}"
         )
 
-    root = resolve_worktree_root(args)
-    worker_path = root / repo.name / args.session / args.worker
-    branch = f"mad/{args.session}/{args.worker}"
+    worker_path = worktree_root / repo.name / session / worker
+    branch = f"msd/{session}/{worker}"
     if worker_path.exists():
-        raise SystemExit(f"Worker path already exists: {worker_path}")
+        raise RuntimeError(f"Worker path already exists: {worker_path}")
     if (
         run_git(
             repo,
@@ -144,41 +154,52 @@ def command_create(args: argparse.Namespace) -> int:
         ).returncode
         == 0
     ):
-        raise SystemExit(f"Worker branch already exists: {branch}")
+        raise RuntimeError(f"Worker branch already exists: {branch}")
 
     worker_path.parent.mkdir(parents=True, exist_ok=True)
-    run_git(
-        repo,
-        ["worktree", "add", "-b", branch, str(worker_path), args.base_ref],
-    )
+    run_git(repo, ["worktree", "add", "-b", branch, str(worker_path), base_ref])
 
-    state_root = Path(args.state_root).expanduser()
-    manifest_path = state_path(repo, args.session, state_root)
+    manifest_path = state_path(repo, session, state_root)
     state = load_state(manifest_path)
     state.update(
         {
             "schema_version": 1,
             "repo": str(repo),
-            "session": args.session,
-            "target_ref_at_creation": args.base_ref,
+            "session": session,
+            "target_ref_at_creation": base_ref,
         }
     )
-    state.setdefault("workers", {})[args.worker] = {
+    state.setdefault("workers", {})[worker] = {
         "path": str(worker_path),
         "branch": branch,
-        "base_ref": args.base_ref,
+        "base_ref": base_ref,
     }
     atomic_write(manifest_path, state)
-    payload = {
+    return {
         "created": True,
         "repo": str(repo),
-        "session": args.session,
-        "worker": args.worker,
+        "session": session,
+        "worker": worker,
         "worktree_path": str(worker_path),
         "branch": branch,
         "manifest": str(manifest_path),
         "excluded_dirty_worker_metadata": dirty if metadata_exception else [],
     }
+
+
+def command_create(args: argparse.Namespace) -> int:
+    try:
+        payload = create_worktree(
+            Path(args.repo).expanduser(),
+            args.session,
+            args.worker,
+            base_ref=args.base_ref,
+            worktree_root=resolve_worktree_root(args),
+            state_root=Path(args.state_root).expanduser(),
+            allow_generated_worker_metadata=args.allow_generated_worker_metadata,
+        )
+    except RuntimeError as error:
+        raise SystemExit(str(error)) from error
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
 

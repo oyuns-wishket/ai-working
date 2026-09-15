@@ -1,0 +1,86 @@
+{
+  "title": "multi-session-dev lane result",
+  "description": "Structured output every lane session must return. Strict (additionalProperties=false, all keys required) so both Claude --json-schema and Codex --output-schema accept it.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "complete",
+        "blocked",
+        "failed"
+      ],
+      "description": "complete: acceptance met and evidence attached. blocked: needs an approval or input the lane contract did not grant. failed: attempted and could not finish."
+    },
+    "scope": {
+      "type": "string",
+      "description": "What this lane actually covered, in one or two sentences."
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Repo-relative paths changed (write lane) or reviewed (read lane)."
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "exit_code": {
+            "type": "integer"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "command",
+          "exit_code",
+          "summary"
+        ]
+      },
+      "description": "Verification commands actually run and their observed results."
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Remaining risks, unverified assumptions, or out-of-scope findings."
+    },
+    "handoff": {
+      "type": "string",
+      "description": "What the Lead should do next with this lane's output."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "N/A"
+      ],
+      "description": "Review lanes only. Implementation lanes return N/A."
+    },
+    "blocked_reason": {
+      "type": "string",
+      "description": "Required approval or missing input when status is blocked; empty string otherwise."
+    }
+  },
+  "required": [
+    "status",
+    "scope",
+    "files",
+    "evidence",
+    "risks",
+    "handoff",
+    "verdict",
+    "blocked_reason"
+  ]
+}

@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""Fake `claude -p` for tests. Behaviour is chosen by MSD_FAKE_ACTION.
+
+Actions: complete (write+commit in cwd), dirty (write, no commit), blocked,
+fail (exit 2), sleep (block until killed), review-pass, review-fail.
+"""
+import json
+import os
+import subprocess
+import sys
+import time
+
+args = sys.argv[1:]
+prompt = sys.stdin.read()
+session_id = "fake-session"
+if "--session-id" in args:
+    session_id = args[args.index("--session-id") + 1]
+if "--resume" in args:
+    session_id = args[args.index("--resume") + 1]
+action = os.environ.get("MSD_FAKE_ACTION", "complete")
+marker = os.environ.get("MSD_FAKE_MARKER", "lane.txt")
+log = os.environ.get("MSD_FAKE_LOG")
+if log:
+    with open(log, "a", encoding="utf-8") as handle:
+        handle.write(json.dumps({"argv": args, "cwd": os.getcwd(), "env_lane": os.environ.get("MULTI_SESSION_DEV_LANE"), "prompt_head": prompt[:80]}) + "\n")
+
+if action == "sleep":
+    time.sleep(120)
+if action == "fail":
+    sys.exit(2)
+
+result = {
+    "status": "complete",
+    "scope": "fake lane",
+    "files": [],
+    "evidence": [{"command": "true", "exit_code": 0, "summary": "ok"}],
+    "risks": [],
+    "handoff": "nothing",
+    "verdict": "N/A",
+    "blocked_reason": "",
+}
+if action in {"complete", "dirty"}:
+    with open(marker, "a", encoding="utf-8") as handle:
+        handle.write(f"{session_id}\n")
+    result["files"] = [marker]
+    if action == "complete":
+        subprocess.run(["git", "add", marker], check=True)
+        subprocess.run(["git", "-c", "user.name=Fake", "-c", "user.email=fake@example.com", "commit", "-qm", f"fake lane {marker}"], check=True)
+elif action == "blocked":
+    result.update({"status": "blocked", "blocked_reason": "needs migration approval"})
+elif action == "review-pass":
+    result["verdict"] = "PASS"
+elif action == "review-fail":
+    result["verdict"] = "FAIL"
+    result["risks"] = ["found a bug"]
+
+print(json.dumps({
+    "type": "result",
+    "subtype": "success",
+    "is_error": False,
+    "session_id": session_id,
+    "total_cost_usd": 0.01,
+    "num_turns": 1,
+    "permission_denials": [],
+    "result": json.dumps(result),
+    "structured_output": result,
+}))

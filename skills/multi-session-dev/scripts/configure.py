@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Manage machine-local multi-agent-dev configuration."""
+"""Manage machine-local multi-session-dev configuration."""
 
 from __future__ import annotations
 
@@ -14,9 +14,17 @@ SCHEMA_VERSION = 1
 VALID_PLATFORMS = {"claude", "codex"}
 
 
+LEGACY_DIR_NAME = "multi-agent-dev"
+VALID_ROLE_KEYS = {"claude_model", "claude_effort", "codex_model", "codex_effort"}
+
+
 def default_config_path() -> Path:
     root = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    return root / "multi-agent-dev" / "config.json"
+    return root / "multi-session-dev" / "config.json"
+
+
+def legacy_config_path(path: Path) -> Path:
+    return path.parent.parent / LEGACY_DIR_NAME / path.name
 
 
 def empty_config() -> dict[str, Any]:
@@ -26,6 +34,11 @@ def empty_config() -> dict[str, Any]:
         "erp_domain_references": [],
         "worktree_root": None,
         "platforms": [],
+        "max_parallel": 3,
+        "retry_limit": 3,
+        "max_budget_usd": None,
+        "role_defaults": {},
+        "binaries": {},
     }
 
 
@@ -34,9 +47,11 @@ def normalize_path(value: str) -> str:
 
 
 def load_config(path: Path) -> dict[str, Any]:
-    if not path.exists():
+    """Load the machine-local config; fall back to the retired multi-agent-dev file."""
+    source = path if path.exists() else legacy_config_path(path)
+    if not source.exists():
         return empty_config()
-    with path.open(encoding="utf-8") as stream:
+    with source.open(encoding="utf-8") as stream:
         data = json.load(stream)
     merged = empty_config()
     merged.update(data)
@@ -97,6 +112,31 @@ def validate(data: dict[str, Any]) -> list[str]:
     invalid = platforms - VALID_PLATFORMS
     if invalid:
         errors.append(f"invalid platforms: {', '.join(sorted(invalid))}")
+
+    for key in ("max_parallel", "retry_limit"):
+        value = data.get(key)
+        if value is not None and (not isinstance(value, int) or value < (1 if key == "max_parallel" else 0)):
+            errors.append(f"{key} must be a non-negative integer (max_parallel >= 1)")
+    budget = data.get("max_budget_usd")
+    if budget is not None and (not isinstance(budget, (int, float)) or budget <= 0):
+        errors.append("max_budget_usd must be a positive number")
+    role_defaults = data.get("role_defaults") or {}
+    if not isinstance(role_defaults, dict):
+        errors.append("role_defaults must be an object keyed by role")
+    else:
+        for role, values in role_defaults.items():
+            if not isinstance(values, dict):
+                errors.append(f"role_defaults.{role} must be an object")
+                continue
+            unknown = set(values) - VALID_ROLE_KEYS
+            if unknown:
+                errors.append(f"role_defaults.{role} has unknown keys: {', '.join(sorted(unknown))}")
+    binaries = data.get("binaries") or {}
+    for name, value in binaries.items():
+        if name not in VALID_PLATFORMS:
+            errors.append(f"binaries.{name} is not a supported platform")
+        elif not Path(str(value)).expanduser().is_file():
+            errors.append(f"binaries.{name} does not exist: {value}")
     return errors
 
 
@@ -107,7 +147,13 @@ def print_json(payload: dict[str, Any]) -> None:
 def command_show(args: argparse.Namespace) -> int:
     path = Path(args.config).expanduser()
     data = load_config(path)
-    payload = {"config_path": str(path), "exists": path.exists(), "config": data}
+    legacy = legacy_config_path(path)
+    payload = {
+        "config_path": str(path),
+        "exists": path.exists(),
+        "legacy_config_path": str(legacy) if not path.exists() and legacy.exists() else None,
+        "config": data,
+    }
     if args.json:
         print_json(payload)
     else:
@@ -138,6 +184,26 @@ def command_set(args: argparse.Namespace) -> int:
 
     if args.worktree_root:
         data["worktree_root"] = normalize_path(args.worktree_root)
+    if args.max_parallel is not None:
+        data["max_parallel"] = args.max_parallel
+    if args.retry_limit is not None:
+        data["retry_limit"] = args.retry_limit
+    if args.max_budget_usd is not None:
+        data["max_budget_usd"] = args.max_budget_usd
+    for entry in args.role_default:
+        # format: <role>:<key>=<value>, e.g. reviewer:claude_model=opus or "*:codex_effort=high"
+        try:
+            role, rest = entry.split(":", 1)
+            key, value = rest.split("=", 1)
+        except ValueError as error:
+            raise SystemExit(f"--role-default expects <role>:<key>=<value>, got {entry!r}") from error
+        data.setdefault("role_defaults", {}).setdefault(role, {})[key] = value
+    for entry in args.binary:
+        try:
+            name, value = entry.split("=", 1)
+        except ValueError as error:
+            raise SystemExit(f"--binary expects <platform>=<path>, got {entry!r}") from error
+        data.setdefault("binaries", {})[name] = normalize_path(value)
 
     requested_platforms: list[str] = []
     for platform in args.platform:
@@ -188,7 +254,7 @@ def command_validate(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Manage machine-local multi-agent-dev configuration."
+        description="Manage machine-local multi-session-dev configuration."
     )
     parser.add_argument("--config", default=str(default_config_path()))
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -201,6 +267,11 @@ def build_parser() -> argparse.ArgumentParser:
     set_parser.add_argument("--workspace-root", action="append", default=[])
     set_parser.add_argument("--erp-domain-reference", action="append", default=[])
     set_parser.add_argument("--worktree-root")
+    set_parser.add_argument("--max-parallel", type=int)
+    set_parser.add_argument("--retry-limit", type=int)
+    set_parser.add_argument("--max-budget-usd", type=float)
+    set_parser.add_argument("--role-default", action="append", default=[])
+    set_parser.add_argument("--binary", action="append", default=[])
     set_parser.add_argument(
         "--platform",
         action="append",

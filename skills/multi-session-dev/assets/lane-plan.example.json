@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "task": "order-cancel",
+  "target_branch": "feat/order-cancel",
+  "base_ref": "HEAD",
+  "commit_allowed": true,
+  "max_parallel": 3,
+  "retry_limit": 3,
+  "rules_to_read": ["CLAUDE.md", "AGENTS.md", "docs/impl-notes/2026-09-15-order-cancel.md"],
+  "resources": "Local Supabase stack already running on the Lead's ports. Do not start Docker, Supabase, or dev servers.",
+  "issue": "owner/repo#123",
+  "lanes": [
+    {
+      "id": "api",
+      "role": "implementation-worker",
+      "mode": "session",
+      "platform": "claude",
+      "model": "opus",
+      "effort": "high",
+      "write": true,
+      "owned_paths": ["apps/api/src/orders/**", "apps/api/test/orders/**"],
+      "depends_on": [],
+      "verify_commands": ["pnpm --filter api test -- orders"],
+      "acceptance": "POST /orders/:id/cancel rejects shipped orders, restores stock once, and is idempotent.",
+      "prompt": "Implement the cancel endpoint per the acceptance criteria. Follow the existing order service patterns."
+    },
+    {
+      "id": "web",
+      "role": "implementation-worker",
+      "mode": "session",
+      "platform": "claude",
+      "write": true,
+      "owned_paths": ["apps/web/src/orders/**"],
+      "depends_on": [],
+      "verify_commands": ["pnpm --filter web lint", "pnpm --filter web typecheck"],
+      "acceptance": "Cancel button appears only for cancellable orders and shows the four UI states.",
+      "prompt": "Add the cancel action to the order detail page using the existing mutation hooks."
+    },
+    {
+      "id": "e2e",
+      "role": "test-engineer",
+      "mode": "session",
+      "platform": "codex",
+      "effort": "high",
+      "write": true,
+      "owned_paths": ["e2e/orders/**"],
+      "depends_on": ["api", "web"],
+      "verify_commands": ["pnpm e2e -- orders"],
+      "acceptance": "End-to-end test covers cancel success, shipped rejection, and double submit.",
+      "prompt": "Write Playwright coverage for the acceptance criteria against the integrated branch."
+    },
+    {
+      "id": "review",
+      "role": "reviewer",
+      "mode": "session",
+      "platform": "claude",
+      "write": false,
+      "depends_on": ["e2e"],
+      "verify_commands": [],
+      "acceptance": "PASS only if all three lanes meet their acceptance and ERP quantity/state invariants hold.",
+      "prompt": "Review the raw diff of the integrated branch against target. Do not edit files."
+    },
+    {
+      "id": "second-opinion",
+      "role": "reviewer",
+      "mode": "session",
+      "platform": "codex",
+      "write": false,
+      "advisory": true,
+      "depends_on": ["e2e"],
+      "verify_commands": [],
+      "acceptance": "Adversarial read: list concrete failure scenarios the implementation does not handle.",
+      "prompt": "Challenge the implementation. Report only findings with a reproducible scenario."
+    }
+  ]
+}

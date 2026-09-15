@@ -161,7 +161,8 @@ def collect_agents(root: Path) -> list[dict[str, Any]]:
     agents: list[dict[str, Any]] = []
     claude_dir = root / ".claude" / "agents"
     codex_dir = root / ".codex" / "agents"
-    canonical_dir = root / ".agents" / "multi-agent-dev" / "workers"
+    canonical_dir = root / ".agents" / "multi-session-dev" / "workers"
+    legacy_dir = root / ".agents" / "multi-agent-dev" / "workers"
     if claude_dir.is_dir():
         agents.extend(
             parse_claude_agent(path) for path in sorted(claude_dir.glob("*.md"))
@@ -170,9 +171,11 @@ def collect_agents(root: Path) -> list[dict[str, Any]]:
         agents.extend(
             parse_codex_agent(path) for path in sorted(codex_dir.glob("*.toml"))
         )
-    if canonical_dir.is_dir():
+    for directory in (canonical_dir, legacy_dir):
+        if not directory.is_dir():
+            continue
         agents.extend(
-            parse_canonical_agent(path) for path in sorted(canonical_dir.glob("*.json"))
+            parse_canonical_agent(path) for path in sorted(directory.glob("*.json"))
         )
     return agents
 

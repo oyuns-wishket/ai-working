@@ -33,7 +33,7 @@ def git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProce
 
 class MultiAgentDevScriptsTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.temp = tempfile.TemporaryDirectory(prefix="multi-agent-dev-test-")
+        self.temp = tempfile.TemporaryDirectory(prefix="multi-session-dev-test-")
         self.root = Path(self.temp.name)
         self.repo = self.root / "sample-erp"
         self.repo.mkdir()
@@ -175,7 +175,7 @@ class MultiAgentDevScriptsTest(unittest.TestCase):
         canonical_path = (
             self.repo
             / ".agents"
-            / "multi-agent-dev"
+            / "multi-session-dev"
             / "workers"
             / "erp-domain-analyst.json"
         )

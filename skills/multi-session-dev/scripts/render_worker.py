@@ -171,7 +171,7 @@ def main() -> int:
     writes: list[dict[str, Any]] = []
     writes.append(
         planned_write(
-            root / ".agents" / "multi-agent-dev" / "workers" / f"{name}.json",
+            root / ".agents" / "multi-session-dev" / "workers" / f"{name}.json",
             canonical_content,
             args.force,
             args.dry_run,

@@ -10,7 +10,7 @@ Skills are task entrypoints, not a second global policy layer. Keep one owner fo
 | brainstorming, writing-plans, executing-plans | dev-protocol: clarify actual unknowns, plan by scope and execute authorized work |
 | using-git-worktrees, finishing-a-development-branch | dev-protocol: isolated work, project branch workflow, authorization and safe cleanup |
 | test-driven-development, verification-before-completion, requesting-code-review | dev-protocol and its verification-review reference: meaningful regression tests, direct evidence and appropriately scoped review |
-| subagent-driven-development | multi-agent-dev: native worker contracts, independent lanes and review |
+| subagent-driven-development, multi-agent-dev | multi-session-dev: lane contracts, in-process read-only subagents, isolated Claude/Codex write sessions per worktree, sequential integration and review |
 | writing-skills | ssotify: create, improve, consolidate and validate shared skills |
 | external systematic-debugging | public systematic-debugging: evidence-driven diagnosis, safe instrumentation and regression verification |
 | wiki-curator | knowns: bounded duplicate/conflict review during an authorized closeout; project-wiki-context: read and health diagnostics |

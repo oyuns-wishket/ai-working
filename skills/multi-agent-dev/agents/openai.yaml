@@ -1,6 +1,0 @@
-interface:
-  display_name: "Multi-Agent ERP Development"
-  short_description: "ERP 프로젝트를 분석해 Worker와 worktree를 자동 구성"
-  default_prompt: "Use $multi-agent-dev to analyze this ERP project and run the task with an adaptive worker team."
-policy:
-  allow_implicit_invocation: true

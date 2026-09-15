@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "multi-session-dev lane plan",
+  "description": "Lead-authored plan consumed by lane_plan.py, session_runner.py and integrate.py. Validation rules beyond types live in lane_plan.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "task": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "repo": { "type": "string", "description": "Absolute repo path. Defaults to the Git root of the current directory." },
+    "target_branch": { "type": "string", "description": "Lead task branch that lane branches merge into. Never main/develop directly." },
+    "base_ref": { "type": "string", "default": "HEAD" },
+    "commit_allowed": { "type": "boolean", "description": "From the caller's input contract. Write lanes require true." },
+    "max_parallel": { "type": "integer", "minimum": 1 },
+    "retry_limit": { "type": "integer", "minimum": 0 },
+    "rules_to_read": { "type": "array", "items": { "type": "string" }, "description": "Repo-relative docs every lane reads first." },
+    "resources": { "type": "string", "description": "DB/Docker/ports a lane may use. Lanes must not start anything else." },
+    "issue": { "type": "string", "description": "Linked issue reference or 'none'." },
+    "lanes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "role": { "type": "string", "description": "Capability name from references/worker-capabilities.md or a project worker name." },
+          "mode": { "type": "string", "enum": ["session", "subagent"] },
+          "platform": { "type": "string", "enum": ["claude", "codex"] },
+          "model": { "type": "string" },
+          "effort": { "type": "string" },
+          "write": { "type": "boolean" },
+          "owned_paths": { "type": "array", "items": { "type": "string" }, "description": "Repo-relative paths or globs this lane may modify. Required and non-overlapping for write lanes." },
+          "depends_on": { "type": "array", "items": { "type": "string" } },
+          "verify_commands": { "type": "array", "items": { "type": "string" } },
+          "acceptance": { "type": "string" },
+          "prompt": { "type": "string" },
+          "prompt_file": { "type": "string" },
+          "advisory": { "type": "boolean", "description": "Review lanes only: FAIL does not block integration." },
+          "max_budget_usd": { "type": "number" },
+          "timeout_seconds": { "type": "integer", "minimum": 60 },
+          "disallowed_tools": { "type": "array", "items": { "type": "string" }, "description": "Claude only: extra --disallowedTools entries." }
+        },
+        "required": ["id", "role", "mode", "platform", "write", "acceptance"]
+      }
+    }
+  },
+  "required": ["schema_version", "task", "target_branch", "commit_allowed", "lanes"]
+}
