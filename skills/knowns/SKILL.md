@@ -132,7 +132,7 @@ index와 이번 주제의 기존 note만 읽고 wiki 전체를 재귀 탐색하�
 스킵이 아닌 답을 받으면 추가 질문 없이 [`references/ingest-modes.md`](references/ingest-modes.md)에서 대상 mode를 선택해 실행한다.
 
 - raw/source가 필요한 wiki는 선택된 source snapshot을 새 파일로 추가한 뒤 수정·이동·삭제하지 않는다.
-- 첫 지식의 연결 생성이 단일 묶음에 포함됐으면 dry-run에서 검토한 registry hash를 `--expected-registry-sha256`으로 넘겨 위키 소유 연결 helper를 `--apply`한다. registry가 바뀌면 새 상태를 대사하며, 연결 후 helper를 다시 실행해 실제 canonical 쓰기 대상을 확인한다. 연결·index·주제 문서를 같은 승인 범위로 검증·발행한다.
+- 첫 지식의 연결 생성이 단일 묶음에 포함됐으면 dry-run helper가 반환한 연결 계획 검토 hash(`registry_sha256`)를 `--expected-registry-sha256`으로 넘겨 위키 소유 연결 helper를 `--apply`한다. registry·부모 index·대상 폴더가 바뀌면 새 상태를 대사하며, 연결 후 helper를 다시 실행해 실제 canonical 쓰기 대상을 확인한다. 연결·index·주제 문서를 같은 승인 범위로 검증·발행한다.
 - 기존 정본을 먼저 갱신하고 새 주제일 때만 새 note를 만든다.
 - 출처, Git SHA, 날짜, status, sensitivity, review metadata는 wiki schema를 따른다. v2는 위키가 소유한 공통 양식·검증기로 자동 ingest와 동일하게 처리하고, security_domain과 customer_scope를 보존한다.
 - `my-wiki`는 명시 읽기 연결이 있어도 knowns의 생성·수정 대상이 아니다. 연결된 정본 쓰기 디렉터리 밖으로 확대하지 않는다.
