@@ -1,6 +1,6 @@
 # 웹 모션과 3D 체험
 
-웹 모션의 기본 정책과 시안 선택은 [motion-design.md](motion-design.md)를 따른다. 이 문서는 3D 장면의 runtime·scroll·성능 검증에서 읽는다. 모델 제작이 필요하면 먼저 [ai-assisted-3d.md](ai-assisted-3d.md), 외부 서비스는 [tool-capabilities.md](tool-capabilities.md)로 실제 사용 가능한 경로를 정한다.
+웹 모션의 기본 정책과 시안 선택은 [motion-design.md](motion-design.md)를 따른다. 이 문서는 3D 장면의 runtime·scroll·성능 검증에서 읽는다. 영상·시퀀스·입자·게임형과 실시간 3D를 선택할 때는 [graphics-production.md](graphics-production.md), 모델 제작이 필요하면 [ai-assisted-3d.md](ai-assisted-3d.md), 외부 서비스는 [tool-capabilities.md](tool-capabilities.md)로 실제 사용 가능한 경로를 정한다.
 
 ## 모션 선택
 

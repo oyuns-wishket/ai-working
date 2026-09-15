@@ -106,7 +106,7 @@ Taste/Impeccable는 에이전트 지침·검사 도구다. 위 스크립트는 A
 
 ## 외부 앱·계정 기능
 
-Blender/Spline 같은 desktop 앱, MCP, 생성 API는 npm 라이브러리와 별개다. [tool-capabilities.md](tool-capabilities.md)로 실제 사용 가능 기능을 정한 뒤 [ai-assisted-3d.md](ai-assisted-3d.md)의 연결·작업 흐름을 실행한다. 연결 가능한 도구를 탐색하고 공식 배포·프로젝트 지침으로 설치한다. 사용자에게 터미널이나 모델링 작업을 넘기지 않는다. 로그인·GUI 권한처럼 에이전트가 할 수 없는 동작만 정확한 위치와 이유를 설명하고 완료 후 에이전트가 재개한다.
+Blender/Spline 같은 desktop 앱, Rive CLI/MCP, 생성 API는 npm 라이브러리와 별개다. [tool-capabilities.md](tool-capabilities.md)로 실제 사용 가능 기능을 정한 뒤 [graphics-production.md](graphics-production.md) 또는 필요한 [ai-assisted-3d.md](ai-assisted-3d.md)의 연결·작업 흐름을 실행한다. 연결 가능한 도구를 탐색하고 공식 배포·프로젝트 지침으로 설치한다. 사용자에게 터미널이나 모델링 작업을 넘기지 않는다. 로그인·GUI 권한처럼 에이전트가 할 수 없는 동작만 정확한 위치와 이유를 설명하고 완료 후 에이전트가 재개한다.
 
 공식 근거: [Anime.js](https://animejs.com/documentation/getting-started/installation/), [Motion](https://motion.dev/docs/react-installation), [Bklit line chart](https://bklit.com/docs/components/line-chart), [R3F](https://r3f.docs.pmnd.rs/getting-started/installation).
 

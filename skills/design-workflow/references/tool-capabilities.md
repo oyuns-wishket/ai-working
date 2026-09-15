@@ -1,6 +1,6 @@
 # 도구의 무료·유료 기능을 실제 작업에 연결하기
 
-외부 제작 서비스·프리미엄 예제·모델 공급원을 선택할 때 읽는다. 사용 가능한 기능을 먼저 활용하고, 계정 확인을 별도 장기 인터뷰로 만들지 않는다. 설치는 [tooling.md](tooling.md), 3D 제작은 [ai-assisted-3d.md](ai-assisted-3d.md)를 따른다.
+외부 제작 서비스·프리미엄 예제·모델 공급원을 선택할 때 읽는다. 사용 가능한 기능을 먼저 활용하고, 계정 확인을 별도 장기 인터뷰로 만들지 않는다. 설치는 [tooling.md](tooling.md), 그래픽 제작은 [graphics-production.md](graphics-production.md), 모델 제작은 [ai-assisted-3d.md](ai-assisted-3d.md)를 따른다.
 
 ## 서비스별로 필요한 작업만 확인
 
@@ -9,7 +9,7 @@
 | 기능 | 확인할 내용 |
 |---|---|
 | 생성·편집 | 텍스트/이미지 생성, 기존 모델 수정, 재질·부품·애니메이션 편집 가능 여부 |
-| 내보내기 | 다운로드 가능 여부, 필요한 GLB/원본 형식, 재질·부품·animation 보존 범위 |
+| 내보내기·배포 | 로컬 build와 export/download/publish 권한을 분리; 영상·프레임·GLB·vector/원본 형식, script 서명과 runtime 수용 여부, 표현/상태 보존 범위 |
 | 사용 권리 | 해당 asset의 상업 사용·수정·귀속표시·배포 조건; 상품 상표/외형 권리는 별도 확인 |
 | 브랜딩 | 워터마크·서비스 로고 제거 가능 여부 |
 | 호스팅 | 서비스 embed, 자체 asset 호스팅, runtime까지 독립 실행이 각각 가능한지 |
@@ -45,11 +45,21 @@
 
 구독 업그레이드·추가 구매·별도 API 결제·자동 초과 사용은 기존 구독 사용과 구분한다. 새로운 지출이 필요한 경우에만 대상·금액/한도·결과물을 제시하고 그 지출 승인을 받는다. 시안 제작 권한만으로 미승인 고객 자료를 외부 서비스에 업로드하지 않는다.
 
+## 사용자가 직접 결제하고 돌아오는 경로
+
+유료 대안이 요구를 더 잘 충족하면 먼저 리뷰 가능한 비교를 제공한다. **지금 가능한 무료/포함 경로의 결과·한계**, **유료로 얻는 구체적인 품질/편집/export/호스팅 차이**, **현재 공식 가격·과금 단위/예상 한도·일회성/반복 비용**, **AI 추천과 이유**를 보여준다. 가격을 확인할 수 없으면 미확인으로 표시한다. 무료 경로로 충분할 때도 불필요한 결제를 유도하지 않는다.
+
+사용자가 유료 경로를 선택하면 공식 결제/기능 안내 링크와 필요한 최소 작업을 안내하고 **사용자가 직접 결제·계정 연결**하도록 한다. 결제정보·비밀번호를 받거나 대신 결제하지 않는다. 기다리는 동안 선택한 결과물을 보존하고 비용 없는 준비만 진행한다. 복귀하면 새로 가능해진 기능과 실제 export/publish를 확인한 뒤 **기존 결정·원본에서 이어서** 제작·웹 연결한다. 인터뷰와 시안 선택을 초기화하지 않는다. 결제 완료 진술을 무제한 API·초과 과금 허용으로 확대하지 않는다.
+
 ## 자주 혼동하는 경계
 
 - **Motion**: 기본 라이브러리와 Motion+ 예제/프리미엄 컴포넌트는 구분한다. 접근 가능한 유료 권한이 있으면 목적에 맞는 보유 예제·기능을 활용하고, 없으면 무료 코어·예제로 완성한다. [Motion 문서](https://motion.dev/docs/react), [Motion+](https://motion.dev/plus)
 - **Bklit UI**: chart 코드와 Studio 편집 도구의 라이선스가 다르다. 해당 코드·도구의 조건을 각각 확인한다. [공식 저장소와 라이선스](https://github.com/bklit/bklit-ui)
 - **Spline**: 웹 embed와 GLB export, 코드 다운로드와 완전 self-host, AI 생성 크레딧은 별도 기능이다. GLB가 씬의 이벤트·조명·후처리를 그대로 보존하지 않는다. [가격/기능](https://spline.design/pricing), [GLB export](https://docs.spline.design/exporting-your-scene/files/exporting-as-gtlf-glb), [self-host](https://docs.spline.design/exporting-your-scene/web/exporting-as-self-hosted-project)
+- **Hana**: Spline의 그래픽 canvas이며 viewer/embed·영상·이미지 등 export와 실제 plan 권한을 확인한다. Spline Desktop MCP 연결 가능 여부와 cloud AI 전송/크레딧도 별개다. [Hana export](https://docs.spline.design/hana-a-canvas-for-interactivity/assets-and-export/exporting-in-hana), [Desktop MCP](https://docs.spline.design/generate/spline-mcp-server)
+- **Rive**: editor의 export 플랜과 CLI의 로컬 제작/build를 같은 권한으로 취급하지 않는다. CLI/MCP의 실제 지원 버전, 편집 원본·`.riv` 출력, 계정이 필요한 export/publish, script 서명·watermark·웹 runtime 조건을 각각 확인한다. 로컬 preview 성공이나 구독만으로 상업 웹 배포/무워터마크 사용이 보장되지 않는다. [CLI](https://rive.app/docs/cli/overview), [시작/배포 조건](https://rive.app/docs/cli/getting-started), [MCP](https://rive.app/docs/editor/ai/mcp), [editor 가격](https://www.rive.app/pricing)
+- **Lottie·게임 엔진**: player/engine의 오픈소스 권리와 가져온 animation·template·asset, 유료 editor·비공개 프로젝트·cloud hosting 조건을 분리한다. [Lottie source/license](https://github.com/airbnb/lottie-web), [PlayCanvas plans](https://playcanvas.com/plans)
+- **전문 DCC·스트리밍**: Cinema 4D/Houdini의 제작 권한과 최종 산출물 권리를 확인한다. Houdini Apprentice는 상업 납품 무료 경로로 가정하지 않는다. Pixel Streaming의 GPU 서버·동시 접속·전송 운영 비용은 engine 이용 조건과 별도다. [Houdini 조건](https://www.sidefx.com/get/try-houdini/), [Pixel Streaming](https://dev.epicgames.com/documentation/unreal-engine/overview-of-pixel-streaming-in-unreal-engine)
 - **Meshy·Tripo**: 무료 생성 체험이 다운로드·상업 사용·API를 모두 허용한다고 가정하지 않는다. Meshy는 무료 다운로드 대상/횟수·귀속표시·API 과금을, Tripo는 다운로드 자격과 생성 모델의 상업 사용 조건을 확인한다. [Meshy 무료 범위](https://help.meshy.ai/en/articles/15696428-what-is-included-on-the-free-plan), [Meshy API](https://docs.meshy.ai/en), [Tripo 다운로드](https://www.tripo3d.ai/help/features/why-cant-i-download-my-model), [Tripo 상업 사용](https://www.tripo3d.ai/help/privacy-policy/how-to-use-tripo-models-commercially)
 - **Blender·외부 자산**: Blender 사용 비용과 가져온 모델·텍스처·HDRI의 권리는 별개다. 오픈소스 생성 모델도 가중치·지역·배포 제한을 확인한다. Hunyuan 계열 자체 호스팅을 조건 확인 없이 무료 기본값으로 추천하지 않는다. [Blender 사용 권한](https://www.blender.org/about/)
 

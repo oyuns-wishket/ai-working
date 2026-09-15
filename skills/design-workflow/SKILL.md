@@ -1,6 +1,6 @@
 ---
 name: design-workflow
-description: Use for frontend screens, components, styling, ERP, commerce and consumer websites, charts, dashboards, landing pages, AI-assisted 3D modeling for websites, redesigns, and visual audits; also standalone decks and visual reports. Skip logic-only changes and ordinary tool explanations.
+description: Use for web UI, ERP, commerce and consumer sites, charts, dashboards, landing pages, AI-assisted 3D and interactive graphics, scroll video, game-like web experiences, redesigns and visual audits; also standalone decks and visual reports. Skip logic-only changes and ordinary tool explanations.
 ---
 
 # Design Workflow
@@ -21,7 +21,7 @@ description: Use for frontend screens, components, styling, ERP, commerce and co
 
 모호한 요청에만 [mode-selection.md](references/mode-selection.md)를 읽는다. 기존 요청·답변·정본으로 확정 가능한 사실은 다시 묻지 않는다. 작은 작업을 새 제품 인터뷰로 확대하지 않는다.
 
-모드와 별도로 [experience-routing.md](references/experience-routing.md)에서 **주 목적**을 고른다: 업무 UI, 커머스, B2C, 데이터 대시보드, 홍보·콘텐츠, 3D 체험. 혼합 사이트는 페이지/구간별로 분류한다. 한 구간의 3D·모션 강도를 모든 페이지에 적용하지 않는다. 목적 선택은 시각 방향 승인을 대신하지 않는다.
+모드와 별도로 [experience-routing.md](references/experience-routing.md)에서 **주 목적**을 고른다: 업무 UI, 커머스, B2C, 데이터 대시보드, 홍보·콘텐츠, 그래픽·3D 체험. 혼합 사이트는 페이지/구간별로 분류한다. 한 구간의 3D·모션 강도를 모든 페이지에 적용하지 않는다. 목적 선택은 시각 방향 승인을 대신하지 않는다.
 
 ## 웹 도구와 협업 기본값
 
@@ -30,6 +30,8 @@ description: Use for frontend screens, components, styling, ERP, commerce and co
 | 웹 UI 작성·수정 | Motion을 기본 도구로 상태·전환을 설계한다. 새 모션 방향은 실제 동작 시안으로 고르고 승인된 패턴은 재사용한다 | [motion-design.md](references/motion-design.md) |
 | 애니메이션·인터랙션 연출 추가 | Anime.js 설치·버전·기존 사용을 확인하고 요청한 연출에 연결한다. 없으면 로컬 설치하며 Motion과 대상 속성을 나눈다 | motion design + [tooling.md](references/tooling.md) |
 | 차트 작성·디자인 변경 | Bklit UI를 기본 경로로 적용하고 새 표현은 같은 데이터의 동작 시안으로 선택한다 | [data-surfaces.md](references/data-surfaces.md) |
+| 느낌·연출 명칭을 모르거나 요청이 모호함 | 시스템·도메인 분석으로 쉬운 경험 이름·추천 이유·보완 요청문을 선제안한다. 충분히 명확하면 생략한다 | [intent-to-experience.md](references/intent-to-experience.md) |
+| 그래픽 영상·scroll media·입자·게임형·혼합형 웹 | 원하는 조작을 기준으로 제작/전달 경로를 비교하고 AI가 장면 제작부터 실제 웹 연결까지 맡는다 | [graphics-production.md](references/graphics-production.md) |
 | 3D 웹 제작, 모델링 경험 없음 | AI가 모델 확보·제작·수정·시각 검수·export·웹 통합을 맡는다. 사용자는 원하는 모습과 정확도를 판단한다 | [ai-assisted-3d.md](references/ai-assisted-3d.md) |
 | 외부 서비스/프리미엄 기능 사용 | 서비스별 실제 free/paid 권한으로 제작부터 전달까지 가능한 경로를 선택한다 | [tool-capabilities.md](references/tool-capabilities.md) |
 
@@ -49,7 +51,7 @@ description: Use for frontend screens, components, styling, ERP, commerce and co
 
 시안·기술 검증용 코드는 분리된 임시 경로에서 만들고 제품 소스에 반영하지 않는다. 동적 사이트의 시안에는 시작/중간/끝 상태 또는 짧은 동작 미리보기를 포함하되 **서로 다른 composition 세 개**라는 기준을 유지한다. 시안의 샘플 데이터·대체 모델은 명시한다.
 
-모션·차트가 포함된 시안은 클릭·필터·스크롤을 직접 비교할 수 있게 만든다. 신규 디자인의 세 시안 안에 함께 넣어 별도 3×3 선택을 만들지 않는다. 3D는 같은 시안에서 모델의 여러 각도와 재질·조명을 검수한다. 새 모션/차트 패턴만 추가하는 scoped 작업은 해당 범위의 동작 비교와 선택만 기록하고 제품 인터뷰·시각 세계관을 다시 시작하지 않는다.
+모션·차트가 포함된 시안은 클릭·필터·스크롤을 직접 비교할 수 있게 만든다. 신규 디자인의 세 시안 안에 함께 넣어 별도 3×3 선택을 만들지 않는다. 그래픽은 같은 시안에서 시간 흐름·입력 반응·재생/초기화를, 3D 모델은 여러 각도와 재질·조명을 검수한다. 새 모션/차트/그래픽 패턴만 추가하는 scoped 작업은 해당 범위의 동작 비교와 선택만 기록하고 제품 인터뷰·시각 세계관을 다시 시작하지 않는다.
 
 세 시안은 같은 핵심 콘텐츠·대표 데이터를 사용해 구조 차이를 비교할 수 있게 한다. 웹 시안은 실제 stack에서 구현 가능한 반응형 구조와 주요 상태를 보여준다. HTML로 보여줄 때는 로컬 서버의 응답을 확인한 접근 가능한 URL을 제공하고 해당 작업의 서버를 종료 시 정리한다. 이미 승인된 디자인을 작은 변경 때문에 다시 세 시안으로 만들지 않는다.
 
@@ -72,6 +74,8 @@ description: Use for frontend screens, components, styling, ERP, commerce and co
 
 [design-context.md](references/design-context.md)와 선택한 목적의 참조를 읽는다. 발견할 수 없는 제품 결정만 질문한다. 기술 도구 이름보다 원하는 경험을 묻는다: “모델 회전인가, 부품 분해인가, 형태 변형인가”, “이 숫자로 어떤 결정을 하는가”.
 
+명칭·느낌을 구체화할 필요가 있으면 [intent-to-experience.md](references/intent-to-experience.md)로 **도메인 분석 → 쉬운 경험 이름·통용 명칭·reference·추천 → 보완 요청문**을 기존 인터뷰/방향 선택에 통합한다. 확정된 요구는 재작성·재질문하지 않는다. 그래픽은 연출 인상과 제작/전달 방식을 구분하고, 충분히 명확한 요청도 모드에 필요한 시안 게이트는 유지한다.
+
 기존 `PRODUCT.md`·`DESIGN.md`가 우선이다. 새 정본은 각 승인 시점에 [PRODUCT](assets/PRODUCT.template.md)·[DESIGN](assets/DESIGN.template.md) 템플릿을 채운다. 작은 작업은 기존 정본/구현노트의 해당 부분만 보완한다. 신규 게이트가 필요한 경우 앞의 순서대로 인터뷰·방향·시안을 완료한다.
 
 ### 3. 필요한 도구만 선택·준비
@@ -93,7 +97,7 @@ description: Use for frontend screens, components, styling, ERP, commerce and co
 - 구조와 주요 축 → 정보 위계·타이포 → 간격·밀도 → 상태·반응 → 장식 순으로 다듬는다. 그리드에 맞는 숫자뿐 아니라 글자·아이콘의 시각적 정렬도 확인한다.
 - 승인된 방향을 화면에 구현한다. 임의의 카드 중첩·gradient·glow·거대한 제목·bounce를 기본값으로 넣지 않는다. 의도된 브랜드 표현은 근거로 유지한다.
 - 입력·hover·focus·active·disabled·loading 상태는 **컴포넌트에 해당하는 것만** 구현한다. 명확한 피드백과 오류 복구를 제공하고 실제 성공 전에 성공 표시를 만들지 않는다.
-- 모션과 차트는 선택된 동작·데이터·토큰을 실제 코드에 연결한다. 3D는 AI가 제작 원본과 웹 자산을 준비하고 실제 브라우저로 옮겨 확인한다. 패키지 설치·외부 사이트 링크·모델 파일 생성만으로 구현 완료를 보고하지 않는다.
+- 모션과 차트는 선택된 동작·데이터·토큰을 실제 코드에 연결한다. 그래픽·3D는 AI가 제작 원본과 선택한 영상/시퀀스/실시간 자산을 준비하고 실제 브라우저로 옮겨 확인한다. 패키지 설치·외부 사이트 링크·자산 생성만으로 구현 완료를 보고하지 않는다.
 - 기능 계약 변경이 필요하면 영향과 기존 승인 범위를 대조해 `dev-protocol`에 기록한다.
 
 ### 6. 실제 검증과 한 번의 개선 검토
@@ -101,6 +105,8 @@ description: Use for frontend screens, components, styling, ERP, commerce and co
 [verification.md](references/verification.md)를 따른다. build/lint/test, source/URL detector, 브라우저 desktop/mobile, 핵심 과업 직접 조작과 목적별 검증을 실행한다. 자동 검사는 사용자 평가를 대신하지 않는다.
 
 동일 조건의 전후 화면을 비교하고 발견된 범위 내 문제를 수정한다. 수정한 부분과 영향받는 검증만 반복한다. 해결되지 않은 중요한 실패가 있으면 완료로 표시하지 않는다. 미실행 항목·환경 제약·의도된 예외는 명시한다.
+
+불만족 피드백은 [feedback-improvement.md](references/feedback-improvement.md)로 **기대와 실제 차이 → 원인 → 디자인/코드/제작 경로 수정 → 재확인**으로 이어간다. 재현된 공통 지침 결함만 승인된 범위에서 스킬에 반영한다. 프로젝트 취향을 전역 규칙으로 만들거나 모든 불만에 스킬을 자동 수정하지 않는다.
 
 ### 7. 완료·인계
 
@@ -114,6 +120,6 @@ description: Use for frontend screens, components, styling, ERP, commerce and co
 - 기존 디자인/기능 계약을 보존하거나 승인된 변경으로 기록했다.
 - 정렬·가독성·반응형·관련 UI 상태와 핵심 과업을 실제 화면에서 확인했다.
 - 채택한 도구의 역할·근거·비용/호환성 제약과 목적별 검증 결과를 남겼다.
-- 관련 모션·차트 동작 선택/기존 승인, 3D 시각 검수·웹 전달과 사용한 기능 권한의 근거가 있다. 개인 계정 정보는 공유 정본에 넣지 않는다.
+- 필요한 의도 보완 또는 생략 근거, 모션·차트·그래픽 동작 선택/기존 승인, 제작 검수·웹 전달과 기능 권한의 근거가 있다. 개인 계정 정보는 공유 정본에 넣지 않는다.
 - build/lint/test·detector·브라우저 검증의 실행 결과와 누락이 구분된다.
 - Claude와 Codex가 같은 정본을 참조하며 정본에 새 결정이 반영됐다.
