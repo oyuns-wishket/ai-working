@@ -31,6 +31,8 @@ python3 <ai-working-root>/skills/project-wiki-context/scripts/wiki_context.py au
 
 `doctor` checks one project. `audit` compares discovered Git repositories with registry coverage without network access. Do not add customer identifiers or personal paths to this skill; mappings belong in the configured registry.
 
+Report duplicate, stale or conflicting knowledge as read-only findings; diagnosis does not rewrite documents or refresh their verification dates. Development closeout uses `knowns` within its existing trigger and authorization. Scheduled raw-to-knowledge ingestion is owned by the knowledge repository's pipeline and policy, not this retrieval skill.
+
 ## Authority and safety
 
 - Current repository and live project-owned infrastructure win when knowledge conflicts.

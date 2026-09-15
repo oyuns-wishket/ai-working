@@ -13,6 +13,7 @@ Skills are task entrypoints, not a second global policy layer. Keep one owner fo
 | subagent-driven-development | multi-agent-dev: native worker contracts, independent lanes and review |
 | writing-skills | ssotify: create, improve, consolidate and validate shared skills |
 | external systematic-debugging | public systematic-debugging: evidence-driven diagnosis, safe instrumentation and regression verification |
+| wiki-curator | knowns: bounded duplicate/conflict review during an authorized closeout; project-wiki-context: read and health diagnostics |
 
 Former entrypoints are removed from the curated home catalog, not retained as duplicate discoverable aliases. Old names in natural-language requests are resolved to their current owner; a removed slash command itself is not guaranteed to remain available. Original third-party skill directories are preserved for existing sessions and reference. This is a curated local workflow, not an in-place vendor upgrade.
 
@@ -24,7 +25,7 @@ Generic plans, tests and reviews do not each start a separate approval process. 
 - `agent-bot-setup` uses customer/project-owned runtime boundaries; `hermes-bot-setup` handles a personal assistant. Preserve their account ownership distinction.
 - `remote-setup`, `remote-ssh-edit` and `mac-file-sync` solve different desktop, editing and file-transfer tasks.
 - `feature-flow` owns project branch/preview mechanics; `dev-protocol` owns the work and approval lifecycle. `paseo-setup` configures a separate worktree tool only when requested.
-- Wiki read/context/curation/closeout workflows keep their existing scope pending a separate wiki review.
+- The project wiki workflow uses `project-wiki-context` for bounded reads and health diagnostics, and `knowns` for development closeout with duplicate/conflict review. Scheduled source ingestion belongs to the knowledge repository's pipeline and policy, not a third skill or an interactive closeout call per item. The separate `knowledge-wiki` integration keeps its adapter-specific scope.
 - Team skills retain their original source and configuration. System skills bundled by a provider keep provider ownership.
 
 Low recent explicit invocation is insufficient reason to remove these capabilities. Setup tasks may be infrequent, and reading a skill through file tools or executing its scripts directly is not counted as a native Skill invocation.
