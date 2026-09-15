@@ -49,6 +49,19 @@ class V2DiscoveryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             M.validate_canonical_write_target(self.root, self.target / "alias/meeting.md", self.target)
 
+    def test_first_note_proposes_connection_without_granting_write_or_creating_folder(self):
+        payload = {"project": {"id": "example.invalid/team/new-project", "security_domain": "work", "connection_status": "common-only"},
+                   "wiki_root": str(self.root), "matched_by": "remote:example.invalid/team/new-project", "git_root": str(self.root.parent / "project")}
+        proposal = M.connection_proposal(payload)
+        self.assertTrue(proposal["requires_connection"])
+        self.assertIsNone(proposal["canonical_write_target"])
+        self.assertFalse(Path(proposal["path"]).exists())
+        self.assertEqual(Path(proposal["path"]), self.root / "sys-wiki/aidp/new-project")
+        self.assertIn("--slug", proposal["connection_dry_run"])
+        self.assertEqual(M.determine_wiki_root(Path(proposal["path"])), self.root)
+        payload["matched_by"] = "local-alias:new-project"
+        self.assertIsNone(M.connection_proposal(payload))
+
     def test_owner_contract_escape_rejected(self):
         self.contract["paths"]["template"] = "../outside.md"
         self.contract_path.write_text(json.dumps(self.contract))

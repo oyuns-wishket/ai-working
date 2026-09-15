@@ -65,3 +65,7 @@ Higher priority cannot silently authorize a write that a lower-level target gove
 ## V2 canonical write discovery
 
 When the owning wiki provides `.system/knowledge-contract.json`, resolve the registry `canonical_write_target` separately from all read scopes. Read the owner schema/template and validator instead of copying a canonical template into this skill. A common-only read or an exact my-wiki binding is not a closeout target. V2 writes stay within the registered sys-wiki target, including after symlink resolution; never fall back to Mode B for a user-owned note. V2 discovery reads explicit governing files and does not recursively scan canonical, candidate or manual content for rules.
+
+### First durable note for a common-only project
+
+A remote-matched managed work project may produce a `registry-connection-proposal` with a suggested flat project directory. This is not a write grant. Run the owner `connect_project_wiki.py` in dry-run mode; include its exact registry/index paths, proposed topic path and registry SHA-256 in the same knowns approval batch. After that existing approval, apply with `--expected-registry-sha256`, rediscover the now-connected canonical target, ingest and validate/publish the complete approved set. Do not create directories for all registry entries in advance. The connector does not modify the customer code repo or grant new raw-source permissions. Existing customer namespace collisions require explicit ownership resolution.

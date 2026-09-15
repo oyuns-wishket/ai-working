@@ -258,6 +258,8 @@ def registry_wiki_candidate(project_root: Path) -> Optional[Dict[str, object]]:
     except json.JSONDecodeError:
         return None
     project = payload.get("project") or {}
+    if payload.get("registry_schema_version") == 2 and project.get("connection_status") == "common-only":
+        return connection_proposal(payload)
     namespace = (payload.get("canonical_write_target") if payload.get("registry_schema_version") == 2
                  else payload.get("namespace_path"))
     if payload.get("mode") != "wiki-bounded" or not namespace:
@@ -276,6 +278,31 @@ def registry_wiki_candidate(project_root: Path) -> Optional[Dict[str, object]]:
         "knowledge_contract_path": payload.get("knowledge_contract_path"),
         "registry_schema_version": payload.get("registry_schema_version", 1),
     }
+
+
+def connection_proposal(payload: dict) -> Optional[dict]:
+    """A discoverable first-write plan is not an already granted write target."""
+    entry = payload.get("project") or {}
+    if entry.get("security_domain") != "work" or not str(payload.get("matched_by", "")).startswith("remote:"):
+        return None
+    root = Path(payload["wiki_root"]).resolve()
+    if not discover_knowledge_contract(root):
+        return None
+    slug = str(entry.get("id", "")).rsplit("/", 1)[-1].lower()
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,79}", slug) or slug in {"common", "index", "raw", "candidate", "my-wiki", "sys-wiki"}:
+        return None
+    target = root / "sys-wiki/aidp" / slug
+    helper = root / ".system/scripts/connect_project_wiki.py"
+    if not helper.is_file():
+        helper = root / "scripts/connect_project_wiki.py"
+    return {"path": str(target), "kind": "registry-connection-proposal",
+            "registry_schema_version": 2, "project_id": entry["id"], "requires_connection": True,
+            "proposed_canonical_write_target": str(target), "canonical_write_target": None,
+            "knowledge_contract_path": str(root / ".system/knowledge-contract.json"),
+            "evidence": [f"project-registry:{entry['id']} ({payload['matched_by']}); common-only, no write granted"],
+            "connection_dry_run": [sys.executable, str(helper), "--wiki-root", str(root),
+                                   "--project", str(payload["git_root"]), "--slug", slug],
+            "connection_helper_available": helper.is_file()}
 
 
 def discover_connected_wikis(rule_files: Sequence[Path], project_root: Path) -> List[Dict[str, object]]:
@@ -297,6 +324,9 @@ def discover_connected_wikis(rule_files: Sequence[Path], project_root: Path) -> 
 
 def determine_wiki_root(target: Path) -> Path:
     current = target.parent if target.is_file() else target
+    for ancestor in (current, *current.parents):
+        if (ancestor / ".system/knowledge-contract.json").is_file():
+            return ancestor.resolve()
     if current.name.lower() in {"wiki", "raw"}:
         current = current.parent
     git_result = subprocess.run(
@@ -503,16 +533,24 @@ def main() -> int:
     if args.wiki:
         wiki_target = Path(os.path.expanduser(args.wiki)).resolve()
         if not wiki_target.exists():
-            raise SystemExit(f"Wiki path does not exist: {wiki_target}")
+            proposal = registry_wiki_candidate(project_root)
+            if not proposal or not proposal.get("requires_connection") or Path(str(proposal["path"])) != wiki_target:
+                raise SystemExit(f"Wiki path does not exist: {wiki_target}")
         wiki_root = determine_wiki_root(wiki_target)
         contract = discover_knowledge_contract(wiki_root)
         if contract:
             registry = registry_wiki_candidate(project_root)
             if not registry or registry.get("registry_schema_version") != 2:
                 raise SystemExit("No explicit canonical write target for this v2 wiki")
-            allowed = Path(str(registry["canonical_write_target"]))
-            validate_canonical_write_target(wiki_root, wiki_target, allowed)
-            result["canonical_write_target"] = str(allowed)
+            if registry.get("requires_connection"):
+                if wiki_target != Path(str(registry["path"])):
+                    raise SystemExit("Selected wiki does not match the proposed explicit connection")
+                result["connection_proposal"] = registry
+                result["canonical_write_target"] = None
+            else:
+                allowed = Path(str(registry["canonical_write_target"]))
+                validate_canonical_write_target(wiki_root, wiki_target, allowed)
+                result["canonical_write_target"] = str(allowed)
             result["knowledge_contract"] = contract
         result.update(
             {
