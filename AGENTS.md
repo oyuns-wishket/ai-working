@@ -10,5 +10,7 @@ defaults, and their installation workflow.
   runtime or use machine-local values under `~/.config/ai-working/`.
 - Before publishing, run `python3 scripts/public_audit.py --history`, `python3 scripts/validate_skills.py`, the hook and
   bootstrap tests, and `./bootstrap.sh --status` when validating an installed environment.
+- After pushing, confirm the `public-safety` run succeeded; local checks alone do not establish completion. Renaming or
+  adding a skill directory also requires updating its per-skill test path in `.github/workflows/public-safety.yml`.
 - Never merge or cherry-pick history from a retired private repository. Rewrite reviewed reusable content on this
   repository's public history.
