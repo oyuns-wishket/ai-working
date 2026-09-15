@@ -41,5 +41,5 @@ jobs:
           python3 skills/agent-bot-setup/scripts/test_runtime_guard.py
           python3 skills/knowns/scripts/test_inspect_context.py
           python3 skills/knowns/scripts/test_publish_git.py
-          python3 -m unittest discover -s skills/multi-agent-dev/tests -p 'test_*.py'
+          python3 -m unittest discover -s skills/multi-session-dev/tests -p 'test_*.py'
           python3 -m unittest discover -s skills/project-wiki-context/tests -p 'test_*.py'
