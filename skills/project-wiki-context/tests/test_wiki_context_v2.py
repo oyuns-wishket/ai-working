@@ -167,6 +167,28 @@ class V2Tests(unittest.TestCase):
         with self.assertRaises(M.ContextError):
             M.find_wiki_root(str(adapter.parent))
 
+    def test_owner_qualified_repository_source_is_actually_checked(self):
+        path = self.root / "sys-wiki/aidp/alpha/rules.md"
+        note(path)
+        path.write_text(path.read_text().replace("user-confirmation:2026-01-01", "repo:team/product@deadbeef/missing.py"))
+        result = self.route()
+        self.assertFalse(self.selected(result))
+        self.assertEqual(result["rejected"][0]["reason"], "invalid-source-ref")
+
+    def test_inline_json_source_refs_used_by_owner_renderer(self):
+        path = self.root / "sys-wiki/aidp/alpha/rules.md"
+        note(path)
+        path.write_text(path.read_text().replace("source_refs:\n  - user-confirmation:2026-01-01", 'source_refs: ["user-confirmation:2026-01-01"]'))
+        self.assertEqual(self.selected(self.route()), {"sys-wiki/aidp/alpha/rules.md"})
+
+    def test_bare_index_is_navigation_only_without_fabricated_freshness(self):
+        (self.root / "sys-wiki/aidp/alpha/index.md").write_text("# Navigation\n[sibling secret](../beta/secret.md)")
+        note(self.root / "sys-wiki/aidp/alpha/rules.md")
+        result = self.route()
+        self.assertFalse(result["navigation"]["injected"])
+        self.assertIsNone(result["index_document"])
+        self.assertEqual(len(result["documents"]), 1)
+
     def test_duplicate_metadata_and_missing_source_not_accepted(self):
         path = self.root / "sys-wiki/aidp/alpha/duplicate.md"
         note(path)

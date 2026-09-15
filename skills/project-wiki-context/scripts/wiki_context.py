@@ -19,7 +19,7 @@ REGISTRY_REL = Path("registry/project-registry.json")
 EXCLUDED_PARTS = {"raw", "derived", ".runtime", "omc-inbox", "80-observations", "candidate", ".system"}
 WORD_RE = re.compile(r"[0-9A-Za-z가-힣][0-9A-Za-z가-힣._/-]*")
 FRONTMATTER_KEY = re.compile(r"^([a-z_]+):\s*(.*?)\s*$")
-SOURCE_REF_RE = re.compile(r"^repo:([^@/]+)@([0-9a-fA-F]{7,40})(?:/(.+))?$")
+SOURCE_REF_RE = re.compile(r"^repo:([^@]+)@([0-9a-fA-F]{7,40})(?:/(.+))?$")
 
 
 class ContextError(RuntimeError):
@@ -385,6 +385,8 @@ def source_reference_health(path: Path, resolved: dict) -> dict:
     project_id = resolved["project"].get("id", "")
     if "/" in project_id:
         aliases.add(project_id.rsplit("/", 1)[-1])
+        aliases.add(project_id)
+        aliases.add(project_id.split("/", 1)[1])
 
     checked = []
     for reference in frontmatter_list(path, "source_refs"):
