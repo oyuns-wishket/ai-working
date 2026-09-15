@@ -1,20 +1,45 @@
-# Verification
+# 실제 검증과 완료 증거
 
-For `audit`, preserve the main skill's read-only boundary: inspect existing source, running screens and already available detectors. Do not install tools, run package-fetching commands below, or write project artifacts; report unavailable checks as gaps. The implementation sequence below applies when changes are authorized.
+게이트·도구 기본값은 [SKILL.md](../SKILL.md), 목적별 판정은 해당 소유 참조를 따른다. 이 문서는 검증 순서·강도·증거 형식을 소유한다. 자동 검사, 직접 조작, reviewer 의견, 사용자의 미적 선택은 서로 다른 증거다.
 
-## Gate order
+## 모드별 검증 매트릭스
 
-### 1. Project checks
+`필수`는 실행 후 결과를 남긴다는 뜻이다. 조건부 항목은 모드가 아니라 검사 대상의 존재로 판정한다. 대상이 없으면 `N/A`와 근거를, 대상은 있지만 실행하지 못하면 `미실행`과 이유를 남긴다. `small-feature`는 대상·인접 패턴·영향받는 공통 컴포넌트로 **범위만 좁힌다**. 조사·새 표현의 시안·검증 강도와 통과 기준은 다른 구현 모드와 같다.
 
-Run the commands defined by the project and its package manager:
+판정: 차트/모션/3D 엔진의 추가·교체, canvas/WebGL/영상 자산 도입, 가상화·대량 데이터, 번들에 새 runtime 추가 중 하나면 성능 영향이 있다고 본다. 이 조건이면 전후 실측을 N/A로 처리하지 않는다. `new`에 이전 구현이 없으면 기준선 없음과 이유를 기록하고 승인 시안·수용 예산 대비 현재 실측을 남긴다.
 
-- lint
-- typecheck when separate
-- targeted tests
-- full tests when practical
-- production build
+| 모드 | lint/typecheck/test/build | source/URL detector | desktop/mobile·접근성 | 과업·상태·권한 | 정본·승인 시안 대조 | 업무 UI·차트·모션·그래픽·3D | 전후 성능 실측 | 증거·누락 보고 |
+|---|---|---|---|---|---|---|---|---|
+| `new` | 필수 | 필수 | 필수 | 필수 | 필수 | 대상이 있으면 필수 | 성능 영향이 있으면 필수 | 필수 |
+| `rebrand` | 필수 | 필수 | 필수 | 필수 | 필수 | 대상이 있으면 필수 | 성능 영향이 있으면 필수 | 필수 |
+| `refactor` | 필수 | 필수 | 필수 | 필수 | 필수 | 대상이 있으면 필수 | 성능 영향이 있으면 필수 | 필수 |
+| `small-feature` | 필수 | 필수 | 필수 | 필수 | 필수 | 대상이 있으면 필수 | 성능 영향이 있으면 필수 | 필수 |
+| `audit` | 기존 결과 열람만 | 설치된 도구로 read-only 검사 | 실행 중 화면 read-only 검사 | 데이터 변경 없는 조작·관찰 | 기존 정본·화면 대조 | 대상의 read-only 검사 | 가능한 현재 상태 read-only 실측 | 대화로 필수 |
 
-Report command, exit code, and relevant counts. Do not claim completion from code inspection alone.
+`audit`이면 source write·설치·package fetch·issue/commit·정본 생성을 하지 않는다. build처럼 산출물을 쓰는 명령, 설정/캐시를 쓰는 detector, 저장·승인처럼 실제 데이터를 바꾸는 과업도 실행하지 않는다. 아래 `npx` 명령은 구현 모드용이며 audit에서는 이미 설치된 도구의 read-only 실행만 허용한다. 실행 중 화면이나 안전한 검사 경로가 없으면 공백을 보고한다. 결과 저장은 사용자가 명시 요청한 보고서에만 허용한다.
+
+앱이 아닌 산출물에서 프로젝트 명령이 없으면 [standalone-visuals.md](standalone-visuals.md)의 전 페이지 렌더 검증으로 치환하고 근거를 기록한다. 앱에 명령이나 테스트가 없으면 그 부재를 숨기거나 성공으로 채우지 않는다.
+
+## 증거 형식
+
+각 검사·조건 조합을 아래 한 행으로 남긴다. 기존 구현노트의 gate 기록, DESIGN의 Verification evidence 또는 [audit template](../assets/design-audit.template.md)의 같은 표를 사용하며 중복 문서를 만들지 않는다. `audit`는 표를 대화로 제공한다.
+
+| 검사 | 명령/route | 조건(viewport·data·state·theme·auth) | 결과 | 미실행 사유 |
+|---|---|---|---|---|
+| 검사명 | 실제 명령 또는 route + 조작 순서 | 실제 값·fixture/기간·상태·theme·역할; 비해당은 N/A | 통과/실패/미실행/N/A + exit code·count·실측·증거 경로 | 실행했으면 없음; 그 외 제약/N/A 근거 |
+
+1. 비교 전에 route·viewport·대표 데이터/필터·UI state·theme·인증 역할을 고정한다. 개인정보·토큰 대신 역할과 비식별 fixture를 쓴다.
+2. identical route/viewport/data/theme/state의 before/after 스크린샷(각 쌍에 route·조건 기재)을 남긴다. 인증 역할(auth)도 동일하게 고정한다. 전후에 같은 조건을 사용한다. `new`여서 이전 화면이 없으면 기준선 없음으로 표시하고 승인 시안과 비교한다. 실데이터가 바뀌었으면 차이를 밝히고 동일 fixture 등 재현 가능한 조건으로 다시 대조한다.
+3. 결과에는 실제 명령의 exit code·검사/실패 수, detector의 severity/rule별 건수, 브라우저 조작 결과와 캡처/재생 증거를 연결한다. `N/A`와 실행 불가를 혼동하지 않는다.
+4. 필요한 검사를 못 했으면 미실행 행을 유지한다. screenshot을 detector·수치 대조·동작 검사 대신으로 기록하지 않는다. 중요한 실패나 필수 검증 공백이 남으면 검증 완료로 표시하지 않는다.
+
+## 검증 순서
+
+### 1. 프로젝트 검사
+
+1. 프로젝트 package manager와 실제 scripts를 확인하고 lint → 별도 typecheck → 관련 tests → 가능한 전체 tests → production build를 실행한다.
+2. 전체 tests를 실행하지 못하면 관련 tests의 실행 범위와 전체 검사 미실행 이유를 각각 기록한다. 없는 명령을 실행했다고 쓰지 않는다.
+3. 변경 때문에 생긴 실패와 기존 기준선 실패를 구분한다. 코드 읽기만으로 build·test 통과를 주장하지 않는다.
 
 ### 2. Source detector
 
@@ -23,93 +48,105 @@ npx --yes impeccable@3.4.0 detect <source-path>
 npx --yes impeccable@3.4.0 detect --json <source-path>
 ```
 
-Exit codes:
+| Exit code | 의미 | 다음 행동 |
+|---|---|---|
+| `0` | no findings | 검사 범위와 0건 기록; 브라우저 검증 계속 |
+| `2` | findings detected | severity/rule별 분류·수정 또는 의도된 예외 근거 기록 |
+| `1` | command failure | 실패 원인과 검사 공백 기록; 복구 가능하면 재실행 |
 
-- `0`: no findings
-- `2`: findings detected
-- `1`: command failure
-
-Classify code `2` findings instead of reporting the scan as crashed.
+`2`는 scan crash가 아니다. 이미 동일 실행의 JSON 결과가 있으면 중복 실행 없이 재사용할 수 있다.
 
 ### 3. Rendered detector
 
-Start the project by its documented command, confirm the URL returns successfully, then run:
+프로젝트의 문서화된 실행 명령으로 서버를 시작하고 URL 응답을 확인한 뒤 실행한다. 서버 운영·정리는 설치된 `dev-protocol`의 local operations를 따른다.
 
 ```bash
 npx --yes impeccable@3.4.0 detect <url>
 ```
 
-URL scan may require browser dependencies. If unavailable, disclose that rendered detector was not completed; Playwright screenshots do not replace detector coverage.
+URL scan에 필요한 browser dependency가 없으면 미실행 이유를 기록한다. Playwright 캡처가 있어도 rendered detector를 완료했다고 쓰지 않는다.
 
-### 4. Playwright matrix
+### 4. 브라우저 직접 조작
 
-At minimum:
+Playwright 또는 사용 가능한 브라우저 도구로 아래를 실행한다. mobile 지원이 없는 계약이면 근거를 남기되 지원하지 않는 폭에서 핵심 정보·안내가 유실되는지도 확인한다. 편리한 desktop/mobile 두 크기만으로 콘텐츠가 깨지는 중간 폭 검사를 대체하지 않는다.
 
-| Surface | Desktop | Mobile |
-|---|---:|---:|
-| target happy path | required | required when responsive |
-| loading/empty/error | relevant states | relevant states |
-| navigation open/closed | when changed | when changed |
+| 검사 | 실행할 조작 | 통과 기준 |
+|---|---|---|
+| 대표 과업 | desktop 및 지원 mobile에서 시작 → 입력/선택 → 완료; keyboard·pointer/touch 각각 수행 | 기대한 실제 결과와 피드백 일치; 입력 유실·중복 처리 없음 |
+| 상태 | 해당 loading/empty/no results/error/disabled/success/permission denied 재현 | 상태 구별, 오류 복구와 실제 응답 전 성공 방지 |
+| navigation | 변경된 메뉴·탭·dialog 열기/닫기, 뒤로가기, 재진입 | URL·검색·선택 보존, focus 이동/복귀·Esc·배경 조작 계약 유지 |
+| 읽기·반응형 | desktop/mobile, 내용이 깨지는 폭, 320 CSS px, 200% 확대, 긴 한글/영문·큰 숫자 | 잘림·겹침·일반 콘텐츠의 불필요한 양방향 scroll 없음 |
+| 접근성 | Tab/Shift+Tab, 해당 Enter/Space/Escape·화살표, focus-visible, 대비·비색상 상태 | 핵심 값/과업에 keyboard·touch 접근 가능; sticky 요소가 focus를 가리지 않음 |
+| 모션 | 연속 입력·중간 취소·초기화, reduced motion 초기 로드와 실행 중 변경 | 최종값·선택·완료 피드백 정확, 승인된 전환·축소 정책 유지 |
+| runtime | console/network 확인, resize, route 이탈/재진입 | 새 오류·실패 요청·중복 listener/timeline/canvas·소유 자원 누수 없음 |
 
-Capture before and after at identical viewport, data, route, theme, and authentication state.
+### 5. 정본·목적별 대조
 
-Check:
+[web-quality.md](web-quality.md)의 정렬 축·타이포·간격·밀도·숫자·주 행동과 기존 PRODUCT/DESIGN의 토큰·anti-pattern·scope guard를 대조한다. 작은 변경도 전역 브랜드·토큰 영향과 공통 컴포넌트 회귀를 확인한다. 아래 해당 목적의 검사를 같은 증거 표에 기록한다.
 
-- no console errors introduced
-- no failed relevant requests
-- no unexpected horizontal scroll
-- no clipped or overlapped text
-- focus order and focus-visible
-- hover/active/disabled/loading states
-- reduced motion
-- zoom and long Korean text when relevant
+## 업무 UI 검증
 
-### 5. Context consistency
+설계 기준은 [work-ui-surfaces.md](work-ui-surfaces.md)다. 표·폼·필터가 있으면 각각 검증하고 없는 요소만 N/A로 남긴다. 검증 계정이 없다는 이유는 N/A가 아니라 미실행이다.
 
-Compare the result against:
+1. **대표 과업:** 등록 → 검색 → 수정 → 승인(또는 이번 범위의 동등 과업)을 키보드만으로 1회, 포인터로 1회 완료한다. 실제 데이터를 쓰는 검증은 승인된 테스트 환경·데이터에서 수행한다. `audit`는 저장 전 관찰까지만 하고 미검증 구간을 명시한다.
+2. **표와 숫자:** [data-surfaces.md](data-surfaces.md)의 수치 대조 표로 최소 두 조건(기본 필터/기간 + 변경한 필터/기간)의 원본 집계·카드·차트·표 숫자, 단위·정밀도·반올림·음수·0·누락을 대조한다. 현재 page 소계와 필터된 전체 합계를 구분한다. 열 정렬·고정 헤더/열·행 높이가 읽기·편집·focus를 방해하지 않는지 본다. 증거 형식은 [data-surfaces.md 직접 검증 1](data-surfaces.md#직접-검증)의 수치 대조 표(필터/기간·원본 집계·카드 값·차트 값·표 합계·일치 여부)다.
+3. **정렬/필터/page:** 필터 적용·초기화, 다중 조건, 정렬 방향, 페이지 이동·크기 변경·결과 감소를 실행한다. client/server 처리 범위, 전체 건수·합계, 선택 유지/해제·일괄 작업의 성공/부분 실패, URL·뒤로가기가 기존 계약과 일치해야 한다. server pagination에서 현재 page만 정렬되는 오류를 확인한다.
+4. **폼·인라인 편집:** 진입 → 변경 → 저장 중 → 성공/실패 → 재시도/취소를 실행한다. 입력 label·그룹·오류 위치, Enter/F2/Tab/Escape 계약, dirty 상태·자동 저장/이탈 경고·focus 복귀, 실패 시 입력 보존·중복 제출 차단을 확인한다. 비동기 결과 역전이나 다른 사용자 수정 충돌이 있는 기능이면 기존 충돌 처리도 검사한다.
+5. **320px·200% 확대:** 필터·주 행동·오류·수치가 사라지지 않아야 한다. 2차원 표가 필요한 경우 별도 scroll 영역과 keyboard 접근을 확인한다. 글자 축소나 핵심 열 숨김만으로 통과 처리하지 않는다.
+6. **권한별 상태:** 권한이 다른 역할 2개로 같은 화면을 비교하고 제공된 추가 역할의 조회·편집·승인·접근 거부를 검사한다. 역할이 1개뿐인 계약이면 그 근거를, 다른 역할에 접근할 수 없으면 미실행을 기록한다. 숨김/disabled·설명·서버 거부·재진입 상태가 권한 계약과 일치해야 한다. 실행하지 못한 역할을 나열하고 해당 역할 검증을 완료했다고 표시하지 않는다.
 
-- product job and audience
-- `DESIGN.md` token usage
-- existing or approved typography
-- density and layout rules
-- explicit anti-pattern list
-- small-feature scope guard
-- interactive motion/chart choice or reused approved pattern
-- actual 3D asset review and selected external capabilities, when relevant
+### 수치 대조 증거
 
-### 6. Final evidence
+업무 UI·데이터 화면이면 아래 표에 최소 두 조건(기본 필터/기간 + 변경한 필터/기간)을 기록한다. 표 형식의 소유 참조는 [data-surfaces.md 직접 검증 1](data-surfaces.md#직접-검증)이며 DESIGN의 Numerical reconciliation에 같은 표가 있으면 링크한다. 카드·차트·표 중 없는 요소만 해당 열에 N/A와 근거를 적는다. 불일치이면 집계 범위·반올림·시간대·page 합계의 원인과 수정/재검증 증거를 일치 여부 열에 연결한다.
 
-Report:
+| 필터/기간 | 원본 집계(쿼리/API 값) | 카드 값 | 차트 값(대표 점) | 표 합계(현재 page / 전체 조건) | 일치 여부 |
+|---|---|---|---|---|---|
 
-- before/after routes or screenshots
-- changed files and scope
-- build/lint/test results
-- detector counts by severity/rule
-- intentional findings and reasons
-- untested states and why
-- plan deviations
+## 레거시 차트 엔진 교체 parity 검증
 
-## Purpose-specific acceptance
+교체 범위·전체 이관 제안·예외 판정은 [data-surfaces.md](data-surfaces.md)의 레거시 차트 엔진 교체 절을, 제거 절차는 [tooling.md](tooling.md)를 따른다. ECharts·Chart.js·ApexCharts·Highcharts·구 Recharts wrapper 등이 발견되면 인벤토리와 실제 사용처를 기준으로 검증한다.
 
-Apply only the selected purpose's checks from [data-surfaces.md](data-surfaces.md), [graphics-production.md](graphics-production.md), or [motion-and-3d.md](motion-and-3d.md). Ordinary forms do not need a 3D performance audit. For graphics, verify the selected delivery path: video playback/seek, sequence decode/cache, real-time effects and inputs, game rules/reset, or section transitions in a hybrid. Compare the promised interaction and visual features with the actual web result; record adapted or missing features and resolve in-scope gaps. Static previews alone do not demonstrate an interactive or temporal experience.
+1. 이관 전 같은 route·대표 데이터·기간/필터·theme·viewport·auth의 기준선을 확보한다. 기존 화면을 실행할 수 없으면 소스/fixture 대체 근거와 직접 비교 공백을 기록한다. fixture 기반 재대조는 이전 엔진과 이후 엔진을 동일 fixture로 실제 실행해 아래 항목을 대조하는 것이다. 새 엔진만 실행하거나 소스에서 기대값을 추정한 결과는 미실행 해소가 아니다.
+2. 같은 조건의 이전/이후를 아래 표로 대조한다. 합계·개별 point·tooltip의 값/단위/집계, 범례 선택·해제, 필터·drill-down, export의 열·행·순서·범위, loading/empty/error/권한 상태, 키보드/터치 접근(범례·point 선택), 모바일 viewport의 범례·tooltip·축 clipping을 검사한다. 실제 없는 기능은 근거와 함께 N/A로 표시한다.
 
-- Data: verify Bklit implementation or documented exception against the chosen same-data preview; reconcile source totals with cards/charts/tables and test filters/missing/error states. Screenshots do not prove numerical correctness.
-- Motion: use [motion-design.md](motion-design.md); run the approved representative task, continuous input, keyboard/touch, reduced motion and route cleanup. Check actual imports/use, not package presence alone.
-- 3D: use [ai-assisted-3d.md](ai-assisted-3d.md); verify editable source and real exported asset, multi-angle appearance/parts/materials/clips, and actual web integration. Test forward/back scroll, resize, restored scroll, route re-entry, mobile, reduced motion, and asset failure/fallback. A generated model or static screenshot is not a completed website.
-- External capabilities: distinguish user-reported plan, current official documentation and actual successful access. Confirm output rights/attribution, required format, hosting and decoder/runtime requests match the chosen path; no accidental paid API or restricted/free export assumption.
-- Work UI: complete the main task with keyboard and pointer; verify feedback, preserved input, and recovery from failure.
-- Marketing/content: check reading order, working CTA, accessible HTML content, relevant title/description and image/font loading. Do not create an SEO migration outside the requested scope.
+| 대상 화면·검사 | 동일 데이터·필터·조건 | 이전 결과 | 이후 결과 | parity 판정·증거 | 미실행/N/A 사유 |
+|---|---|---|---|---|---|
+| route / 수치·tooltip·범례·export·상태·키보드/터치·모바일별 행 | fixture/기간·viewport·state·theme·auth | 값/동작 | 값/동작 | 일치/승인된 차이/실패/미실행/N/A + 증거 | 없음 또는 제약 |
 
-## Final quality review
+3. 승인된 시각 변경과 기능/데이터 손실을 구분한다. 수치·필터/기간·tooltip·범례·export·상태·키보드/터치·모바일 중 해당 검사가 실패하거나 **미실행**이거나 대상 화면에 레거시 import가 0건이 아니면 대상 화면 이관 완료로 표시하지 않는다. 기준선 실행 불가로 parity가 미실행이면 상태를 `이관(parity 미실행)`으로 두고 N에 더하지 않으며, fixture 기반 재대조로 미실행을 해소한 뒤에만 `이관 완료`로 바꾼다. 확인된 개별 차트 예외가 없는 화면은 모든 레거시 차트를 함께 이관한다. 개별 차트의 비호환 예외(필수 기능 부재·실측 성능)가 기록된 화면은 해당 차트에 한해 공존을 허용하고, 예외 범위·의존 비용·재검토 조건을 기록한다. 해당 route는 `기록된 예외`로 집계하며 `이관 완료`나 레거시 import 0건으로 표시하지 않는다. 개별 차트 예외가 있는 route는 `기록된 예외`를 유지하며 이관한 차트의 parity도 따로 기록한다. 정지 캡처는 수치·동작 parity의 증거가 아니다.
+4. 전체 인벤토리와 최종 소스를 대조한다. 제거 대상으로 확정한 레거시 패키지는 `package.json`·lockfile 참조 0건, 실제 import/require/dynamic import 및 구 wrapper 사용 0건을 확인하고 검색 명령·범위·결과를 남긴다. 생성 소스·alias·workspace package도 검사하며 검색 오류를 0건으로 쓰지 않는다.
+5. [data-surfaces.md](data-surfaces.md)의 계수 기준에 따라 레거시 import 0건은 앱 코드(page·component·wrapper·테마)에서 레거시 엔진 패키지와 그 wrapper를 import하는 파일이 0개라는 뜻이다. Bklit/shadcn이 생성한 chart source의 실제 하위 의존성 import는 레거시 계수에서 제외하고 경로를 기록한다. 구 Recharts wrapper는 Bklit 도입 이전에 프로젝트가 직접 작성한 recharts 기반 컴포넌트다. 채택 구현이 실제 사용하는 의존성은 무작정 제거하지 않고 필요 경로를 남긴다. 이것은 구 wrapper를 유지할 근거가 아니다.
+6. 범위 밖 레거시 사용처가 남으면 전체 이관 제안·사용자 결정·잔여 route·제거 조건을 기록한다. 차트 소유 참조의 화면별 완료 증거 표를 채운다. 화면 이관률 N/M은 고유 route 기준으로 계산한다. 파일·import 수는 별도로 기록한다. “실제 레거시 잔존 사용처”, “기록된 예외”, “미처리 이관 대상”을 구분하며, 미처리 이관 대상만 전체 대상−이관 완료−기록된 예외로 계산한다. 집계 근거와 다음 이관 범위를 연결하고, 과도기 보고는 “부분 적용: N/M 화면 이관, 나머지 제안 중”으로 한다. 대상 화면의 실제 검증 상태와 전체 이관 미완료를 함께 보고한다. `이관(parity 미실행)`은 미처리 이관 대상에 포함하고 N에서는 제외한다. 실제 레거시 잔존 사용처는 레거시 import가 남은 행 수(= `기록된 예외` + `제안 중`; 두 값이 다르면 인벤토리 상태가 틀린 것이므로 상태를 먼저 고친다)로 센다. `이관(parity 실패)`는 N에서 제외하고 미처리 이관 대상에 포함하며 실패 항목과 수정·재검증 계획을 기록한다. 개별 차트 예외가 있는 route는 `기록된 예외`를 유지하고 이관한 차트의 parity 미실행·실패 항목·사유·해소 계획을 별도로 기록한다. 공존은 과도기 또는 기록된 예외로만 남기고 일부 화면·설치·wrapper 변경을 전체 통일 완료로 보고하지 않는다.
 
-Use [web-quality.md](web-quality.md). Compare the same route, viewport, data and state against the approved comp or existing design authority. Check shared alignment axes, typography, spacing, numerical formatting, and primary action clarity. Include narrow content-failure widths, long text and zoom where relevant, not only two convenient screenshot sizes.
+## 공식 예제 관찰 → 결과 대조
 
-For a new chart or motion direction, compare the selected reference and the artifact using the same representative action and corresponding start, transition, and end states. Record which promised visual and interaction features are present, adapted, or absent, and why. Show the result or replay evidence alongside the reference where practical. Fix missing in-scope features or disclose the gap before delivery. Package installation, import checks, passing test counts, and static screenshots alone do not establish design quality or demonstrate motion. Reuse existing evidence for small changes to approved patterns; this adds no separate approval gate.
+새 차트·모션·그래픽/3D 방향이면 해당 참조에 따라 공식 실행 예제를 직접 조작하고, 같은 데이터/콘텐츠의 동작 시안 정확히 3개와 사용자 선택을 기존 게이트에 통합한다. 신규 디자인의 composition 세 개와 별도 3×3 묶음을 만들지 않는다. 승인 패턴의 작은 수정이면 기존 관찰·선택을 링크하고 변경 상태를 직접 재검증한다. 기록 없는 기존 패턴은 SKILL.md의 새 표현 판정에 따라 “기존 코드 패턴 재사용(미승인): 원 코드·동작 동일성·새 표현 아님 판정 근거·변경 상태 검증”으로 기록한다. 새 표현이 아니면 공식 관찰 이력 부재를 명시하고 기존 코드와 변경 결과를 대조하며, 없는 승인·관찰을 만들어 채우지 않는다.
 
-For reused chart systems, compare different chart types together against the approved theme and information hierarchy, then inspect the changed states individually. Verify selection-to-summary/table correspondence, first/last-point marker and tooltip clipping, period updates, repeated selection/reset, and live reduced-motion changes when affected. Use representative real data before claiming product integration; a sample gallery proves only its demonstrated scope. Keep automated correctness, reviewer findings, and the user's aesthetic decision as separate evidence.
+기록은 DESIGN 또는 gate template의 아래 공통 표를 사용한다. 시안 전에는 대조 결과를 `구현 전`으로 두고 검증 때 실제 결과로 갱신한다. 접근 실패는 공식 영상·문서·소스 등 실제 확인한 대체 근거와 한계·직접 관찰 미실행을 명시한다. [SKILL.md의 공통 원칙](../SKILL.md#공통-원칙)을 따른다. 직접 관찰이 미완료이면 새 방향의 최종 채택과 application source 구현을 보류한다. 접근 가능한 실행본이 있으면 결정을 묻지 않고 직접 조작한다. 접근 불가(URL 응답 실패·로컬 실행 실패의 실제 근거)가 확인된 경우에만 사용자에게 접근 가능한 공식 실행본 확보·공식 소스의 로컬 실행·해당 방향 보류 중 하나를 결정받는다. 대체 자료와 진행 요청은 직접 관찰 완료를 대신하지 않는다. 동작 시안·결과 대조는 생략하지 않는다.
 
-Record one representative user action → visible response → completion result. For performance-sensitive changes, record device/network/cache conditions and measured before/after results. Core Web Vitals field thresholds and lab observations are different evidence; do not claim field INP from a Lighthouse load test.
+| URL | 행동 | 관찰 | 채택 | 대조 결과 |
+|---|---|---|---|---|
+| 공식 예제·관찰일/대체 근거 | 직접 조작 순서 | 시작·전환·끝 또는 미관찰 한계 | 표현·적용 위치 | 구현 전 / present(반영)·adapted(조정)·absent(누락)·미실행 + route·조건·증거·이유 |
 
-Fix observed in-scope issues, rerun affected checks, then finish when acceptance criteria pass. Do not loop indefinitely for arbitrary aesthetic scores. If a required check cannot run, disclose the exact gap; a screenshot or source review is not a substitute. Keep optional polish separate from blocking defects and preserve user-approved intentional findings.
+상세 관찰 기록은 [모션](motion-design.md#공식-예제-관찰과-채택-기록), [그래픽](graphics-production.md#공식-예제-관찰과-채택-기록), [3D](ai-assisted-3d.md#공식-예제-관찰과-채택-기록)의 표를 연결한다. 상세 검증 표는 아래 목적별 소유 참조의 실제 확인/검증 절에 연결하고, 공통 검증 표의 결과 열에는 그 증거를 링크한다. 공통 관찰 표의 대조 결과는 `present(반영) / adapted(조정) / absent(누락)`와 이유·증거로 판정한다. 구현 전·미실행이면 그 상태를 유지한다.
 
-When the user is dissatisfied, use [feedback-improvement.md](feedback-improvement.md) to separate design preference, implementation/asset errors, performance limits, and demonstrated workflow defects. Repair the affected result under existing authorization; a global skill update needs evidence of a reusable instruction problem and applicable scope. Never report user satisfaction from automated checks alone.
+채택한 선/채움·축·tooltip·marker·선택·상태 연결·장면 반응을 승인 시안과 대조한다. 다른 차트 종류에도 승인 theme·위계가 일관되는지, 첫/끝 point clipping·요약/표 연결·기간 변경·재선택/초기화가 맞는지 확인한다. 범위 내 누락은 수정하고 다시 검사한다. import나 패키지 설치는 표현 품질의 증거가 아니다.
+
+## 나머지 목적별 검증
+
+| 대상이 있으면 | 실행·판정 | 소유 참조 |
+|---|---|---|
+| Motion·Anime.js | 실제 import/사용 대상, 속성별 제어 주체 하나, 대표 행동·연속 입력·keyboard/touch·reduced motion·cleanup 확인 | [motion-design.md 실제 확인](motion-design.md#실제-확인) |
+| 그래픽 | 선택한 전달 경로의 재생/seek·sequence decode/cache·실시간 입력·게임 규칙/reset·혼합 장면 전환을 실제 웹에서 확인; 약속한 조작/표현 누락 수정 | [graphics-production.md 상세 검증 표](graphics-production.md#실행-순서와-결과-대조) |
+| 모델·3D | 편집 원본·실제 export·다각도 형상/부품/재질/clip 대조; 앞뒤 scroll·resize·복원·재진입·mobile·reduced motion·로드 실패/fallback 확인 | [ai-assisted-3d.md 자산 검수](ai-assisted-3d.md#6-자산-검수와-최종-웹-대조), [motion-and-3d.md runtime 검증](motion-and-3d.md#검증) |
+| 외부 제작 기능 | 사용자 진술·공식 문서·실제 실행을 구분; 출력 권리/귀속·형식·호스팅·decoder/runtime 요청이 선택 경로와 일치 | [tool-capabilities.md 기능 권한 검증](tool-capabilities.md#기능-권한과-납품-검증) |
+| 홍보·콘텐츠·커머스·B2C | 읽기 순서·HTML 핵심 내용·CTA·탐색/구매/신청 과업·title/description·이미지/폰트 로드 확인; 범위 밖 SEO 이관 금지 | [web-quality.md](web-quality.md) |
+
+성능 영향이 있으면 기기·browser·network·cache·대표 데이터 규모·측정 방법을 조건 열에 추가하고 전후 수치를 남긴다. frame time·입력 반응·seek/decode·자원 증가 중 실제 경로의 비용을 측정한다. 운영 field 데이터와 lab 결과를 구분하며 Lighthouse load test로 field INP나 사용자 만족도를 주장하지 않는다.
+
+## 최종 판정과 인계
+
+1. 대표 행동 → 보이는 반응 → 실제 완료 결과를 기록하고 모드·범위·diff·기존 계약·승인 근거와 일치하는지 확인한다.
+2. 범위 내 결함이면 수정 후 영향받는 검사와 전후 대조를 반복한다. 새 실패·변경 근거 없이 전체 검사를 반복하거나 임의 미적 점수를 달성하려고 무한 수정하지 않는다.
+3. 필수 검사와 수용 기준을 충족하면 실제 결과·route/URL·변경 파일·의도된 예외·계획 이탈·남은 한계를 보고한다. 실패·미실행·부분 이관은 그대로 명시한다.
+4. 사용자가 불만족하면 [feedback-improvement.md](feedback-improvement.md)로 기대/관찰 차이와 원인을 확인해 해당 결과를 수정한다. 자동 검사 결과를 사용자 만족 확인으로 기록하지 않는다.
