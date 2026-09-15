@@ -33,6 +33,7 @@ claude -p --output-format json --json-schema <schema-json>
 | write | `Bash(git push*)` + plan의 `disallowed_tools` |
 | read | `Write,Edit,MultiEdit,NotebookEdit,Bash(git push*),Bash(git commit*)` + plan의 `disallowed_tools` |
 
+- `--json-schema`는 `$schema` 메타 키가 있으면 `no schema with key or ref ...`로 즉시 실패한다. runner가 자산 파일을 읽어 그 키를 제거하고 compact JSON으로 넘긴다. 자산 파일 자체에도 `$schema`를 다시 넣지 않는다. Codex는 같은 파일을 `--output-schema`로 그대로 받는다.
 - `--permission-prompts none`은 prompt가 뜰 상황을 자동 거부로 바꾼다. lane이 `blocked`/`failed`로 끝나면 결과의 `permission_denials`를 먼저 본다.
 - 결과 JSON의 `structured_output`이 lane result다. `session_id`, `total_cost_usd`, `permission_denials`, `usage`도 상태에 기록된다.
 - 재시도: `--resume <session_id>`로 같은 대화를 이어간다. 새 시도는 `--session-id`를 새로 발급한다.
