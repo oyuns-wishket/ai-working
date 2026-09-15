@@ -16,7 +16,7 @@ from urllib.parse import urlsplit
 
 
 REGISTRY_REL = Path("registry/project-registry.json")
-EXCLUDED_PARTS = {"raw", "derived", ".runtime", "omc-inbox", "80-observations"}
+EXCLUDED_PARTS = {"raw", "derived", ".runtime", "omc-inbox", "80-observations", "candidate", ".system"}
 WORD_RE = re.compile(r"[0-9A-Za-z가-힣][0-9A-Za-z가-힣._/-]*")
 FRONTMATTER_KEY = re.compile(r"^([a-z_]+):\s*(.*?)\s*$")
 SOURCE_REF_RE = re.compile(r"^repo:([^@/]+)@([0-9a-fA-F]{7,40})(?:/(.+))?$")
@@ -134,7 +134,16 @@ def find_wiki_root(explicit: str | None = None) -> Path:
     candidates.append(Path.home() / ".config" / "ai-working" / "context-registry")
     for candidate in candidates:
         root = candidate.expanduser().resolve()
-        if (root / REGISTRY_REL).is_file():
+        pointer = root / "registry/knowledge-root.json"
+        if pointer.is_file():
+            try:
+                value = json.loads(pointer.read_text(encoding="utf-8"))
+                root = Path(value["knowledge_root"]).expanduser().resolve()
+                if not knowledge_contract(root):
+                    raise ContextError("adapter points to a missing knowledge contract")
+            except (OSError, KeyError, TypeError, ValueError) as error:
+                raise ContextError(f"invalid knowledge root adapter: {error}") from error
+        if registry_path(root).is_file():
             return root
     checked = ", ".join(str(p.expanduser()) for p in candidates)
     raise ContextError(f"registry not found; checked: {checked}")
@@ -142,11 +151,16 @@ def find_wiki_root(explicit: str | None = None) -> Path:
 
 def load_registry(root: Path) -> dict:
     try:
-        data = json.loads((root / REGISTRY_REL).read_text(encoding="utf-8"))
+        data = json.loads(registry_path(root).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise ContextError(f"invalid registry: {error}") from error
-    if not isinstance(data, dict) or data.get("schema_version") != 1 or not isinstance(data.get("projects"), list):
+    if not isinstance(data, dict) or data.get("schema_version") not in (1, 2) or not isinstance(data.get("projects"), list):
         raise ContextError("unsupported registry schema")
+    if not isinstance(data.get("defaults", {}), dict):
+        raise ContextError("registry defaults must be an object")
+    defaults = data.get("defaults", {}).get("retrieval", {})
+    if not isinstance(defaults, dict):
+        raise ContextError("registry defaults.retrieval must be an object")
     allowed_connections = {"connected", "common-only", "archived", "excluded"}
     for entry in data["projects"]:
         if not isinstance(entry, dict):
@@ -161,7 +175,10 @@ def load_registry(root: Path) -> dict:
             raise ContextError("registry connection_status is invalid")
         if not isinstance(entry.get("wiki_namespace"), (str, type(None))):
             raise ContextError("registry wiki_namespace must be a string or null")
-        retrieval = entry.get("retrieval", {})
+        if not isinstance(entry.get("retrieval", {}), dict):
+            raise ContextError("registry retrieval must be an object")
+        retrieval = {**defaults, **entry.get("retrieval", {})}
+        entry["retrieval"] = retrieval
         if not isinstance(retrieval, dict):
             raise ContextError("registry retrieval must be an object")
         for key, default, maximum in (
@@ -191,6 +208,8 @@ def load_registry(root: Path) -> dict:
                 or any(not isinstance(item, str) for item in documents)
             ):
                 raise ContextError(f"registry intent route {intent!r} is invalid")
+    if data["schema_version"] == 2:
+        validate_registry_v2(data)
     ids = [entry.get("id") for entry in data["projects"]]
     if any(not isinstance(item, str) or not item for item in ids) or len(ids) != len(set(ids)):
         raise ContextError("registry project ids must be non-empty and unique")
@@ -240,6 +259,8 @@ def resolve(project: Path, wiki_root: str | None = None) -> dict:
     }
     if entry is None:
         return {**base, "mode": "repo-only", "reason": "registry entry not found"}
+    if registry["schema_version"] == 2:
+        return resolve_v2(base, entry, root)
     namespace = entry.get("wiki_namespace")
     namespace_path = (root / namespace).resolve() if namespace else None
     index_path = namespace_path / "index.md" if namespace_path else None
@@ -298,6 +319,12 @@ def frontmatter_list(path: Path, key: str) -> list[str]:
         match = FRONTMATTER_KEY.match(line)
         if match:
             active = match.group(1) == key
+            if active and match.group(2).startswith("["):
+                try:
+                    value = json.loads(match.group(2))
+                    return value if isinstance(value, list) and all(isinstance(item, str) for item in value) else []
+                except ValueError:
+                    return []
             continue
         if active:
             item = re.match(r'^\s+-\s+"?(.+?)"?\s*$', line)
@@ -507,6 +534,8 @@ def namespace_health(
 
 
 def routed_documents(resolved: dict, query: str) -> dict:
+    if resolved.get("registry_schema_version") == 2:
+        return routed_v2(resolved, query)
     if resolved.get("mode") != "wiki-bounded":
         return {**resolved, "documents": [], "route_reason": resolved.get("reason", "repo-only")}
     namespace = Path(resolved["namespace_path"])
@@ -684,6 +713,11 @@ def audit_workspace(workspace: Path, wiki_root: str | None = None) -> dict:
 
 def doctor(project: Path, wiki_root: str | None = None) -> dict:
     result = resolve(project, wiki_root)
+    if result.get("registry_schema_version") == 2:
+        route = routed_v2(result, "")
+        return {**route, "healthy": route.get("mode") == "wiki-bounded",
+                "status": "healthy" if route.get("mode") == "wiki-bounded" and not route.get("rejected") else "degraded",
+                "checks": [{"name": "scoped-routing", "ok": route.get("mode") == "wiki-bounded"}]}
     checks = []
     route = None
     checks.append({"name": "registry-match", "ok": result["managed"], "detail": result["matched_by"]})
@@ -758,6 +792,300 @@ def print_result(value: dict | str, compact: bool) -> None:
         print(json.dumps(value, ensure_ascii=False, separators=(",", ":")))
     else:
         print(json.dumps(value, ensure_ascii=False, indent=2))
+
+
+# Registry v2 keeps routing, write ownership, and user-owned notes separate.
+def safe_relative(value: object) -> Path:
+    if not isinstance(value, str) or not value or Path(value).is_absolute() or ".." in Path(value).parts:
+        raise ContextError("unsafe registry/contract path")
+    return Path(value)
+
+
+def knowledge_contract(root: Path) -> dict | None:
+    path = root / ".system/knowledge-contract.json"
+    if not path.is_file():
+        return None
+    try:
+        contract = json.loads(path.read_text(encoding="utf-8"))
+        paths = contract["paths"]
+        if contract["schema_version"] != 2 or not isinstance(paths, dict):
+            raise ValueError("unsupported contract")
+        for key in ("canonical", "candidate", "manual", "registry", "registry_schema", "schema", "template"):
+            relative = safe_relative(paths[key])
+            (root / relative).resolve().relative_to(root.resolve())
+        for key, expected in (("canonical", "sys-wiki"), ("candidate", "candidate"), ("manual", "my-wiki")):
+            if paths[key] != expected:
+                raise ValueError("invalid v2 knowledge roots")
+        return contract
+    except (OSError, KeyError, TypeError, ValueError) as error:
+        raise ContextError(f"invalid knowledge contract: {error}") from error
+
+
+def registry_path(root: Path) -> Path:
+    contract = knowledge_contract(root)
+    if contract:
+        return root / contract["paths"]["registry"]
+    return root / REGISTRY_REL
+
+
+def domain(value: str) -> str:
+    return value.split("/", 1)[0]
+
+
+def validate_registry_v2(data: dict) -> None:
+    for entry in data["projects"]:
+        if not isinstance(entry.get("security_domain"), str):
+            raise ContextError("v2 project security_domain required")
+        scopes = entry.get("read_scopes")
+        bindings = entry.get("manual_read_bindings")
+        if not isinstance(scopes, list) or not isinstance(bindings, list):
+            raise ContextError("v2 read scopes and manual bindings must be arrays")
+        if entry["connection_status"] in {"excluded", "archived"} and (scopes or bindings or entry.get("canonical_write_target")):
+            raise ContextError("excluded project must not grant knowledge access")
+        for scope in scopes:
+            if not isinstance(scope, dict):
+                raise ContextError("invalid read scope")
+            path = safe_relative(scope.get("path"))
+            if path.parts[0] != "sys-wiki" or scope.get("recursive") is not False:
+                raise ContextError("v2 canonical scopes must be flat sys-wiki directories")
+            validate_scope_identity(entry, scope)
+        ids = []
+        for binding in bindings:
+            if not isinstance(binding, dict) or not isinstance(binding.get("id"), str) or not binding["id"]:
+                raise ContextError("manual binding requires a stable document id")
+            path = safe_relative(binding.get("path"))
+            if path.parts[0] != "my-wiki" or path.suffix != ".md":
+                raise ContextError("manual binding must name one my-wiki markdown file")
+            validate_scope_identity(entry, binding)
+            ids.append(binding["id"])
+        if len(ids) != len(set(ids)):
+            raise ContextError("duplicate manual note binding")
+        target = entry.get("canonical_write_target")
+        if target is not None:
+            path = safe_relative(target)
+            if entry["connection_status"] != "connected" or path.parts[0] != "sys-wiki":
+                raise ContextError("canonical write target must be connected sys-wiki")
+            if target != entry.get("wiki_namespace"):
+                raise ContextError("legacy namespace must equal canonical write target")
+            if not any(s["path"] == target and s["customer_scope"] == entry.get("customer_scope") for s in scopes):
+                raise ContextError("write target must be the project's own read scope")
+        elif entry["connection_status"] == "connected":
+            raise ContextError("connected entry requires canonical_write_target")
+
+
+def validate_scope_identity(entry: dict, scope: dict) -> None:
+    scope_domain = scope.get("security_domain")
+    customer = scope.get("customer_scope")
+    if scope_domain not in {"work", "personal", "public"} or domain(entry["security_domain"]) != scope_domain:
+        raise ContextError("read scope security domain differs from project")
+    if not isinstance(customer, str) or not customer:
+        raise ContextError("read scope customer identity required")
+    if customer not in {"common", entry.get("customer_scope")}:
+        raise ContextError("cross-customer read scope")
+    path = safe_relative(scope["path"])
+    if path.parts[0] == "sys-wiki":
+        if customer == "common" and tuple(path.parts) != ("sys-wiki", "aidp"):
+            raise ContextError("common scope must be flat AIDP root")
+        if customer != "common" and tuple(path.parts) != ("sys-wiki", "aidp", customer):
+            raise ContextError("project scope path must match customer identity")
+
+
+def resolve_v2(base: dict, entry: dict, root: Path) -> dict:
+    active = entry["connection_status"] in {"connected", "common-only"}
+    target = entry.get("canonical_write_target")
+    scopes = entry["read_scopes"]
+    for scope in [*scopes, *entry["manual_read_bindings"]]:
+        relative = safe_relative(scope["path"])
+        try:
+            (root / relative).resolve().relative_to(root.resolve())
+        except (OSError, ValueError) as error:
+            raise ContextError("read scope escapes knowledge root") from error
+    namespace = target or (scopes[0]["path"] if scopes else None)
+    return {**base, "project": entry, "registry_schema_version": 2,
+            "knowledge_contract_path": str(root / ".system/knowledge-contract.json") if knowledge_contract(root) else None,
+            "mode": "wiki-bounded" if active and scopes else "repo-only",
+            "reason": "scoped project knowledge" if active and scopes else "no allowed read scope",
+            "canonical_write_target": str(root / target) if target else None,
+            "namespace_path": str(root / namespace) if namespace else None,
+            "index_path": str(root / namespace / "index.md") if namespace else None}
+
+
+def scoped_document(path: Path, root: Path, scope: dict, today: dt.date, *, manual: bool = False) -> tuple[bool, str, dict, str]:
+    try:
+        actual = path.resolve(strict=True)
+        relative = actual.relative_to(root.resolve())
+        expected_root = root / ("my-wiki" if manual else "sys-wiki")
+        actual.relative_to(expected_root.resolve(strict=True))
+        if any(part in EXCLUDED_PARTS for part in relative.parts):
+            return False, "excluded corpus", {}, ""
+        if manual:
+            if actual != (root / scope["path"]).resolve():
+                return False, "unbound manual note", {}, ""
+        elif actual.parent != (root / scope["path"]).resolve():
+            return False, "path escapes flat scope", {}, ""
+        # No unbounded reads from a malformed/generated giant file.
+        if actual.stat().st_size > 2_000_000:
+            return False, "document exceeds scan budget", {}, ""
+        metadata, body = parse_frontmatter(actual)
+        lines = actual.read_text(encoding="utf-8").splitlines()
+        keys = []
+        for line in lines[1:]:
+            if line.strip() == "---":
+                break
+            match = FRONTMATTER_KEY.match(line)
+            if match:
+                keys.append(match[1])
+        if len(keys) != len(set(keys)):
+            return False, "duplicate metadata keys", {}, ""
+    except (OSError, ValueError, UnicodeError):
+        return False, "path escapes or unreadable", {}, ""
+    required = ("id", "title", "security_domain", "review_by", "status")
+    if any(not metadata.get(key) for key in required):
+        return False, "missing required metadata", metadata, body
+    if metadata["security_domain"] != scope["security_domain"] or metadata.get("customer_scope") != scope["customer_scope"]:
+        return False, "document security/customer scope mismatch", metadata, body
+    if manual:
+        if metadata["id"] != scope["id"]:
+            return False, "manual id mismatch", metadata, body
+        if metadata["status"] not in {"canonical", "provisional", "draft"}:
+            return False, "manual status excluded", metadata, body
+    else:
+        if metadata.get("schema_version") != "2" or any(not metadata.get(k) for k in ("owner", "type", "verified_at")):
+            return False, "invalid canonical schema", metadata, body
+        if not re.fullmatch(r"KB-[A-Z0-9][A-Z0-9_-]*", metadata["id"]):
+            return False, "invalid canonical stable id", metadata, body
+        if metadata["type"] not in {"profile", "preference", "charter", "governance", "environment", "workflow", "reference", "business", "domain", "channel", "system", "decision", "delivery", "runbook"} or "related" not in metadata:
+            return False, "invalid canonical type/relations", metadata, body
+        if not frontmatter_list(path, "source_refs"):
+            return False, "canonical source refs missing", metadata, body
+        if metadata["status"] != "canonical":
+            return False, f"status:{metadata['status']}", metadata, body
+    try:
+        review = dt.date.fromisoformat(metadata["review_by"])
+        verified = dt.date.fromisoformat(metadata.get("verified_at", today.isoformat()))
+        if verified > today or verified > review:
+            return False, "invalid verification date", metadata, body
+    except ValueError:
+        return False, "invalid review/verification date", metadata, body
+    if review < today:
+        return False, f"overdue:{review}", metadata, body
+    return True, "explicit-manual-read" if manual else "canonical-current", metadata, body
+
+
+def section_ranges(path: Path, query: str, *, limit: int) -> list[dict]:
+    """Rank sections across the complete file; return actual line ranges and byte cost."""
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    query_tokens = tokens(query)
+    starts = [i for i, line in enumerate(lines) if re.match(r"^#{1,6} ", line)]
+    starts = sorted(set([0, *starts, len(lines)]))
+    ranked = []
+    for start, end in zip(starts, starts[1:]):
+        # Split huge individual sections into small line windows, not just first 12k.
+        cursor = start
+        while cursor < end:
+            stop, size = cursor, 0
+            while stop < end and size + len(lines[stop].encode("utf-8")) <= limit:
+                size += len(lines[stop].encode("utf-8"))
+                stop += 1
+            if stop == cursor:
+                cursor += 1  # one oversized line cannot fit a line-bounded read
+                continue
+            overlap = sorted(query_tokens & tokens("".join(lines[cursor:stop])))
+            if overlap:
+                ranked.append({"line_start": cursor + 1, "line_end": stop, "bytes": size,
+                               "matched_terms": overlap[:12], "score": len(overlap) * 10})
+            cursor = stop
+    return sorted(ranked, key=lambda row: (-row["score"], row["bytes"], row["line_start"]))
+
+
+def routed_v2(resolved: dict, query: str) -> dict:
+    if resolved.get("mode") != "wiki-bounded":
+        return {**resolved, "documents": [], "route_reason": resolved.get("reason", "repo-only")}
+    root = Path(resolved["wiki_root"])
+    entry = resolved["project"]
+    policy = entry["retrieval"]
+    max_documents = policy.get("max_documents", 4)
+    max_bytes = policy.get("max_total_bytes", 80000)
+    section_limit = min(12000, max_bytes)
+    intents, intent_documents = matched_intents(policy, query)
+    today = dt.date.today()
+    rejected, ranked = [], []
+    scopes = [(s, False) for s in entry["read_scopes"]] + [(s, True) for s in entry["manual_read_bindings"]]
+    seen = set()
+    for scope, manual in scopes:
+        paths = [root / scope["path"]] if manual else sorted((root / scope["path"]).glob("*.md"))
+        for path in paths:
+            if path in seen:
+                continue
+            seen.add(path)
+            rel = path.relative_to(root).as_posix()
+            if path.name == "index.md" and not manual:
+                # Indexes are navigation, never semantic evidence or injected context.
+                continue
+            ok, reason, metadata, body = scoped_document(path, root, scope, today, manual=manual)
+            if not ok:
+                rejected.append({"path": rel, "reason": reason})
+                continue
+            source = source_reference_health(path, resolved)
+            if source["missing_commits"] or source["missing_paths"]:
+                rejected.append({"path": rel, "reason": "invalid-source-ref"})
+                continue
+            document = {"path": str(path), "relative_path": rel, "id": metadata["id"], "title": metadata["title"],
+                        "status": metadata["status"], "source_health": source, "read_only": True,
+                        "corpus": "manual" if manual else "canonical", "scope": scope["customer_scope"]}
+            size = path.stat().st_size
+            ranges = section_ranges(path, query, limit=section_limit)
+            overlap = sorted(tokens(query) & tokens(f"{metadata['title']} {body} {path.name}"))
+            intent = path.name in intent_documents or rel in intent_documents
+            score = len(overlap) * 10 + (30 if intent else 0)
+            if not score:
+                continue
+            if not ranges and (intent or overlap):
+                # A title/intent-only match may read the first bounded section.
+                ranges = section_ranges(path, metadata["title"], limit=section_limit)
+            reasons = (["query-overlap"] if overlap else []) + (["intent-route"] if intent else [])
+            ranked.append({**document, "bytes": size, "score": score, "matched_terms": overlap[:12],
+                           "selection_reasons": reasons, "ranges": ranges})
+    # Bare indexes provide navigation without pretending they are verified knowledge.
+    index_path = Path(resolved["index_path"])
+    try:
+        index_path.resolve(strict=True).relative_to(root.resolve())
+        if not index_path.is_file() or index_path.resolve().parent != index_path.parent.resolve():
+            raise ValueError("index escapes scope")
+    except (OSError, ValueError):
+        return {**resolved, "mode": "repo-only", "documents": [], "rejected": rejected,
+                "route_reason": "scoped navigation index missing or escaped"}
+    navigation = {"path": str(index_path), "navigation_only": True, "follow_links": False,
+                  "injected": False}
+    selected, used = [], 0
+    for document in sorted(ranked, key=lambda d: (-d["score"], d["bytes"], d["relative_path"])):
+        if len(selected) >= max_documents:
+            break
+        remaining = max_bytes - used
+        ranges = document.pop("ranges")
+        if document["bytes"] <= min(section_limit, remaining):
+            document["read_mode"] = "document"
+        else:
+            chosen = []
+            for row in ranges:
+                if row["bytes"] <= remaining:
+                    chosen.append(row)
+                    remaining -= row["bytes"]
+                    if len(chosen) == 3:
+                        break
+            if not chosen:
+                rejected.append({"path": document["relative_path"], "reason": "no matching section fits budget"})
+                continue
+            document["read_mode"] = "sections"
+            document["sections"] = sorted(chosen, key=lambda row: row["line_start"])
+            document["bytes"] = sum(row["bytes"] for row in chosen)
+        used += document["bytes"]
+        selected.append(document)
+    return {**resolved, "index_document": None, "navigation": navigation, "query_documents": selected, "documents": selected,
+            "index_counts_toward_document_limit": False, "query": query, "matched_intents": intents,
+            "selected_bytes": used, "rejected": rejected,
+            "route_reason": "bounded scoped retrieval" if selected else "no relevant current document; use repository context",
+            "knowledge_health": {"status": "degraded" if rejected else "healthy", "rejected_count": len(rejected)}}
 
 
 def main() -> int:

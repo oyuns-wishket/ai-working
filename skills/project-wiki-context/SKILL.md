@@ -20,7 +20,7 @@ python3 <ai-working-root>/skills/project-wiki-context/scripts/wiki_context.py re
 python3 <ai-working-root>/skills/project-wiki-context/scripts/wiki_context.py route --project "$PWD" --query "<task>"
 ```
 
-Use only documents returned by `route`. The resolver rejects stale, contested, malformed, oversized, escaped, or unregistered content and returns routing evidence rather than dumping the entire knowledge tree. Continue repository-only when resolution is unavailable or unhealthy and report that limitation.
+Use only documents returned by `route`. For `read_mode:sections`, read only the returned inclusive line ranges; never expand them to the full file. Version 2 indexes are navigation-only and must not be injected or followed into other project folders. The resolver rejects stale, contested, malformed, oversized, escaped, or unregistered content and returns routing evidence rather than dumping the entire knowledge tree. Continue repository-only when resolution is unavailable or unhealthy and report that limitation.
 
 ## Diagnose
 
@@ -36,6 +36,6 @@ Report duplicate, stale or conflicting knowledge as read-only findings; diagnosi
 ## Authority and safety
 
 - Current repository and live project-owned infrastructure win when knowledge conflicts.
-- Never read broad raw/derived ingestion areas during ordinary work.
+- Never read raw, derived, candidate or observation areas during ordinary work. `my-wiki` is read-only and only exact explicit bindings may be read; project tags alone do not authorize access.
 - Never copy secrets, credentials, personal data, or customer-only payloads into output or public Git.
 - Registry edits and wiki proposals are separate writes and require the authorization applicable to their owning repository.

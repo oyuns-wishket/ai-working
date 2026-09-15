@@ -2,6 +2,10 @@
 
 Select a mode only after reading the target wiki's governing rules. The target contract overrides these defaults.
 
+## V2 contract mode — canonical system knowledge
+
+Prefer this mode when the owner declares `.system/knowledge-contract.json`. Use its canonical schema/template/validator and the registry's `canonical_write_target`; never write `my-wiki`, even if it is explicitly linked for reading. Preserve stable topic ID, provenance, security domain, customer scope and actual verification dates. Search and update the existing topic; create only a new topic. The same owner validator applies to scheduled automatic ingestion and development closeout. The raw pipeline runs independently and does not invoke the interactive knowns approval workflow for each batch.
+
 ## Mode A — immutable source to compiled wiki
 
 Use when the knowledge base has `raw/` or `raw/sources/` plus a curated `wiki/`.

@@ -172,6 +172,12 @@ def discover_wiki_candidates(rule_files: Sequence[Path], project_root: Path) -> 
         root = determine_wiki_root(resolved)
         if root == project_root:
             return None
+        if (root / ".system/knowledge-contract.json").is_file():
+            try:
+                resolved.relative_to(root / "my-wiki")
+                return None  # an explicit read link never becomes a write destination
+            except ValueError:
+                pass
         if resolved.is_file() and (root / ".obsidian").is_dir():
             try:
                 relative = resolved.relative_to(root)
@@ -183,7 +189,7 @@ def discover_wiki_candidates(rule_files: Sequence[Path], project_root: Path) -> 
                 and resolved.name not in STANDARD_RULE_NAMES
             ):
                 return resolved
-        has_wiki_shape = (root / "wiki").is_dir() or (root / "raw").is_dir()
+        has_wiki_shape = (root / "wiki").is_dir() or (root / "raw").is_dir() or (root / "sys-wiki").is_dir()
         named_like_wiki = any(
             term in part.lower()
             for part in root.parts
@@ -252,7 +258,8 @@ def registry_wiki_candidate(project_root: Path) -> Optional[Dict[str, object]]:
     except json.JSONDecodeError:
         return None
     project = payload.get("project") or {}
-    namespace = payload.get("namespace_path")
+    namespace = (payload.get("canonical_write_target") if payload.get("registry_schema_version") == 2
+                 else payload.get("namespace_path"))
     if payload.get("mode") != "wiki-bounded" or not namespace:
         return None
     target = Path(namespace).resolve()
@@ -265,6 +272,9 @@ def registry_wiki_candidate(project_root: Path) -> Optional[Dict[str, object]]:
         ],
         "kind": "registry-namespace",
         "project_id": project.get("id"),
+        "canonical_write_target": str(target),
+        "knowledge_contract_path": payload.get("knowledge_contract_path"),
+        "registry_schema_version": payload.get("registry_schema_version", 1),
     }
 
 
@@ -334,6 +344,18 @@ def relative_depth(path: Path, root: Path) -> int:
 
 def seed_wiki_rules(root: Path, target: Path) -> Set[Path]:
     seeds: Set[Path] = set(standard_rules_at(root))
+    contract = discover_knowledge_contract(root)
+    if contract:
+        seeds.add(root / ".system/knowledge-contract.json")
+        for key in ("schema", "template", "registry_schema"):
+            path = root / contract["paths"][key]
+            if path.is_file():
+                seeds.add(path)
+        for path in (root / ".system/scripts/kb_check.py", root / ".system/pipelines/canonical.py"):
+            if path.is_file():
+                seeds.add(path)
+        # v2 rules are explicit; do not traverse unrelated notes or raw/candidates.
+        return seeds
     target_directory = target.parent if target.is_file() else target
     if root == target_directory or root in target_directory.parents:
         relative = target_directory.relative_to(root)
@@ -349,7 +371,7 @@ def seed_wiki_rules(root: Path, target: Path) -> Set[Path]:
         child_directories[:] = [
             name
             for name in child_directories
-            if name not in {".git", "raw", "evidence", "node_modules", ".next"}
+            if name not in {".git", "raw", "candidate", "my-wiki", "evidence", "node_modules", ".next"}
             and depth < 5
         ]
         if depth > 5:
@@ -424,6 +446,36 @@ def collect_wiki_rules(root: Path, target: Path) -> List[Path]:
     return sorted(collected)
 
 
+def discover_knowledge_contract(root: Path) -> Optional[dict]:
+    path = root / ".system/knowledge-contract.json"
+    if not path.is_file():
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        if value.get("schema_version") != 2 or value["paths"]["canonical"] != "sys-wiki" or value["paths"]["manual"] != "my-wiki":
+            raise ValueError("unsupported knowledge contract")
+        for key in ("canonical", "candidate", "manual", "schema", "template", "registry", "registry_schema"):
+            relative = Path(value["paths"][key])
+            if relative.is_absolute() or ".." in relative.parts:
+                raise ValueError("unsafe contract path")
+            (root / relative).resolve().relative_to(root.resolve())
+        return value
+    except (KeyError, TypeError, ValueError, OSError) as error:
+        raise ValueError(f"Invalid owning knowledge contract: {error}") from error
+
+
+def validate_canonical_write_target(root: Path, target: Path, allowed: Path) -> None:
+    """A bound manual note and a read scope are never a canonical write grant."""
+    canonical = (root / "sys-wiki").resolve()
+    try:
+        allowed.resolve().relative_to(canonical)
+        target.resolve().relative_to(allowed.resolve())
+    except ValueError as error:
+        raise ValueError("Write target must stay inside the registered sys-wiki canonical target") from error
+    if "my-wiki" in target.relative_to(root).parts:
+        raise ValueError("my-wiki is user-owned and never an ingest target")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", required=True, help="Active project path")
@@ -453,6 +505,15 @@ def main() -> int:
         if not wiki_target.exists():
             raise SystemExit(f"Wiki path does not exist: {wiki_target}")
         wiki_root = determine_wiki_root(wiki_target)
+        contract = discover_knowledge_contract(wiki_root)
+        if contract:
+            registry = registry_wiki_candidate(project_root)
+            if not registry or registry.get("registry_schema_version") != 2:
+                raise SystemExit("No explicit canonical write target for this v2 wiki")
+            allowed = Path(str(registry["canonical_write_target"]))
+            validate_canonical_write_target(wiki_root, wiki_target, allowed)
+            result["canonical_write_target"] = str(allowed)
+            result["knowledge_contract"] = contract
         result.update(
             {
                 "wiki_target": str(wiki_target),

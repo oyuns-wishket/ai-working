@@ -57,7 +57,8 @@ python3 <knowns-root>/scripts/inspect_context.py \
 ```
 
 4. project 규칙 또는 machine-local registry가 canonical Git remote로 명시 연결한 namespace만 후보로 인정한다.
-5. 후보가 없으면 `no-explicit-wiki-link`로 종료한다. 여러 후보면 별도 질문하지 말고 추천 대상과 대안을 단일 묶음에 포함한다.
+5. v2 위키는 owning `.system/knowledge-contract.json`의 schema/template/validator와 registry의 `canonical_write_target`을 사용한다. 읽기 범위나 `my-wiki` 연결을 쓰기 대상으로 해석하지 않는다.
+6. 후보가 없으면 `no-explicit-wiki-link`로 종료한다. 여러 후보면 별도 질문하지 말고 추천 대상과 대안을 단일 묶음에 포함한다.
 
 세부 탐색은 [`references/rule-discovery.md`](references/rule-discovery.md)를 따른다.
 
@@ -131,7 +132,8 @@ index와 이번 주제의 기존 note만 읽고 wiki 전체를 재귀 탐색하�
 
 - raw/source가 필요한 wiki는 선택된 source snapshot을 새 파일로 추가한 뒤 수정·이동·삭제하지 않는다.
 - 기존 정본을 먼저 갱신하고 새 주제일 때만 새 note를 만든다.
-- 출처, Git SHA, 날짜, status, sensitivity, review metadata는 wiki schema를 따른다.
+- 출처, Git SHA, 날짜, status, sensitivity, review metadata는 wiki schema를 따른다. v2는 위키가 소유한 공통 양식·검증기로 자동 ingest와 동일하게 처리하고, security_domain과 customer_scope를 보존한다.
+- `my-wiki`는 명시 읽기 연결이 있어도 knowns의 생성·수정 대상이 아니다. 연결된 정본 쓰기 디렉터리 밖으로 확대하지 않는다.
 - 충돌은 조용히 덮지 않고 contested/contradiction 절차를 따른다.
 - index·log·manifest·HANDOFF가 계약에 포함되면 같은 pass에서 갱신한다.
 - 승인된 단일 묶음 범위 밖 변경이 필요하면 write를 멈추고 `blocked`로 보고한다.

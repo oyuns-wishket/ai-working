@@ -61,3 +61,7 @@ Higher priority cannot silently authorize a write that a lower-level target gove
 - Search by task concepts, file paths, issue number, domain terms, and current Git SHA.
 - Do not scan an entire vault or `raw/` tree without a governing rule that requires it.
 - Record every rule file used in the final write plan so the user can verify the interpretation.
+
+## V2 canonical write discovery
+
+When the owning wiki provides `.system/knowledge-contract.json`, resolve the registry `canonical_write_target` separately from all read scopes. Read the owner schema/template and validator instead of copying a canonical template into this skill. A common-only read or an exact my-wiki binding is not a closeout target. V2 writes stay within the registered sys-wiki target, including after symlink resolution; never fall back to Mode B for a user-owned note. V2 discovery reads explicit governing files and does not recursively scan canonical, candidate or manual content for rules.
