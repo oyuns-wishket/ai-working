@@ -166,6 +166,10 @@ primary worktree, 다른 세션이 쓰는 경로, 미커밋·미병합 변경은
 
 별도 task worktree를 만들거나 사용하지 않았다면 질문하지 말고 `정리 대상 worktree 없음`이라고 보고한다.
 
+### Wiki 활용 기록
+
+이번 작업의 `project-wiki-context` 조회가 trace ID를 반환했다면 검증 후 같은 trace에 실제 사용·미사용·누락·오류 결과를 기록한다. 절차는 [retrieval feedback](../project-wiki-context/references/retrieval-feedback.md)을 따른다. 문서가 검색됐다는 이유만으로 도움이 됐다고 판정하지 않고, 기존 검증 산출물에 판단 근거와 trace ID를 연결한다. 사용자 확인을 추가로 요구하지 않으며, 관측이 없거나 기록을 남길 수 없으면 unknown으로 남긴다. 이전 세션 trace를 추정해 연결하거나 wiki 관리·평가 결과를 실제 개발 성과로 합산하지 않는다.
+
 ### 5.5 HANDOFF
 
 `docs/handoff/HANDOFF.md`가 있으면 `Next actions`, `Decisions & context`, `Open items & blockers`를 갱신한다.

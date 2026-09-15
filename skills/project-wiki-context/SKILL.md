@@ -17,12 +17,16 @@ Point `AI_WORKING_CONTEXT_REGISTRY_PATH` at a machine-local or project-owned reg
 
 ```bash
 python3 <ai-working-root>/skills/project-wiki-context/scripts/wiki_context.py resolve --project "$PWD"
-python3 <ai-working-root>/skills/project-wiki-context/scripts/wiki_context.py route --project "$PWD" --query "<task>"
+python3 <ai-working-root>/skills/project-wiki-context/scripts/wiki_context.py route --project "$PWD" --query "<task>" --record --sample-kind development
 ```
 
 Use only documents returned by `route`. For `read_mode:sections`, read only the returned inclusive line ranges; never expand them to the full file. Version 2 indexes are navigation-only and must not be injected or followed into other project folders. The resolver rejects stale, contested, malformed, oversized, escaped, or unregistered content and returns routing evidence rather than dumping the entire knowledge tree. Continue repository-only when resolution is unavailable or unhealthy and report that limitation.
 
 V2 searches title/body plus bounded `aliases` and `tags`, including Korean spacing variants. A selected canonical result may bring at most one current related note into spare document/byte budget; `related_via` identifies the seed. Do not follow more links yourself. Manual notes cannot seed or receive this expansion. The owning contract may declare one level of business categories inside an already authorized namespace; undeclared folders remain unread.
+
+## Observe actual use
+
+For substantive development, retain the returned `retrieval_feedback.trace_id` with the current task and close it using [retrieval feedback](references/retrieval-feedback.md) after verification. Record `used` only for selected knowledge that actually influenced a checked decision; returned documents alone are not proof of use. Report missing, incorrect or outdated knowledge when observed. Unknown and absent feedback remain unknown. Use `evaluation` for test queries and `maintenance` for wiki management so neither inflates development results. A trace failure never blocks development. Omitting `--record` keeps the route command read-only.
 
 ## Diagnose
 

@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -1206,6 +1208,7 @@ def routed_v2(resolved: dict, query: str) -> dict:
                 continue
             document = {"path": str(path), "relative_path": rel, "id": metadata["id"], "title": metadata["title"],
                         "status": metadata["status"], "source_health": source, "read_only": True,
+                        "body_sha256": hashlib.sha256(body.encode("utf-8")).hexdigest(),
                         "corpus": "manual" if manual else "canonical", "scope": scope["customer_scope"]}
             try:
                 aliases = bounded_metadata_list(path, "aliases", 8)
@@ -1324,9 +1327,22 @@ def main() -> int:
     route_parser = subparsers.add_parser("route")
     route_parser.add_argument("--project", default=".")
     route_parser.add_argument("--query", required=True)
+    route_parser.add_argument("--record", action="store_true", help="record a private content-free retrieval trace")
+    route_parser.add_argument("--sample-kind", choices=("development", "evaluation", "maintenance"), default="development")
     audit_parser = subparsers.add_parser("audit")
     audit_parser.add_argument("--workspace", default=str(Path.home() / "projects"))
     args = parser.parse_args()
+    started = time.perf_counter()
+
+    def with_trace(value):
+        if args.command == "route" and args.record:
+            try:
+                from retrieval_feedback import record_route
+                value["retrieval_feedback"] = record_route(value, args.query, (time.perf_counter()-started)*1000, args.sample_kind)
+            except (OSError, ValueError, KeyError, TypeError):
+                value["retrieval_feedback"] = {"status": "unavailable", "reason": "private trace could not be recorded; retrieval remains usable"}
+        return value
+
     try:
         if args.command == "resolve":
             value = resolve(Path(args.project), args.wiki_root)
@@ -1338,7 +1354,7 @@ def main() -> int:
             value = compact_hook(resolve(Path(args.project), args.wiki_root))
         else:
             value = audit_workspace(Path(args.workspace), args.wiki_root)
-        print_result(value, args.compact)
+        print_result(with_trace(value), args.compact)
         if isinstance(value, dict) and args.command == "doctor" and not value.get("healthy"):
             return 1
         if isinstance(value, dict) and args.command == "audit" and value.get("unclassified_count"):
@@ -1357,7 +1373,7 @@ def main() -> int:
         if args.command == "hook":
             return 0
         if args.command in {"resolve", "route"}:
-            print_result(fallback, args.compact)
+            print_result(with_trace(fallback), args.compact)
             return 0
         print(json.dumps(fallback, ensure_ascii=False), file=sys.stderr)
         return 2
