@@ -167,6 +167,12 @@ class V2Tests(unittest.TestCase):
         with self.assertRaises(M.ContextError):
             M.find_wiki_root(str(adapter.parent))
 
+    def test_fifo_is_rejected_without_waiting_for_a_writer(self):
+        path = self.root / "sys-wiki/aidp/alpha/pipe.md"
+        os.mkfifo(path)
+        self.assertFalse(self.selected(self.route()))
+        self.assertEqual(self.route()["rejected"][0]["reason"], "not a regular document")
+
     def test_owner_qualified_repository_source_is_actually_checked(self):
         path = self.root / "sys-wiki/aidp/alpha/rules.md"
         note(path)

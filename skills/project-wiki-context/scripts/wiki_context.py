@@ -925,6 +925,8 @@ def scoped_document(path: Path, root: Path, scope: dict, today: dt.date, *, manu
                 return False, "unbound manual note", {}, ""
         elif actual.parent != (root / scope["path"]).resolve():
             return False, "path escapes flat scope", {}, ""
+        if not actual.is_file():
+            return False, "not a regular document", {}, ""
         # No unbounded reads from a malformed/generated giant file.
         if actual.stat().st_size > 2_000_000:
             return False, "document exceeds scan budget", {}, ""
