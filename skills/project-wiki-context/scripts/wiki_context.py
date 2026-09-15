@@ -803,6 +803,52 @@ def safe_relative(value: object) -> Path:
     return Path(value)
 
 
+def validate_sections(value: object) -> list[dict]:
+    if not isinstance(value, list) or len(value) > 12:
+        raise ValueError("canonical sections must contain at most twelve entries")
+    seen = set()
+    for section in value:
+        if not isinstance(section, dict) or (not {"slug", "title"} <= set(section) or set(section) - {"slug", "title", "description", "terms"}):
+            raise ValueError("invalid canonical section fields")
+        slug = section["slug"]
+        if not isinstance(slug, str) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug) or len(slug) > 64 or slug in seen or slug in {"raw", "candidate", "my-wiki", "sys-wiki", "aidp", "index"}:
+            raise ValueError("unsafe or duplicate canonical section slug")
+        seen.add(slug)
+        for key, maximum in (("title", 80), ("description", 500)):
+            text = section.get(key, "")
+            if not isinstance(text, str) or (key == "title" and not text.strip()) or len(text) > maximum or any(ord(c) < 32 for c in text):
+                raise ValueError("invalid canonical section text")
+        terms = section.get("terms", [])
+        if not isinstance(terms, list) or len(terms) > 8 or any(not isinstance(t, str) or not t.strip() or len(t) > 80 or any(ord(c) < 32 for c in t) for t in terms):
+            raise ValueError("invalid canonical section terms")
+        if len(terms) != len({term.strip().casefold() for term in terms}):
+            raise ValueError("duplicate canonical section terms")
+    return value
+
+
+def no_symlink_directory(root: Path, relative: Path) -> Path:
+    path = root
+    for part in relative.parts:
+        path = path / part
+        if path.is_symlink() or (path.exists() and not path.is_dir()):
+            raise ValueError("canonical directory is a symlink or not a directory")
+    path.resolve().relative_to(root.resolve())
+    return path
+
+
+def scoped_directories(root: Path, scope: dict, contract: dict | None) -> list[Path]:
+    """An existing scope grants access; the contract only bounds its child directories."""
+    namespace = scope["path"]
+    sections = (contract or {}).get("canonical_sections", {}).get(namespace)
+    if sections is None:
+        relative = Path(namespace)
+        own_project = (len(relative.parts) == 3 and relative.parts[:2] == ("sys-wiki", "aidp")
+                       and relative.parts[2] == scope["customer_scope"] and scope["customer_scope"] != "common")
+        sections = (contract or {}).get("default_project_sections", []) if own_project else []
+    return [no_symlink_directory(root, Path(namespace)),
+            *(no_symlink_directory(root, Path(namespace) / section["slug"]) for section in sections)]
+
+
 def knowledge_contract(root: Path) -> dict | None:
     path = root / ".system/knowledge-contract.json"
     if not path.is_file():
@@ -818,6 +864,22 @@ def knowledge_contract(root: Path) -> dict | None:
         for key, expected in (("canonical", "sys-wiki"), ("candidate", "candidate"), ("manual", "my-wiki")):
             if paths[key] != expected:
                 raise ValueError("invalid v2 knowledge roots")
+        sections = contract.get("canonical_sections", {})
+        if not isinstance(sections, dict) or len(sections) > 1000:
+            raise ValueError("canonical_sections must be a namespace map")
+        for namespace, rows in sections.items():
+            relative = safe_relative(namespace)
+            parts = relative.parts
+            if not parts or parts[-1] in {"raw", "candidate", "my-wiki", "sys-wiki", "aidp", "index"} or namespace != relative.as_posix() or not (
+                    (len(parts) == 3 and parts[:2] == ("sys-wiki", "aidp"))
+                    or (len(parts) == 2 and parts[0] == "sys-wiki" and parts[1] != "aidp")) or any(
+                    not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", part) or len(part) > 64 for part in parts[1:]):
+                raise ValueError("canonical section namespace must name a canonical project root")
+            no_symlink_directory(root, relative)
+            for section in validate_sections(rows):
+                no_symlink_directory(root, relative / section["slug"])
+        if "default_project_sections" in contract:
+            validate_sections(contract["default_project_sections"])
         return contract
     except (OSError, KeyError, TypeError, ValueError) as error:
         raise ContextError(f"invalid knowledge contract: {error}") from error
@@ -912,7 +974,7 @@ def resolve_v2(base: dict, entry: dict, root: Path) -> dict:
             "index_path": str(root / namespace / "index.md") if namespace else None}
 
 
-def scoped_document(path: Path, root: Path, scope: dict, today: dt.date, *, manual: bool = False) -> tuple[bool, str, dict, str]:
+def scoped_document(path: Path, root: Path, scope: dict, today: dt.date, *, manual: bool = False, allowed_parents: list[Path] | None = None) -> tuple[bool, str, dict, str]:
     try:
         actual = path.resolve(strict=True)
         relative = actual.relative_to(root.resolve())
@@ -923,8 +985,8 @@ def scoped_document(path: Path, root: Path, scope: dict, today: dt.date, *, manu
         if manual:
             if actual != (root / scope["path"]).resolve():
                 return False, "unbound manual note", {}, ""
-        elif actual.parent != (root / scope["path"]).resolve():
-            return False, "path escapes flat scope", {}, ""
+        elif path.is_symlink() or actual.parent not in {parent.resolve() for parent in (allowed_parents or [root / scope["path"]])}:
+            return False, "path escapes declared scope or is a symlink", {}, ""
         if not actual.is_file():
             return False, "not a regular document", {}, ""
         # No unbounded reads from a malformed/generated giant file.
@@ -976,12 +1038,110 @@ def scoped_document(path: Path, root: Path, scope: dict, today: dt.date, *, manu
     return True, "explicit-manual-read" if manual else "canonical-current", metadata, body
 
 
-def section_ranges(path: Path, query: str, *, limit: int) -> list[dict]:
+def bounded_metadata_list(path: Path, key: str, maximum: int) -> list[str]:
+    """Read the supported flat YAML list without silently accepting malformed values."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    value, block = None, []
+    active = False
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        match = FRONTMATTER_KEY.match(line)
+        if match:
+            active = match[1] == key
+            if active:
+                value = match[2]
+            continue
+        if active and line.strip():
+            item = re.fullmatch(r"  - (.+)", line)
+            if not item:
+                raise ValueError(f"invalid metadata list:{key}")
+            block.append(item[1])
+    if value is None:
+        return []
+    if value:
+        try:
+            items = json.loads(value)
+        except ValueError:
+            raise ValueError(f"invalid metadata list:{key}") from None
+        if block:
+            raise ValueError(f"invalid metadata list:{key}")
+    else:
+        items = []
+        for item in block:
+            item = item.strip()
+            if item in {"[]", "{}", "null", "true", "false"} or item.startswith(('"', "[")):
+                try:
+                    item = json.loads(item)
+                except ValueError:
+                    raise ValueError(f"invalid metadata list:{key}") from None
+            elif item.startswith("'") and item.endswith("'"):
+                item = item[1:-1].replace("''", "'")
+            elif item.isdigit():
+                item = int(item)
+            items.append(item)
+    if (not isinstance(items, list) or len(items) > maximum
+            or any(not isinstance(item, str) or not item.strip() or len(item) > 80
+                   or any(ord(char) < 32 for char in item) for item in items)
+            or len({item.strip().casefold() for item in items}) != len(items)):
+        raise ValueError(f"invalid metadata list:{key}")
+    return items
+
+
+def phrase_matches(phrase: str, text: str) -> bool:
+    """Whole phrases tolerate Korean spacing and common postpositions, not substrings."""
+    phrase = " ".join(phrase.lower().split())
+    if not phrase:
+        return False
+    compact = phrase.replace(" ", "")
+    if re.fullmatch(r"[가-힣]{4,80}", compact):
+        pattern = r"\s*".join(map(re.escape, compact))
+        suffix = r"(?:에서는|으로|에서|부터|까지|은|는|이|가|을|를|에|의|로|과|와|도|만)?"
+    else:
+        pattern = r"\s+".join(re.escape(part) for part in phrase.split())
+        suffix = ""
+    return bool(re.search(r"(?<![\w])" + pattern + suffix + r"(?![\w])", text.lower()))
+
+
+def matched_search_phrases(values: list[str], query: str) -> list[str]:
+    matches, seen = [], set()
+    for value in values:
+        normalized = " ".join(value.casefold().split())
+        compact = normalized.replace(" ", "")
+        key = compact if re.fullmatch(r"[가-힣]{4,80}", compact) else normalized
+        if key not in seen and phrase_matches(value, query):
+            matches.append(value)
+            seen.add(key)
+    return matches
+
+
+def spacing_terms(query: str) -> list[str]:
+    """At most sixteen short Korean phrase candidates, never arbitrary substrings."""
+    words = list(re.finditer(r"[가-힣]+", query[:2000]))[:24]
+    result = []
+    for width in (1, 2, 3):
+        for index in range(len(words) - width + 1):
+            group = words[index:index + width]
+            if any(query[a.end():b.start()].strip() for a, b in zip(group, group[1:])):
+                continue
+            phrase = "".join(word[0] for word in group)
+            if 4 <= len(phrase) <= 24 and phrase not in result:
+                result.append(phrase)
+                if len(result) == 16:
+                    return result
+    return result
+
+
+def section_ranges(path: Path, query: str, *, limit: int, fallback: bool = False) -> list[dict]:
     """Rank sections across the complete file; return actual line ranges and byte cost."""
     lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
     query_tokens = tokens(query)
     starts = [i for i, line in enumerate(lines) if re.match(r"^#{1,6} ", line)]
-    starts = sorted(set([0, *starts, len(lines)]))
+    body_start = 0
+    if lines and lines[0].strip() == "---":
+        body_start = next((i + 1 for i in range(1, len(lines)) if lines[i].strip() == "---"), len(lines))
+    starts = sorted(set([body_start, *(i for i in starts if i >= body_start), len(lines)]))
+    spacing = spacing_terms(query)
     ranked = []
     for start, end in zip(starts, starts[1:]):
         # Split huge individual sections into small line windows, not just first 12k.
@@ -994,12 +1154,14 @@ def section_ranges(path: Path, query: str, *, limit: int) -> list[dict]:
             if stop == cursor:
                 cursor += 1  # one oversized line cannot fit a line-bounded read
                 continue
-            overlap = sorted(query_tokens & tokens("".join(lines[cursor:stop])))
-            if overlap:
+            window = "".join(lines[cursor:stop])
+            overlap = sorted(query_tokens & tokens(window))
+            phrases = [term for term in spacing if phrase_matches(term, window)]
+            if overlap or phrases or fallback:
                 ranked.append({"line_start": cursor + 1, "line_end": stop, "bytes": size,
-                               "matched_terms": overlap[:12], "score": len(overlap) * 10})
+                               "matched_terms": overlap[:12], "score": len(overlap) * 10 + len(phrases) * 10})
             cursor = stop
-    return sorted(ranked, key=lambda row: (-row["score"], row["bytes"], row["line_start"]))
+    return sorted(ranked, key=lambda row: (-row["score"], row["line_start"] if fallback else row["bytes"], row["line_start"]))
 
 
 def routed_v2(resolved: dict, query: str) -> dict:
@@ -1013,11 +1175,17 @@ def routed_v2(resolved: dict, query: str) -> dict:
     section_limit = min(12000, max_bytes)
     intents, intent_documents = matched_intents(policy, query)
     today = dt.date.today()
-    rejected, ranked = [], []
+    contract = knowledge_contract(root)
+    rejected, ranked, eligible, id_paths = [], [], {}, {}
+    spacing = spacing_terms(query)
     scopes = [(s, False) for s in entry["read_scopes"]] + [(s, True) for s in entry["manual_read_bindings"]]
     seen = set()
     for scope, manual in scopes:
-        paths = [root / scope["path"]] if manual else sorted((root / scope["path"]).glob("*.md"))
+        try:
+            parents = [] if manual else scoped_directories(root, scope, contract)
+        except (ValueError, OSError) as error:
+            raise ContextError(f"invalid scoped directories: {error}") from error
+        paths = [root / scope["path"]] if manual else sorted(path for parent in parents for path in parent.glob("*.md"))
         for path in paths:
             if path in seen:
                 continue
@@ -1026,7 +1194,9 @@ def routed_v2(resolved: dict, query: str) -> dict:
             if path.name == "index.md" and not manual:
                 # Indexes are navigation, never semantic evidence or injected context.
                 continue
-            ok, reason, metadata, body = scoped_document(path, root, scope, today, manual=manual)
+            ok, reason, metadata, body = scoped_document(path, root, scope, today, manual=manual, allowed_parents=parents)
+            if metadata.get("id"):
+                id_paths.setdefault(metadata["id"], set()).add(rel)
             if not ok:
                 rejected.append({"path": rel, "reason": reason})
                 continue
@@ -1037,19 +1207,38 @@ def routed_v2(resolved: dict, query: str) -> dict:
             document = {"path": str(path), "relative_path": rel, "id": metadata["id"], "title": metadata["title"],
                         "status": metadata["status"], "source_health": source, "read_only": True,
                         "corpus": "manual" if manual else "canonical", "scope": scope["customer_scope"]}
-            size = path.stat().st_size
-            ranges = section_ranges(path, query, limit=section_limit)
-            overlap = sorted(tokens(query) & tokens(f"{metadata['title']} {body} {path.name}"))
-            intent = path.name in intent_documents or rel in intent_documents
-            score = len(overlap) * 10 + (30 if intent else 0)
-            if not score:
+            try:
+                aliases = bounded_metadata_list(path, "aliases", 8)
+                tags = bounded_metadata_list(path, "tags", 8)
+                related = bounded_metadata_list(path, "related", 6) if not manual else []
+                if any(not re.fullmatch(r"KB-[A-Z0-9][A-Z0-9_-]*", item) or item == metadata["id"] for item in related):
+                    raise ValueError("invalid canonical relations")
+            except ValueError as exc:
+                rejected.append({"path": rel, "reason": str(exc)})
                 continue
-            if not ranges and (intent or overlap):
-                # A title/intent-only match may read the first bounded section.
-                ranges = section_ranges(path, metadata["title"], limit=section_limit)
-            reasons = (["query-overlap"] if overlap else []) + (["intent-route"] if intent else [])
-            ranked.append({**document, "bytes": size, "score": score, "matched_terms": overlap[:12],
-                           "selection_reasons": reasons, "ranges": ranges})
+            overlap = sorted(tokens(query) & tokens(f"{metadata['title']} {body} {path.name}"))
+            phrases = [term for term in spacing if phrase_matches(term, f"{metadata['title']} {body}")]
+            alias_matches = matched_search_phrases(aliases, query)
+            tag_matches = matched_search_phrases(tags, query)
+            intent = path.name in intent_documents or rel in intent_documents
+            if not manual:
+                intent = intent or path.relative_to(root / scope["path"]).as_posix() in intent_documents
+            score = len(overlap) * 10 + min(2, len(phrases)) * 10 + (30 if intent else 0)
+            score += min(2, len(alias_matches)) * 30 + min(2, len(tag_matches)) * 20
+            reasons = (["query-overlap"] if overlap else []) + (["spacing-phrase"] if phrases else [])
+            reasons += (["alias-match"] if alias_matches else []) + (["tag-match"] if tag_matches else []) + (["intent-route"] if intent else [])
+            document.update(bytes=path.stat().st_size, score=score, matched_terms=overlap[:12],
+                            matched_aliases=alias_matches, matched_tags=tag_matches, matched_phrases=phrases,
+                            selection_reasons=reasons)
+            eligible[rel] = {"document": document, "related": related}
+            if score:
+                ranked.append(document)
+    duplicate_ids = {key for key, paths in id_paths.items() if len(paths) > 1}
+    for rel, item in list(eligible.items()):
+        if item["document"]["id"] in duplicate_ids:
+            rejected.append({"path": rel, "reason": "duplicate canonical/manual id"})
+            del eligible[rel]
+    ranked = [document for document in ranked if document["relative_path"] in eligible]
     # Bare indexes provide navigation without pretending they are verified knowledge.
     index_path = Path(resolved["index_path"])
     try:
@@ -1062,14 +1251,22 @@ def routed_v2(resolved: dict, query: str) -> dict:
     navigation = {"path": str(index_path), "navigation_only": True, "follow_links": False,
                   "injected": False}
     selected, used = [], 0
-    for document in sorted(ranked, key=lambda d: (-d["score"], d["bytes"], d["relative_path"])):
+
+    def select(document: dict) -> bool:
+        nonlocal used
         if len(selected) >= max_documents:
-            break
+            return False
+        document = dict(document)
         remaining = max_bytes - used
-        ranges = document.pop("ranges")
+        if remaining <= 0:
+            return False
         if document["bytes"] <= min(section_limit, remaining):
             document["read_mode"] = "document"
         else:
+            path = Path(document["path"])
+            ranges = section_ranges(path, query, limit=min(section_limit, remaining))
+            if not ranges:
+                ranges = section_ranges(path, document["title"], limit=min(section_limit, remaining), fallback=True)
             chosen = []
             for row in ranges:
                 if row["bytes"] <= remaining:
@@ -1079,12 +1276,36 @@ def routed_v2(resolved: dict, query: str) -> dict:
                         break
             if not chosen:
                 rejected.append({"path": document["relative_path"], "reason": "no matching section fits budget"})
-                continue
+                return False
             document["read_mode"] = "sections"
             document["sections"] = sorted(chosen, key=lambda row: row["line_start"])
             document["bytes"] = sum(row["bytes"] for row in chosen)
         used += document["bytes"]
         selected.append(document)
+        return True
+
+    for document in sorted(ranked, key=lambda d: (-d["score"], d["bytes"], d["relative_path"])):
+        select(document)
+    # Direct evidence always gets first use of the budget. Never recurse or follow paths.
+    by_id = {item["document"]["id"]: item["document"] for item in eligible.values()
+             if item["document"]["corpus"] == "canonical"}
+    seeds = list(selected)
+    selected_ids = {document["id"] for document in selected}
+    added = False
+    for seed in seeds:
+        if seed["corpus"] != "canonical" or added or len(selected) >= max_documents:
+            continue
+        for target_id in eligible[seed["relative_path"]]["related"]:
+            target = by_id.get(target_id)
+            if not target or target_id in selected_ids:
+                continue
+            if target["scope"] != seed["scope"] and not (seed["scope"] != "common" and target["scope"] == "common"):
+                continue
+            supplemental = {**target, "score": 0, "selection_reasons": ["related-one-hop"],
+                            "related_via": {"id": seed["id"], "relative_path": seed["relative_path"], "relation": target_id}}
+            if select(supplemental):
+                added = True
+                break
     return {**resolved, "index_document": None, "navigation": navigation, "query_documents": selected, "documents": selected,
             "index_counts_toward_document_limit": False, "query": query, "matched_intents": intents,
             "selected_bytes": used, "rejected": rejected,

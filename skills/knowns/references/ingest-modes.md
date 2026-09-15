@@ -6,6 +6,10 @@ Select a mode only after reading the target wiki's governing rules. The target c
 
 Prefer this mode when the owner declares `.system/knowledge-contract.json`. Use its canonical schema/template/validator and the registry's `canonical_write_target`; never write `my-wiki`, even if it is explicitly linked for reading. Preserve stable topic ID, provenance, security domain, customer scope and actual verification dates. Search and update the existing topic; create only a new topic. The same owner validator applies to scheduled automatic ingestion and development closeout. The raw pipeline runs independently and does not invoke the interactive knowns approval workflow for each batch.
 
+Update an existing topic in its current declared category. For a new topic, choose the business area from the owner's `canonical_sections` or applicable `default_project_sections`; keep the namespace root only when the owner permits it. Do not invent category folders or write below one category level. If the area is unclear, hold that proposal for clarification within the existing batch. The owner validator is the final authority on declared paths.
+
+Use concise `aliases` and `tags` only when they improve task retrieval (each at most 8 distinct single-line strings, at most 80 characters each). `related` is at most 6 distinct existing stable canonical IDs, excluding the note itself; paths and `[[wikilinks]]` do not belong in that field. Maintain human-readable links in the body and relevant navigation indexes with the same approved write set. Validate metadata, target scope and links using the owning repository's checks; do not add another approval step.
+
 ## Mode A — immutable source to compiled wiki
 
 Use when the knowledge base has `raw/` or `raw/sources/` plus a curated `wiki/`.

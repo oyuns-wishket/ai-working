@@ -202,6 +202,230 @@ class V2Tests(unittest.TestCase):
         self.assertFalse(self.selected(self.route()))
         self.assertIn("duplicate", self.route()["rejected"][0]["reason"])
 
+    def add_note(self, name, body="unrelated detail", *, related=None, aliases=None, tags=None, **kwargs):
+        path = self.root / "sys-wiki/aidp/alpha" / name
+        note(path, body, **kwargs)
+        text = path.read_text()
+        if related is not None:
+            text = text.replace("related: []", "related: " + json.dumps(related))
+        for key, value in (("aliases", aliases), ("tags", tags)):
+            if value is not None:
+                text = text.replace("related:", key + ": " + json.dumps(value, ensure_ascii=False) + "\nrelated:")
+        path.write_text(text)
+        return path
+
+    def sections(self, rows=None, defaults=None):
+        value = contract(self.root)
+        if rows is not None:
+            value["canonical_sections"] = {"sys-wiki/aidp/alpha": rows}
+        if defaults is not None:
+            value["default_project_sections"] = defaults
+        (self.root / ".system/knowledge-contract.json").write_text(json.dumps(value))
+
+    def test_alias_tag_spacing_matches_are_bounded_whole_phrases(self):
+        self.add_note("dispatch.md", aliases=["송장 등록"], tags=["fulfillment"])
+        for query in ("송장등록", "송장 등록", "송장등록을 개선", "fulfillment"):
+            with self.subTest(query=query):
+                document = self.route(query)["documents"][0]
+                self.assertTrue(set(document["selection_reasons"]) & {"alias-match", "tag-match"})
+        for query in ("등록", "송장등록취소", "prefullfillment"):
+            self.assertFalse(self.route(query)["documents"])
+
+    def test_body_spacing_match_without_aliases(self):
+        self.add_note("dispatch.md", "송장 등록 업무 원칙")
+        self.assertIn("spacing-phrase", self.route("송장등록")["documents"][0]["selection_reasons"])
+
+    def test_invalid_search_metadata_and_relations_are_rejected(self):
+        for values in (["term"] * 9, ["x" * 81], ["line\nbreak"], [False], ["term", "term"]):
+            with self.subTest(values=values):
+                self.add_note("bad.md", "shipping", aliases=values)
+                self.assertFalse(self.route()["documents"])
+        for related in (["KB-BAD"], ["../beta/secret.md"], ["[[KB-OTHER]]"], ["KB-X", "KB-X"], [f"KB-X{i}" for i in range(7)]):
+            self.add_note("bad.md", "shipping", related=related)
+            self.assertFalse(self.route()["documents"])
+
+    def test_block_metadata_list_is_supported(self):
+        path = self.add_note("dispatch.md")
+        path.write_text(path.read_text().replace("related: []", 'aliases:\n  - "송장 등록"\n  - shipping\nrelated: []'))
+        self.assertTrue(self.route("송장등록")["documents"])
+
+    def test_one_hop_requires_direct_seed_and_never_recurses(self):
+        self.entry["retrieval"]["max_documents"] = 4
+        self.add_note("seed.md", "shipping", related=["KB-TARGET", "KB-OTHER"])
+        self.add_note("target.md", related=["KB-THIRD"])
+        self.add_note("other.md")
+        self.add_note("third.md")
+        result = self.route()
+        self.assertEqual([d["id"] for d in result["documents"]], ["KB-SEED", "KB-TARGET"])
+        related = result["documents"][1]
+        self.assertEqual(related["selection_reasons"], ["related-one-hop"])
+        self.assertEqual(related["related_via"]["id"], "KB-SEED")
+        self.assertFalse(self.route("no-match")["documents"])
+
+    def test_relation_does_not_displace_direct_results_or_exceed_budget(self):
+        self.add_note("seed.md", "shipping", related=["KB-TARGET"])
+        self.add_note("direct.md", "shipping")
+        self.add_note("target.md")
+        result = self.route()
+        self.assertEqual({d["id"] for d in result["documents"]}, {"KB-SEED", "KB-DIRECT"})
+        (self.root / "sys-wiki/aidp/alpha/direct.md").unlink()
+        self.entry["retrieval"]["max_total_bytes"] = (self.root / "sys-wiki/aidp/alpha/seed.md").stat().st_size
+        result = self.route()
+        self.assertEqual([d["id"] for d in result["documents"]], ["KB-SEED"])
+        self.assertLessEqual(result["selected_bytes"], self.entry["retrieval"]["max_total_bytes"])
+
+    def test_relation_targets_must_be_current_canonical_allowed_and_unique(self):
+        for kwargs in ({"review": "2020-01-01"}, {"status": "contested"}, {"security": "personal"}, {"customer": "beta"}):
+            with self.subTest(kwargs=kwargs):
+                self.add_note("seed.md", "shipping", related=["KB-TARGET"])
+                self.add_note("target.md", **kwargs)
+                self.assertEqual([d["id"] for d in self.route()["documents"]], ["KB-SEED"])
+        self.add_note("target.md")
+        self.add_note("duplicate.md", note_id="KB-TARGET", review="2020-01-01")
+        self.assertEqual([d["id"] for d in self.route()["documents"]], ["KB-SEED"])
+
+    def test_forbidden_corpora_and_dangling_ids_are_not_followed(self):
+        self.add_note("seed.md", "shipping", related=["KB-TARGET"])
+        for relative, kwargs in (("candidate/target.md", {}), ("raw/target.md", {}),
+                                 ("my-wiki/target.md", {}), ("sys-wiki/aidp/beta/target.md", {"customer": "beta"})):
+            note(self.root / relative, **kwargs)
+        self.assertEqual([d["id"] for d in self.route()["documents"]], ["KB-SEED"])
+
+    def test_manual_notes_are_neither_relation_seeds_nor_targets(self):
+        path = self.root / "my-wiki/manual.md"
+        note(path, "shipping", note_id="KB-MANUAL", status="draft")
+        path.write_text(path.read_text().replace("related: []", 'related: ["KB-TARGET"]'))
+        self.entry["manual_read_bindings"] = [{"path": "my-wiki/manual.md", "id": "KB-MANUAL", "security_domain": "work", "customer_scope": "alpha"}]
+        self.add_note("target.md")
+        self.assertEqual([d["id"] for d in self.route()["documents"]], ["KB-MANUAL"])
+        note(path, "unrelated", note_id="KB-MANUAL", status="draft")
+        self.add_note("seed.md", "shipping", related=["KB-MANUAL"])
+        self.assertEqual([d["id"] for d in self.route()["documents"]], ["KB-SEED"])
+
+    def test_relation_can_read_allowed_common_but_cycles_stop(self):
+        self.add_note("seed.md", "shipping", related=["KB-SHARED"])
+        shared = self.root / "sys-wiki/aidp/shared.md"
+        note(shared, "common evidence", customer="common")
+        shared.write_text(shared.read_text().replace("related: []", 'related: ["KB-SEED"]'))
+        self.assertEqual([d["id"] for d in self.route()["documents"]], ["KB-SEED", "KB-SHARED"])
+
+    def test_alias_only_large_note_uses_real_body_ranges(self):
+        path = self.add_note("large.md", "## Knowledge\n" + "업무 원칙 설명\n" * 3000, aliases=["송장 등록"])
+        result = self.route("송장등록")
+        document = result["documents"][0]
+        self.assertEqual(document["read_mode"], "sections")
+        lines = path.read_text().splitlines(keepends=True)
+        text = "".join("".join(lines[r["line_start"]-1:r["line_end"]]) for r in document["sections"])
+        self.assertNotIn("schema_version:", text)
+        self.assertEqual(len(text.encode()), result["selected_bytes"])
+        self.assertLessEqual(result["selected_bytes"], 6000)
+
+    def test_declared_one_level_sections_only_and_relation_crosses_sections(self):
+        self.sections([{"slug": "orders", "title": "Orders"}, {"slug": "delivery", "title": "Delivery"}])
+        self.add_note("orders/seed.md", "shipping", related=["KB-TARGET"])
+        self.add_note("delivery/target.md")
+        self.add_note("undeclared/hidden.md", "shipping")
+        self.add_note("orders/nested/hidden.md", "shipping")
+        self.add_note("orders/index.md", "shipping")
+        result = self.route()
+        self.assertEqual({d["relative_path"] for d in result["documents"]},
+                         {"sys-wiki/aidp/alpha/orders/seed.md", "sys-wiki/aidp/alpha/delivery/target.md"})
+        self.assertFalse(result["navigation"]["injected"])
+
+    def test_defaults_are_lazy_do_not_expand_common_or_other_customers(self):
+        self.sections(defaults=[{"slug": "business", "title": "Business"}])
+        self.add_note("business/rules.md", "shipping")
+        note(self.root / "sys-wiki/aidp/business/common.md", customer="common")
+        note(self.root / "sys-wiki/aidp/beta/business/hidden.md", customer="beta")
+        self.assertEqual(self.selected(self.route()), {"sys-wiki/aidp/alpha/business/rules.md"})
+        self.sections(rows=[], defaults=[{"slug": "business", "title": "Business"}])
+        self.assertFalse(self.route()["documents"])
+
+    def test_unsafe_section_contracts_fail_closed(self):
+        for rows in ([{"slug": "../beta", "title": "Bad"}], [{"slug": "raw", "title": "Bad"}],
+                     [{"slug": "orders", "title": "Bad", "unknown": True}],
+                     [{"slug": "orders", "title": "Bad", "terms": ["x", "x"]}],
+                     [{"slug": "orders", "title": "Bad"}] * 2):
+            self.sections(rows)
+            with self.assertRaises(M.ContextError):
+                self.route()
+        self.sections([{"slug": "orders", "title": "Orders"}])
+        outside = self.root / "candidate/orders"
+        outside.mkdir(parents=True)
+        (self.root / "sys-wiki/aidp/alpha/orders").symlink_to(outside)
+        with self.assertRaises(M.ContextError):
+            self.route()
+
+    def test_stale_or_duplicate_seed_cannot_expand_relations(self):
+        self.add_note("seed.md", "shipping", related=["KB-TARGET"], review="2020-01-01")
+        self.add_note("target.md")
+        self.assertFalse(self.route()["documents"])
+        self.add_note("seed.md", "shipping", related=["KB-TARGET"])
+        self.add_note("duplicate.md", note_id="KB-SEED")
+        self.assertFalse(self.route()["documents"])
+
+    def test_large_related_note_keeps_remaining_utf8_budget(self):
+        seed = self.add_note("seed.md", "shipping", related=["KB-TARGET"])
+        target = self.add_note("target.md", "## Evidence\n" + "업무 지식 설명\n" * 3000)
+        result = self.route()
+        self.assertEqual(len(result["documents"]), 2)
+        document = result["documents"][1]
+        self.assertEqual(document["read_mode"], "sections")
+        lines = target.read_text().splitlines(keepends=True)
+        text = "".join("".join(lines[r["line_start"]-1:r["line_end"]]) for r in document["sections"])
+        self.assertEqual(result["selected_bytes"], seed.stat().st_size + len(text.encode()))
+        self.assertLessEqual(result["selected_bytes"], 6000)
+
+    def test_undeclared_namespace_contract_fails_closed(self):
+        for namespace in (".", "sys-wiki/aidp", "raw/project", "sys-wiki/aidp/alpha/orders", "sys-wiki/../candidate", "sys-wiki/" + "a" * 65, "sys-wiki/raw", "sys-wiki/aidp/index"):
+            value = contract(self.root)
+            value["canonical_sections"] = {namespace: []}
+            (self.root / ".system/knowledge-contract.json").write_text(json.dumps(value))
+            with self.assertRaises(M.ContextError):
+                self.route()
+
+    def test_section_terms_normalization_and_reserved_long_slugs(self):
+        for row in ({"slug": "a" * 65, "title": "Long"},
+                    {"slug": "orders", "title": "Orders", "terms": ["Task", " task "]},
+                    {"slug": "orders", "title": "Multi\nline"}):
+            self.sections([row])
+            with self.assertRaises(M.ContextError):
+                self.route()
+
+    def test_common_seed_does_not_expand_customer_knowledge(self):
+        shared = self.root / "sys-wiki/aidp/shared.md"
+        note(shared, "shipping", customer="common")
+        shared.write_text(shared.read_text().replace("related: []", 'related: ["KB-TARGET"]'))
+        self.add_note("target.md")
+        self.assertEqual([d["id"] for d in self.route()["documents"]], ["KB-SHARED"])
+
+    def test_normalized_duplicate_signals_cannot_inflate_scores(self):
+        self.add_note("dispatch.md", aliases=["Task", " task "])
+        self.assertFalse(self.route("task")["documents"])
+        self.add_note("dispatch.md", aliases=["송장 등록", "송장등록"])
+        document = self.route("송장등록")["documents"][0]
+        self.assertEqual(document["score"], 30)
+        self.assertEqual(len(document["matched_aliases"]), 1)
+
+    def test_block_search_metadata_rejects_nonstring_scalars(self):
+        for key in ("aliases", "tags"):
+            for scalar in ("false", " false ", "null", "123", "[]", "{}", '["nested"]'):
+                with self.subTest(key=key, scalar=scalar):
+                    path = self.add_note("bad.md", "shipping")
+                    path.write_text(path.read_text().replace("related: []", f"{key}:\n  - {scalar}\nrelated: []"))
+                    self.assertFalse(self.route()["documents"])
+        path = self.add_note("bad.md")
+        path.write_text(path.read_text().replace("related: []", 'aliases:\n  - "false"\nrelated: []'))
+        self.assertTrue(self.route("false")["documents"])
+
+    def test_nested_intent_matches_namespace_relative_path(self):
+        self.sections([{"slug": "engineering", "title": "Engineering"}])
+        self.add_note("engineering/landscape.md")
+        self.entry["retrieval"]["intent_routes"] = {"architecture": {"terms": ["architecture"], "documents": ["engineering/landscape.md"]}}
+        result = self.route("architecture")
+        self.assertEqual(self.selected(result), {"sys-wiki/aidp/alpha/engineering/landscape.md"})
+        self.assertEqual(result["documents"][0]["selection_reasons"], ["intent-route"])
+
 
 if __name__ == "__main__":
     unittest.main()

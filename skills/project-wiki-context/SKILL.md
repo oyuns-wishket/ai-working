@@ -22,6 +22,8 @@ python3 <ai-working-root>/skills/project-wiki-context/scripts/wiki_context.py ro
 
 Use only documents returned by `route`. For `read_mode:sections`, read only the returned inclusive line ranges; never expand them to the full file. Version 2 indexes are navigation-only and must not be injected or followed into other project folders. The resolver rejects stale, contested, malformed, oversized, escaped, or unregistered content and returns routing evidence rather than dumping the entire knowledge tree. Continue repository-only when resolution is unavailable or unhealthy and report that limitation.
 
+V2 searches title/body plus bounded `aliases` and `tags`, including Korean spacing variants. A selected canonical result may bring at most one current related note into spare document/byte budget; `related_via` identifies the seed. Do not follow more links yourself. Manual notes cannot seed or receive this expansion. The owning contract may declare one level of business categories inside an already authorized namespace; undeclared folders remain unread.
+
 ## Diagnose
 
 ```bash
