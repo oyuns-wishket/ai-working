@@ -1022,7 +1022,7 @@ def scoped_document(path: Path, root: Path, scope: dict, today: dt.date, *, manu
             return False, "invalid canonical schema", metadata, body
         if not re.fullmatch(r"KB-[A-Z0-9][A-Z0-9_-]*", metadata["id"]):
             return False, "invalid canonical stable id", metadata, body
-        if metadata["type"] not in {"profile", "preference", "charter", "governance", "environment", "workflow", "reference", "business", "domain", "channel", "system", "decision", "delivery", "runbook", "lesson"} or "related" not in metadata:
+        if metadata["type"] not in {"profile", "preference", "charter", "governance", "environment", "workflow", "reference", "business", "domain", "channel", "system", "decision", "delivery", "runbook", "lesson", "record"} or "related" not in metadata:
             return False, "invalid canonical type/relations", metadata, body
         if not frontmatter_list(path, "source_refs"):
             return False, "canonical source refs missing", metadata, body
