@@ -950,9 +950,14 @@ def validate_scope_identity(entry: dict, scope: dict) -> None:
         raise ContextError("cross-customer read scope")
     path = safe_relative(scope["path"])
     if path.parts[0] == "sys-wiki":
-        if customer == "common" and tuple(path.parts) != ("sys-wiki", "aidp"):
-            raise ContextError("common scope must be flat AIDP root")
-        if customer != "common" and tuple(path.parts) != ("sys-wiki", "aidp", customer):
+        if customer == "common":
+            if tuple(path.parts) != ("sys-wiki", "aidp"):
+                raise ContextError("common scope must be flat AIDP root")
+        elif scope_domain == "personal":
+            # Personal ventures own a flat sys-wiki/<customer_scope> root beside aidp, never inside it.
+            if customer in {"aidp", "index"} or tuple(path.parts) != ("sys-wiki", customer):
+                raise ContextError("personal scope path must be sys-wiki/<customer_scope>")
+        elif tuple(path.parts) != ("sys-wiki", "aidp", customer):
             raise ContextError("project scope path must match customer identity")
 
 
@@ -1010,7 +1015,11 @@ def scoped_document(path: Path, root: Path, scope: dict, today: dt.date, *, manu
     required = ("id", "title", "security_domain", "review_by", "status")
     if any(not metadata.get(key) for key in required):
         return False, "missing required metadata", metadata, body
-    if metadata["security_domain"] != scope["security_domain"] or metadata.get("customer_scope") != scope["customer_scope"]:
+    expected_customer = scope["customer_scope"]
+    if not manual and scope["security_domain"] == "personal":
+        # kb_check keeps non-AIDP canonical notes free of customer_scope; the flat sys-wiki/<customer> folder is the identity.
+        expected_customer = None
+    if metadata["security_domain"] != scope["security_domain"] or metadata.get("customer_scope") != expected_customer:
         return False, "document security/customer scope mismatch", metadata, body
     if manual:
         if metadata["id"] != scope["id"]:

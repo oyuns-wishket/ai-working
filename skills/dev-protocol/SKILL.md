@@ -172,7 +172,7 @@ primary worktree, 다른 세션이 쓰는 경로, 미커밋·미병합 변경은
 
 ### 5.5 HANDOFF
 
-`docs/handoff/HANDOFF.md`가 있으면 `Next actions`, `Decisions & context`, `Open items & blockers`를 갱신한다.
+`docs/handoff/HANDOFF.md`가 없으면 ai-working `templates/HANDOFF.md`를 복사해 만든다. 세션 시작 hook이 `[인계 없음]`으로 부재를 알린다. 있으면 `Next actions`, `Decisions & context`, `Open items & blockers`를 갱신한다. 세 절 제목은 hook이 인식하는 이름·별칭을 유지한다.
 
 ### 5.6 배포 클로즈아웃 (같은 턴)
 

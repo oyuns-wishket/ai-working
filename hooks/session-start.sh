@@ -24,6 +24,17 @@ if in_git_repo; then
     [ -n "$handoff" ] || handoff="[인계 생략] source: docs/handoff/HANDOFF.md — bounded reader unavailable; read relevant sections on demand."
     out="$out
 $handoff"
+  else
+    out="$out
+[인계 없음] docs/handoff/HANDOFF.md 없음 — 첫 비단순 작업 종료 시 dev-protocol §5.5가 ai-working templates/HANDOFF.md로 생성한다."
+  fi
+  # wiki registry — one read-only line when this repo has no knowledge connection.
+  # Silent when the resolver or a machine-local registry is absent (other machines, fixtures).
+  resolver="$HOME/.claude/skills/project-wiki-context/scripts/wiki_context.py"
+  if [ "${AI_WORKING_STARTUP_WIKI:-1}" = 1 ] && [ -f "$resolver" ] && command -v python3 >/dev/null 2>&1; then
+    wiki="$(run_guarded 3 python3 "$resolver" doctor --project "$PWD" | jq -r 'select(.mode=="repo-only" and .reason=="registry entry not found") | "[wiki 미연결] remote \((.normalized_remotes[0] // "없음")) 는 knowledge registry에 없어 wiki 지식 없이 repo-only로 진행한다. 연결: 업무 repo는 knowns 첫 저장 시 connect 제안, 개인 repo는 wiki .system/scripts/connect_project_wiki.py --personal --slug <slug> (dry-run 후 승인 시 --apply)."' 2>/dev/null)"
+    [ -n "$wiki" ] && out="$out
+$wiki"
   fi
 fi
 # Rule 9 — disk guard (하루 1회만 du; 매 세션 전체 재귀스캔 비용 제거)
