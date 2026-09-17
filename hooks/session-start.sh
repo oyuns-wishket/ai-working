@@ -32,7 +32,7 @@ $handoff"
   # Silent when the resolver or a machine-local registry is absent (other machines, fixtures).
   resolver="$HOME/.claude/skills/project-wiki-context/scripts/wiki_context.py"
   if [ "${AI_WORKING_STARTUP_WIKI:-1}" = 1 ] && [ -f "$resolver" ] && command -v python3 >/dev/null 2>&1; then
-    wiki="$(run_guarded 3 python3 "$resolver" doctor --project "$PWD" | jq -r 'select(.mode=="repo-only" and .reason=="registry entry not found") | "[wiki 미연결] remote \((.normalized_remotes[0] // "없음")) 는 knowledge registry에 없어 wiki 지식 없이 repo-only로 진행한다. 연결: 업무 repo는 knowns 첫 저장 시 connect 제안, 개인 repo는 wiki .system/scripts/connect_project_wiki.py --personal --slug <slug> (dry-run 후 승인 시 --apply)."' 2>/dev/null)"
+    wiki="$(run_guarded 3 python3 "$resolver" doctor --project "$PWD" | jq -r 'select(.mode=="repo-only" and .reason=="registry entry not found") | "[wiki 미연결] remote \((.normalized_remotes[0] // "없음")) 는 knowledge registry에 없어 wiki 지식 없이 repo-only로 진행한다. 연결: 개인 repo는 wiki .system/scripts/connect_project_wiki.py --personal --slug <slug> (dry-run 후 승인 시 --apply); 업무 repo는 registry에 common-only 항목을 먼저 추가하면 knowns 첫 저장 시 connect를 제안한다."' 2>/dev/null)"
     [ -n "$wiki" ] && out="$out
 $wiki"
   fi
