@@ -39,7 +39,7 @@ type: domain
 status: {status}
 owner: reviewer
 security_domain: {security}
-customer_scope: {customer}
+{"" if customer is None else f"customer_scope: {customer}"}
 verified_at: 2026-01-01
 review_by: {review}
 source_refs:
@@ -103,6 +103,24 @@ class V2Tests(unittest.TestCase):
         self.assertEqual(result["mode"], "wiki-bounded")
         self.assertEqual(self.selected(result), {"sys-wiki/aidp/common.md"})
         self.assertIsNone(result["canonical_write_target"])
+
+    def test_personal_venture_reads_flat_sys_wiki_root_beside_aidp(self):
+        self.entry.update(wiki_namespace="sys-wiki/jyt", canonical_write_target="sys-wiki/jyt",
+                          security_domain="personal/venture/jyt", customer_scope="jyt",
+                          read_scopes=[{"path": "sys-wiki/jyt", "recursive": False, "security_domain": "personal", "customer_scope": "jyt"}])
+        note(self.root / "sys-wiki/jyt/index.md", "navigation", customer=None, security="personal")
+        note(self.root / "sys-wiki/jyt/delivery.md", customer=None, security="personal")
+        note(self.root / "sys-wiki/jyt/tagged.md", customer="jyt", security="personal")
+        note(self.root / "sys-wiki/jyt/work-leak.md", customer=None, security="work")
+        note(self.root / "sys-wiki/aidp/alpha/rules.md")
+        result = self.route()
+        self.assertEqual(result["mode"], "wiki-bounded")
+        self.assertEqual(self.selected(result), {"sys-wiki/jyt/delivery.md"})
+        self.assertEqual(result["canonical_write_target"], str(self.root / "sys-wiki/jyt"))
+        for path in ("sys-wiki/aidp/jyt", "sys-wiki/aidp", "sys-wiki/personal"):
+            self.entry["read_scopes"][0]["path"] = path
+            with self.assertRaises(M.ContextError):
+                self.route()
 
     def test_wrong_security_stale_contested_and_wrong_customer_rejected(self):
         note(self.root / "sys-wiki/aidp/alpha/personal.md", security="personal")

@@ -83,7 +83,9 @@ test("fenced fake headings are never selected as real sections", t => {
 
 test("missing, empty, and unrecognized documents fail open without a raw fallback", t => {
   const missing = fixture(t, null)
-  assert.equal(missing.run(), "")
+  const notice = missing.run()
+  assert.match(notice, /\[인계 없음\] docs\/handoff\/HANDOFF.md/)
+  assert.ok(Buffer.byteLength(notice) < 512)
   assert.match(readHandoffContext(missing.file), /unavailable/)
   for (const content of ["", "# Archive\nDO_NOT_INJECT\n", "##Next actions\nDO_NOT_INJECT\n", "```\n## Next actions\nDO_NOT_INJECT\n"]) {
     const setup = fixture(t, content)
@@ -171,4 +173,49 @@ test("pathological tiny lines have an internal scan deadline", t => {
   assert.match(context, /current action/)
   assert.match(context, /Scan time budget reached|Scan capped/)
   assert.ok(Buffer.byteLength(context) <= MAX_CONTEXT_BYTES)
+})
+
+function wikiRegistry(t, setup, projects) {
+  const home = path.dirname(path.dirname(setup.hooks))
+  const skills = path.join(home, ".claude", "skills")
+  fs.mkdirSync(skills, { recursive: true })
+  fs.symlinkSync(path.join(repo, "skills", "project-wiki-context"), path.join(skills, "project-wiki-context"))
+  const wiki = path.join(home, "wiki")
+  fs.mkdirSync(path.join(wiki, ".system", "registry"), { recursive: true })
+  fs.writeFileSync(path.join(wiki, ".system", "knowledge-contract.json"), JSON.stringify({ schema_version: 2, paths: {
+    canonical: "sys-wiki", candidate: "candidate", manual: "my-wiki",
+    registry: ".system/registry/project-registry.json", registry_schema: ".system/registry/project-registry.schema.json",
+    schema: ".system/schemas/canonical-note.schema.json", template: ".system/templates/canonical-note.md" } }))
+  fs.writeFileSync(path.join(wiki, ".system", "registry", "project-registry.json"), JSON.stringify({ schema_version: 2, projects }))
+  return wiki
+}
+
+test("unregistered repositories get one bounded wiki notice; missing resolver stays silent", t => {
+  const silent = fixture(t, "## Next actions\ncurrent action\n", true)
+  assert.doesNotMatch(silent.run(), /wiki 미연결/)
+  const setup = fixture(t, "## Next actions\ncurrent action\n", true)
+  const wiki = wikiRegistry(t, setup, [])
+  process.env.AI_WORKING_CONTEXT_REGISTRY_PATH = wiki
+  t.after(() => { delete process.env.AI_WORKING_CONTEXT_REGISTRY_PATH })
+  const context = setup.run()
+  assert.match(context, /current action/)
+  assert.match(context, /\[wiki 미연결\] remote example.invalid\/test\/repo/)
+  assert.match(context, /connect_project_wiki.py --personal/)
+  assert.ok(Buffer.byteLength(context) <= MAX_CONTEXT_BYTES + 1024)
+  process.env.AI_WORKING_STARTUP_WIKI = "0"
+  t.after(() => { delete process.env.AI_WORKING_STARTUP_WIKI })
+  assert.doesNotMatch(setup.run(), /wiki 미연결/)
+})
+
+test("registered repositories produce no wiki notice", t => {
+  const setup = fixture(t, "## Next actions\ncurrent action\n", true)
+  const wiki = wikiRegistry(t, setup, [{ id: "example.invalid/test/repo", canonical_remote: "https://example.invalid/test/repo",
+    remote_aliases: [], local_aliases: [], connection_status: "common-only", lifecycle: "active", project_kind: "managed-project",
+    security_domain: "work", wiki_namespace: null, retrieval_profile: "common-only", customer_scope: "common",
+    canonical_write_target: null, read_scopes: [], manual_read_bindings: [] }])
+  process.env.AI_WORKING_CONTEXT_REGISTRY_PATH = wiki
+  t.after(() => { delete process.env.AI_WORKING_CONTEXT_REGISTRY_PATH })
+  const context = setup.run()
+  assert.match(context, /current action/)
+  assert.doesNotMatch(context, /wiki 미연결/)
 })
