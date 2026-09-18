@@ -14,7 +14,7 @@ Active trusted hooks may help, but verify cleanup instead of assuming they handl
 
 ## Sharing an HTML result
 
-Serve only the intended artifact directory, excluding credentials and unrelated files. Discover an accessible approved VPN/LAN address, with a local hostname fallback when appropriate. Start a local HTTP server, for example `python3 -m http.server <port> --bind 0.0.0.0`, and record its process ownership so it can be stopped after review or at work-unit end.
+Serve only the intended artifact directory, excluding credentials and unrelated files. Share the **Tailscale (VPN) address only** — discover it at runtime (`tailscale ip -4`, or the app bundle CLI on macOS). Do not present LAN IPs, `localhost`, or mDNS hostnames as the review URL: the user's device is on the tailnet, not the local LAN, so those never open (user correction 2026-09-18). If no Tailscale address is available, say so and ask how to deliver instead of falling back to LAN. Start a local HTTP server, for example `python3 -m http.server <port> --bind 0.0.0.0`, and record its process ownership so it can be stopped after review or at work-unit end.
 
 URL-encode non-ASCII filenames and verify the actual artifact responds successfully before sharing its URL. Opening a local browser alone shows the server machine's screen, which may not be the user's device. Do not create a new public tunnel or public deployment merely to work around network access without that scope being authorized.
 
