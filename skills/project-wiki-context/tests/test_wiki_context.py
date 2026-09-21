@@ -223,6 +223,10 @@ class WikiContextTest(unittest.TestCase):
                 {"path": "orders.md", "reason": "invalid-source-ref"},
                 routed["rejected"],
             )
+            self.assertEqual(routed["warnings"][0], "knowledge degraded: 1 document rejected (invalid-source-ref 1)")
+            self.assertIn("orders.md: invalid-source-ref", routed["warnings"])
+            self.assertEqual(routed["knowledge_health"]["rejected_reasons"], {"invalid-source-ref": 1})
+            self.assertEqual(routed["knowledge_health"]["rejected_count"], 1)
 
     def test_repository_state_and_source_reference_drift_are_reported(self):
         with tempfile.TemporaryDirectory() as temp:

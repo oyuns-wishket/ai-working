@@ -219,3 +219,55 @@ test("registered repositories produce no wiki notice", t => {
   assert.match(context, /current action/)
   assert.doesNotMatch(context, /wiki 미연결/)
 })
+
+function canonicalNote(file, { type = "domain", review = "2099-01-01", status = "canonical", customer = "alpha" } = {}) {
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  const stem = path.basename(file, ".md")
+  fs.writeFileSync(file, `---\nschema_version: 2\nid: KB-${stem.toUpperCase().replace(/-/g, "_")}\ntitle: ${stem}\ntype: ${type}\nstatus: ${status}\nowner: reviewer\nsecurity_domain: work\ncustomer_scope: ${customer}\nverified_at: 2026-01-01\nreview_by: ${review}\nsource_refs:\n  - user-confirmation:2026-01-01\nrelated: []\n---\n# ${stem}\nshipping\n`)
+}
+
+function connectedWiki(t, setup) {
+  const wiki = wikiRegistry(t, setup, [{ id: "example.invalid/test/repo", canonical_remote: "https://example.invalid/test/repo",
+    remote_aliases: [], local_aliases: [], connection_status: "connected", security_domain: "work/customer/alpha",
+    customer_scope: "alpha", wiki_namespace: "sys-wiki/aidp/alpha", canonical_write_target: "sys-wiki/aidp/alpha",
+    read_scopes: [{ path: "sys-wiki/aidp/alpha", recursive: false, security_domain: "work", customer_scope: "alpha" }],
+    manual_read_bindings: [] }])
+  canonicalNote(path.join(wiki, "sys-wiki", "aidp", "alpha", "index.md"))
+  canonicalNote(path.join(wiki, "sys-wiki", "aidp", "alpha", "rules.md"))
+  process.env.AI_WORKING_CONTEXT_REGISTRY_PATH = wiki
+  t.after(() => { delete process.env.AI_WORKING_CONTEXT_REGISTRY_PATH })
+  return wiki
+}
+
+test("degraded connected knowledge prints one count-only status line", t => {
+  const setup = fixture(t, "## Next actions\ncurrent action\n", true)
+  const wiki = connectedWiki(t, setup)
+  assert.doesNotMatch(setup.run(), /wiki 상태/)
+  canonicalNote(path.join(wiki, "sys-wiki", "aidp", "alpha", "expired-secret-topic.md"), { review: "2026-06-01" })
+  canonicalNote(path.join(wiki, "sys-wiki", "aidp", "alpha", "draft-topic.md"), { status: "provisional" })
+  const context = setup.run()
+  assert.match(context, /\[wiki 상태\] 정본 2건 제외 \(overdue 1 · provisional 1\) — 위키 점검\(lint\) 권장/)
+  assert.doesNotMatch(context, /expired-secret-topic|draft-topic|sys-wiki/)
+  assert.doesNotMatch(context, /wiki 미연결/)
+})
+
+test("unclosed development retrieval traces from the last 14 days print one closing hint", t => {
+  const setup = fixture(t, "## Next actions\ncurrent action\n", true)
+  connectedWiki(t, setup)
+  // The recorder refuses symlinked parents (macOS tmp is one), so resolve the real path first.
+  const state = path.join(fs.realpathSync(path.dirname(path.dirname(setup.hooks))), "wiki-feedback")
+  process.env.AI_WORKING_WIKI_FEEDBACK_STATE = state
+  t.after(() => { delete process.env.AI_WORKING_WIKI_FEEDBACK_STATE })
+  assert.doesNotMatch(setup.run(), /wiki 피드백 미마감/)
+  const scripts = path.join(repo, "skills", "project-wiki-context", "scripts")
+  const project = path.resolve(path.dirname(setup.file), "..", "..")
+  const route = JSON.parse(execFileSync("python3", [path.join(scripts, "wiki_context.py"), "route", "--project", project,
+    "--query", "shipping", "--record"], { encoding: "utf8", env: process.env }))
+  const traceId = route.retrieval_feedback.trace_id
+  assert.match(traceId, /^[a-f0-9]{32}$/)
+  const context = setup.run()
+  assert.match(context, /\[wiki 피드백 미마감 1건\] .*retrieval_feedback\.py feedback --trace-id/)
+  assert.doesNotMatch(context, new RegExp(traceId))
+  execFileSync("python3", [path.join(scripts, "retrieval_feedback.py"), "feedback", "--trace-id", traceId, "--outcome", "not_used"], { env: process.env })
+  assert.doesNotMatch(setup.run(), /wiki 피드백 미마감/)
+})

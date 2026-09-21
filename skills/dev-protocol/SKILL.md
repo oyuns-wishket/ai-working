@@ -143,6 +143,7 @@ ai-working의 `scripts/task_metrics.py`를 사용할 수 있는 비단순 구현
 - **검증**: 실행한 build, lint, test와 결과
 - **이탈**: 없음 또는 승인 대기 항목
 - **이슈**: 연결 번호와 `종료/일부 완료/배포 대기/생략/조회 불가`, 관련 열린 항목
+- **Wiki 조회**: trace ID와 마감 결과(used/not_used/missing/unknown), 조회가 없었으면 "없음"
 
 ### 5.3 배포 범위 선택
 

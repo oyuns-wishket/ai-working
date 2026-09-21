@@ -3,7 +3,7 @@
 import argparse
 from collections import Counter
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import fcntl
 import hashlib
 import json
@@ -22,6 +22,7 @@ KINDS = ('development', 'evaluation', 'maintenance')
 OUTCOMES = ('used', 'not_used', 'missing', 'incorrect', 'outdated', 'unknown')
 MAX_BYTES = 65536
 MAX_RECORDS = 10000
+MAX_SINCE_DAYS = 3650
 
 
 def digest(value):
@@ -211,9 +212,12 @@ def feedback(trace_id, outcome, document_ids, evidence_kind=None, evidence_ref=N
     return {'trace_id': trace_id, 'outcome': outcome, 'actor': actor}
 
 
-def report(kind='development', limit=MAX_RECORDS):
+def report(kind='development', limit=MAX_RECORDS, since_days=None):
     if kind not in KINDS or not 1 <= limit <= MAX_RECORDS:
         raise ValueError('invalid report bound')
+    if since_days is not None and (type(since_days) is not int or not 1 <= since_days <= MAX_SINCE_DAYS):
+        raise ValueError('invalid report window')
+    cutoff = datetime.now(timezone.utc) - timedelta(days=since_days) if since_days else None
     root = directory()
     rows, examined, rejected, truncated = [], 0, 0, False
     if root is not None:
@@ -227,8 +231,11 @@ def report(kind='development', limit=MAX_RECORDS):
                 examined += 1
                 try:
                     row = read_record(Path(entry.path))
-                    if row['sample_kind'] == kind:
-                        rows.append(row)
+                    if row['sample_kind'] != kind:
+                        continue
+                    if cutoff and datetime.fromisoformat(row['recorded_at'].replace('Z', '+00:00')) < cutoff:
+                        continue
+                    rows.append(row)
                 except (OSError, ValueError, KeyError, TypeError):
                     rejected += 1
     outcomes = Counter((r.get('feedback') or {}).get('outcome', 'unreported') for r in rows)
@@ -236,7 +243,7 @@ def report(kind='development', limit=MAX_RECORDS):
     bad_docs = Counter(d for r in rows if (r.get('feedback') or {}).get('outcome') in ('incorrect', 'outdated')
                        for d in r['feedback']['document_ids'])
     n = len(rows)
-    return {'sample_kind': kind, 'traces': n, 'outcomes': dict(outcomes),
+    return {'sample_kind': kind, 'since_days': since_days, 'traces': n, 'outcomes': dict(outcomes),
             'feedback_coverage': round((n-outcomes['unreported'])/n, 4) if n else None,
             'no_canonical_context_routes': sum(not r['documents'] for r in rows),
             'routing_ms_p50': durations[(n-1)//2] if n else None,
@@ -260,9 +267,10 @@ def main():
     r = sub.add_parser('report')
     r.add_argument('--kind', choices=KINDS, default='development')
     r.add_argument('--limit', type=int, default=MAX_RECORDS)
+    r.add_argument('--since-days', type=int, help='Only traces recorded within the last N days (1..%d)' % MAX_SINCE_DAYS)
     args = p.parse_args()
     try:
-        value = feedback(args.trace_id, args.outcome, args.document_id, args.evidence_kind, args.evidence_ref, args.actor) if args.command == 'feedback' else report(args.kind, args.limit)
+        value = feedback(args.trace_id, args.outcome, args.document_id, args.evidence_kind, args.evidence_ref, args.actor) if args.command == 'feedback' else report(args.kind, args.limit, args.since_days)
         print(json.dumps(value, ensure_ascii=False, indent=2))
         return 0
     except (OSError, ValueError, KeyError, TypeError):
