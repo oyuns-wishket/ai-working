@@ -14,7 +14,7 @@
 
 ## 1. 실행 여부와 모드 선택
 
-세션 lane은 규칙·hook·skill을 다시 로드하므로 단일 세션보다 토큰이 수 배 든다. 다음 중 하나가 아니면 이 스킬을 쓰지 않고 Lead가 직접 처리한다.
+세션 lane은 규칙·hook·skill을 다시 로드하므로 단일 세션보다 토큰이 수 배 든다. 그래도 lane 방식이 싼 이유는 lane이 작은 컨텍스트로 한 번에 끝나기 때문이며, 그 이득은 Lead 세션이 길어지면 사라진다(§9 실측). 다음 중 하나가 아니면 이 스킬을 쓰지 않고 Lead가 직접 처리한다.
 
 - 파일 소유권이 겹치지 않는 쓰기 lane이 둘 이상이다.
 - 다른 플랫폼의 독립 리뷰가 필요하다.
@@ -112,3 +112,4 @@ python3 scripts/integrate.py --task <t> --verify "pnpm lint" --verify "pnpm test
 - Cross-model review 논문(arXiv 2607.21656, LeetCode 116문제, 실행 없는 리뷰): Claude가 Codex 초안 리뷰 시 71.6→89.7%, Codex가 Claude 초안 리뷰 시 91.4→82.8%. 실제 repo 일반화는 검증되지 않음. → §5 gate=Claude, Codex=advisory. 실무에서 advisory 반론의 적중률을 관찰한 뒤 재평가한다.
 - Claude Code agent teams 문서: 실험적, Claude 전용, `-p`에서 teammate 미생성, teammate별 worktree 없음. → 대체재로 채택하지 않음.
 - 실무 보고 다수: 3~5 lane 이상은 사람 리뷰가 병목. worktree는 DB·포트·credential을 격리하지 않음. → §2 상한, 프롬프트의 자원 제한.
+- 자체 실측(2026-07-27~09-21, Claude Code transcript 309세션, API 정가 환산): 출력 1K토큰당 비용이 1턴 세션 $0.16, 21턴 이상 세션 $0.40. 9/15~17 lane 21개는 $0.12, 같은 기간 lane을 띄운 Lead 세션 27개는 $0.26이며 지출의 87%가 Lead 쪽. 비용 구성은 cache read 50%, cache write 40%, output 10%. 400K 이상 컨텍스트 호출 34%가 비용 54%. lane peak는 130~420K, Bash 30~80회로 컨텍스트 대부분이 명령 출력. 세션 콜드스타트는 cache write 약 45K($0.5~0.9). → SKILL.md 「세션 길이와 비용」: 계획·실행 세션 분리, lane 출력 필터, 상한 미강제.

@@ -188,3 +188,10 @@ skills/multi-session-dev/
 - 계획 표 문구: "마지막 확인점"은 이미 승인한 범위를 다시 묻게 만들 수 있어, 승인 범위 안이면 바로 실행하고 범위 밖 차이만 확인하도록 수정.
 - 미실측: Codex sandbox 환경변수로 Lead 상태를 판별하는 방법. 실측 시점에 Codex API가 429를 반환해 확인하지 못했고, 문서에는 실제 관찰한 오류 문구만 판별 기준으로 적었다.
 - 범위 밖으로 남긴 것: 전역 규칙 표의 "독립 lane 둘 이상·다중 모듈·DB/권한/migration/연동 작업" 나열 문구. 사용자 요청 범위가 아니어서 수정하지 않았다.
+
+## Follow-up (2026-09-21): 세션 길이·비용 규칙
+
+- 배경: Claude Code transcript 309세션(7/27~9/21) 실측에서 캐시 적중 97.9%는 유지되지만, 400K 이상 컨텍스트 호출 34%가 비용 54%를 차지. lane은 출력 1K당 $0.12로 싸지만 lane을 띄운 Lead 세션(peak 중앙값 352K, $0.26)이 지출의 87%. 분석 스크립트·원자료는 `/tmp/tokeff/`(세션 로컬, 저장소 미포함).
+- 사용자 결정: 컨텍스트 상한 강제 없음. 성능 유지(모델·effort 하향 없음). 계획 세션과 lane 실행 세션 분리, 캐시 적중 유지.
+- 반영: `SKILL.md` 「세션 길이와 비용」 절과 §2·§3 문구, `orchestration.md` §1·§9 실측 근거, `dev-protocol/SKILL.md` 호출 문구, `global/CLAUDE.md` 표 행. plan·계약 저장 위치는 repo 밖 `~/.local/state/multi-session-dev/plans/<task>.json`·`.contract.md` 관례(스크립트 변경 없음).
+- 미반영: CLIProxyAPI는 토큰을 저장하지 않아(in-memory usage queue) 프록시 측 정량은 요청 수만 가능. `request-log`를 켜면 이후부터 남는다. Codex 세션은 258K 창·compaction 523회로 Claude와 턴당 토큰이 같은 수준(3.9M vs 3.75M)이며 이번 규칙은 플랫폼 공통으로 적용.

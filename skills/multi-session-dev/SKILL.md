@@ -34,6 +34,19 @@ Lead가 Claude든 Codex든 같은 스크립트를 쓴다. 단, macOS에서 Codex
 
 단일 파일 수정, 순차 의존이 강한 작업, 같은 파일을 여러 lane이 건드리는 작업은 Lead가 직접 처리하고 생략 이유를 한 줄로 남긴다. 세션 lane은 규칙·hook·skill을 다시 로드하므로 단일 세션보다 토큰이 수 배 든다.
 
+## 세션 길이와 비용
+
+비용은 세션 길이가 아니라 호출마다 다시 읽는 컨텍스트 크기로 결정된다. 컨텍스트 상한을 강제하지 않는 대신 phase 경계에서 세션을 나눈다. 성능이 우선이므로 모델·effort를 낮추는 방식으로 비용을 줄이지 않는다. 실측 근거는 `orchestration.md` §9.
+
+| 경계 | 규칙 |
+|---|---|
+| 계획 → 실행 | plan과 입력 계약을 확정한 세션에서 lane을 띄우지 않는다. 두 파일을 repo 밖(`~/.local/state/multi-session-dev/plans/<task>.json`, 같은 이름의 `.contract.md`)에 저장하고, 새 Lead 세션이 그 두 파일과 프로젝트 규칙만 읽고 §3부터 진행한다. `.contract.md`에는 `lane-contract.md` §1 항목에 더해 계획 중 내린 결정, 기각한 대안과 이유, 조사에서 발견한 제약을 적는다. 이 세 가지가 빠지면 실행 세션이 같은 조사를 반복하거나 다른 선택을 한다. 계획 세션은 사용자에게 재개 문구 한 줄만 남긴다 |
+| 실행 → 통합·리뷰 | 같은 Lead 세션에서 이어간다. lane 결과는 `status --json`과 diff로 받고 lane transcript를 읽지 않는다 |
+| 1시간 이상 대기 | prompt cache TTL이 1시간이라 그 뒤 첫 호출은 전체 컨텍스트를 다시 기록한다. 승인·외부 응답 대기가 길어질 것 같으면 상태를 state 디렉토리에 두고 새 세션으로 재개한다 |
+| lane 하나 | 스킬을 쓰지 않는다. 새 세션에서 직접 구현하는 것이 같은 효과를 내고 통합 오버헤드가 없다 |
+
+lane 세션은 한 번에 끝나므로 캐시 적중이 자동으로 유지된다. lane의 컨텍스트는 Bash 출력이 대부분이므로 lane 프롬프트의 `verify_commands`는 전체 로그를 파일에 남기고 컨텍스트에는 실패 줄만 넣도록 필터한다(`2>&1 | tee <log> | grep -E "FAIL|Error" | head -50`). 판정은 항상 exit code로 하고 필터된 텍스트로 통과를 추정하지 않는다. 테스트 lane처럼 출력이 큰 lane은 `max_budget_usd`를 plan에 적어 폭주를 막는다. 상한이 아니라 알림용이다.
+
 ## 절차
 
 ### 0. 설정과 프로젝트 분석
@@ -63,8 +76,11 @@ python3 scripts/lane_plan.py validate --plan <plan.json> --json
 - 쓰기 lane은 항상 `session` + 전용 worktree. 소유 경로가 겹치면 검증이 실패하므로 lane을 다시 자른다.
 - 읽기 전용 조사는 `subagent`. 리뷰는 `session` read-only이며 gate는 Claude, advisory는 Codex를 기본으로 한다.
 - Lead workspace가 dirty이면 worktree 생성이 거부된다. 사용자 변경을 보존하고 commit 방향을 확인한다. 자동 stash·reset 금지.
+- 표가 확정되면 plan과 입력 계약을 저장하고 이 세션을 끝낸다. 실행은 새 Lead 세션이 맡는다(「세션 길이와 비용」).
 
 ### 3. 실행
+
+새 Lead 세션은 저장된 plan·입력 계약과 프로젝트 규칙만 읽고 시작한다. 이전 세션의 대화·조사 결과를 다시 불러오지 않는다.
 
 ```bash
 python3 scripts/session_runner.py run --plan <plan.json> --wave 0 --json

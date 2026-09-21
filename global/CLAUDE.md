@@ -24,7 +24,7 @@
 | 설정된 프로젝트 workspace의 비단순 작업 | 프로젝트 규칙·현재 코드를 확인하고 `project-wiki-context`로 필요한 최신 맥락만 읽는다 |
 | 구현·설계·비가역 작업 | `dev-protocol`: 구체화 → 계획 → 격리 작업 → 실행 → 실측 검증 → 완료 |
 | 화면·스타일·시각 산출물 | `design-workflow`로 모드와 승인 게이트를 먼저 정한다. 단독 덱·리포트도 같은 원칙을 적용한다 |
-| 독립 lane 둘 이상·다중 모듈·DB/권한/migration/연동 작업 | `multi-session-dev`; 단순 작업은 제외한다 |
+| 독립 lane 둘 이상·다중 모듈·DB/권한/migration/연동 작업 | `multi-session-dev`; 단순 작업은 제외하고, 계획 세션과 lane 실행 세션을 분리한다 |
 | Git×Supabase×Vercel 기능 작업 | 프로젝트 절차를 확인하고 `feature-flow`를 적용한다 |
 | 원인 불명 오류·실패한 수정 | `systematic-debugging`으로 원인을 검증한다 |
 | 배포 검증 성공 | 같은 턴에 `dev-protocol` 클로즈아웃: 개발은 HANDOFF 후보, 운영은 `knowns` |
