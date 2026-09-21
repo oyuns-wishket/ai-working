@@ -24,6 +24,11 @@ Every discovered canonical remote must have exactly one registry entry or an exp
 - Reject overdue documents (`review_by` before today), invalid/missing frontmatter, paths outside the registered namespace, and symlink escapes.
 - Always exclude `raw/`, `derived/`, `.runtime/`, `omc-inbox/`, and `wiki/80-observations/` from ordinary retrieval.
 - Enforce registry `max_documents` and `max_total_bytes`.
+- `max_records` (0..4, default 1) caps `type: record` notes (dated meeting/design/review records) per route. Knowledge
+  types (domain, runbook, lesson, decision, system, charter, …) are selected first by score; matching records only take
+  slots knowledge left, so a matching `lesson` is never displaced by a record. Records still need a query match.
+- Each returned document carries `type`. `warnings` lists one summary line plus one line per rejected document;
+  `knowledge_health.rejected_reasons` counts them by category (`overdue`, `invalid-source-ref`, `provisional`, …).
 - V1 retains its legacy index behavior: `index.md` consumes bytes but no document slot, and `documents` combines the index with `query_documents`. V2 indexes are navigation-only, never injected, and consume neither budget; both result arrays contain only selected notes.
 - Optional `intent_routes` map stable query terms to explicit namespace-relative documents. Intent score augments text
   overlap; a pinned document with neither signal is not injected merely because it is pinned.

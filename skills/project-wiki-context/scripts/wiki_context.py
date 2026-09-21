@@ -190,6 +190,9 @@ def load_registry(root: Path) -> dict:
             value = retrieval.get(key, default)
             if not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= maximum:
                 raise ContextError(f"registry retrieval {key} is invalid")
+        max_records = retrieval.get("max_records", 1)
+        if not isinstance(max_records, int) or isinstance(max_records, bool) or not 0 <= max_records <= 4:
+            raise ContextError("registry retrieval max_records is invalid")
         pinned = retrieval.get("pinned", [])
         if not isinstance(pinned, list) or any(not isinstance(item, str) for item in pinned):
             raise ContextError("registry retrieval pinned must be a string array")
@@ -362,6 +365,37 @@ def safe_document(path: Path, namespace: Path, today: dt.date) -> tuple[bool, st
 
 def tokens(value: str) -> set[str]:
     return {match.group(0).lower() for match in WORD_RE.finditer(value) if len(match.group(0)) > 1}
+
+
+def rejection_category(reason: str) -> str:
+    """Fold detailed reasons (overdue:<date>, status:<value>) into a short category."""
+    if reason.startswith("status:"):
+        return reason.split(":", 1)[1] or "status"
+    return reason.split(":", 1)[0]
+
+
+def rejection_counts(rejected: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rejected:
+        category = rejection_category(str(row.get("reason", "")))
+        counts[category] = counts.get(category, 0) + 1
+    return dict(sorted(counts.items(), key=lambda item: (-item[1], item[0])))
+
+
+def knowledge_warnings(rejected: list[dict]) -> list[str]:
+    """Human-readable lines: one summary plus one line per rejected document."""
+    if not rejected:
+        return []
+    counts = rejection_counts(rejected)
+    summary = ", ".join(f"{category} {count}" for category, count in counts.items())
+    noun = "document" if len(rejected) == 1 else "documents"
+    return [f"knowledge degraded: {len(rejected)} {noun} rejected ({summary})",
+            *(f"{row.get('path')}: {row.get('reason')}" for row in rejected)]
+
+
+def record_first_key(document: dict) -> tuple:
+    """Durable knowledge outranks dated records; within each partition keep the score order."""
+    return (document.get("type") == "record", -document["score"], document["bytes"], document["relative_path"])
 
 
 def matched_intents(policy: dict, query: str) -> tuple[list[str], set[str]]:
@@ -561,6 +595,7 @@ def routed_documents(resolved: dict, query: str) -> dict:
 
     policy = resolved["project"].get("retrieval", {})
     max_documents = max(1, min(int(policy.get("max_documents", 4)), 8))
+    max_records = max(0, min(int(policy.get("max_records", 1)), 4))
     max_bytes = max(1, min(int(policy.get("max_total_bytes", 80000)), 250000))
     query_tokens = tokens(query)
     intents, intent_documents = matched_intents(policy, query)
@@ -595,6 +630,7 @@ def routed_documents(resolved: dict, query: str) -> dict:
                 "path": str(path),
                 "relative_path": rel,
                 "title": title,
+                "type": metadata.get("type"),
                 "bytes": len(path.read_bytes()),
                 "score": score,
                 "matched_terms": overlap[:12],
@@ -611,13 +647,17 @@ def routed_documents(resolved: dict, query: str) -> dict:
         if rel in policy.get("pinned", []) and score > 0:
             score += 2
             reasons.append("pinned-tiebreak")
-        candidates.append((score, len(path.read_bytes()), rel, path, title, overlap, reasons))
+        candidates.append((score, len(path.read_bytes()), rel, path, title, overlap, reasons, metadata.get("type")))
 
-    candidates.sort(key=lambda item: (-item[0], item[1], item[2]))
+    # Knowledge first: records only take slots knowledge left, capped by max_records.
+    candidates.sort(key=lambda item: (item[7] == "record", -item[0], item[1], item[2]))
     selected = []
+    selected_records = 0
     used_bytes = index_document["bytes"] if index_document else 0
-    for score, size, rel, path, title, overlap, reasons in candidates:
+    for score, size, rel, path, title, overlap, reasons, doc_type in candidates:
         if score <= 0 or len(selected) >= max_documents or used_bytes + size > max_bytes:
+            continue
+        if doc_type == "record" and selected_records >= max_records:
             continue
         source_health = cached_source_health(path)
         if source_health["missing_commits"] or source_health["missing_paths"]:
@@ -628,6 +668,7 @@ def routed_documents(resolved: dict, query: str) -> dict:
                 "path": str(path),
                 "relative_path": rel,
                 "title": title,
+                "type": doc_type,
                 "bytes": size,
                 "score": score,
                 "matched_terms": overlap[:12],
@@ -636,6 +677,7 @@ def routed_documents(resolved: dict, query: str) -> dict:
             }
         )
         used_bytes += size
+        selected_records += doc_type == "record"
     if index_document is None:
         return {
             **resolved,
@@ -664,7 +706,9 @@ def routed_documents(resolved: dict, query: str) -> dict:
         "matched_intents": intents,
         "selected_bytes": used_bytes,
         "rejected": rejected,
-        "knowledge_health": namespace_health(resolved, today, source_cache),
+        "warnings": knowledge_warnings(rejected),
+        "knowledge_health": {**namespace_health(resolved, today, source_cache),
+                             "rejected_count": len(rejected), "rejected_reasons": rejection_counts(rejected)},
     }
 
 
@@ -772,6 +816,7 @@ def doctor(project: Path, wiki_root: str | None = None) -> dict:
         "healthy": connection_healthy,
         "status": status,
         "checks": checks,
+        "warnings": route.get("warnings", []) if route else [],
         "knowledge_health": quality,
     }
 
@@ -1182,6 +1227,7 @@ def routed_v2(resolved: dict, query: str) -> dict:
     entry = resolved["project"]
     policy = entry["retrieval"]
     max_documents = policy.get("max_documents", 4)
+    max_records = policy.get("max_records", 1)
     max_bytes = policy.get("max_total_bytes", 80000)
     section_limit = min(12000, max_bytes)
     intents, intent_documents = matched_intents(policy, query)
@@ -1216,7 +1262,7 @@ def routed_v2(resolved: dict, query: str) -> dict:
                 rejected.append({"path": rel, "reason": "invalid-source-ref"})
                 continue
             document = {"path": str(path), "relative_path": rel, "id": metadata["id"], "title": metadata["title"],
-                        "status": metadata["status"], "source_health": source, "read_only": True,
+                        "type": metadata.get("type"), "status": metadata["status"], "source_health": source, "read_only": True,
                         "body_sha256": hashlib.sha256(body.encode("utf-8")).hexdigest(),
                         "corpus": "manual" if manual else "canonical", "scope": scope["customer_scope"]}
             try:
@@ -1262,11 +1308,13 @@ def routed_v2(resolved: dict, query: str) -> dict:
                 "route_reason": "scoped navigation index missing or escaped"}
     navigation = {"path": str(index_path), "navigation_only": True, "follow_links": False,
                   "injected": False}
-    selected, used = [], 0
+    selected, used, selected_records = [], 0, 0
 
     def select(document: dict) -> bool:
-        nonlocal used
+        nonlocal used, selected_records
         if len(selected) >= max_documents:
+            return False
+        if document.get("type") == "record" and selected_records >= max_records:
             return False
         document = dict(document)
         remaining = max_bytes - used
@@ -1294,9 +1342,11 @@ def routed_v2(resolved: dict, query: str) -> dict:
             document["bytes"] = sum(row["bytes"] for row in chosen)
         used += document["bytes"]
         selected.append(document)
+        selected_records += document.get("type") == "record"
         return True
 
-    for document in sorted(ranked, key=lambda d: (-d["score"], d["bytes"], d["relative_path"])):
+    # Knowledge first: a matching lesson/runbook/domain note is never displaced by a dated record.
+    for document in sorted(ranked, key=record_first_key):
         select(document)
     # Direct evidence always gets first use of the budget. Never recurse or follow paths.
     by_id = {item["document"]["id"]: item["document"] for item in eligible.values()
@@ -1320,9 +1370,10 @@ def routed_v2(resolved: dict, query: str) -> dict:
                 break
     return {**resolved, "index_document": None, "navigation": navigation, "query_documents": selected, "documents": selected,
             "index_counts_toward_document_limit": False, "query": query, "matched_intents": intents,
-            "selected_bytes": used, "rejected": rejected,
+            "selected_bytes": used, "rejected": rejected, "warnings": knowledge_warnings(rejected),
             "route_reason": "bounded scoped retrieval" if selected else "no relevant current document; use repository context",
-            "knowledge_health": {"status": "degraded" if rejected else "healthy", "rejected_count": len(rejected)}}
+            "knowledge_health": {"status": "degraded" if rejected else "healthy", "rejected_count": len(rejected),
+                                 "rejected_reasons": rejection_counts(rejected)}}
 
 
 def main() -> int:

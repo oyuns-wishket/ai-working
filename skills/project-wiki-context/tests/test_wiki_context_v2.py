@@ -29,13 +29,13 @@ def contract(root):
     return value
 
 
-def note(path, body="shipping", *, customer="alpha", security="work", status="canonical", review="2099-01-01", note_id=None):
+def note(path, body="shipping", *, customer="alpha", security="work", status="canonical", review="2099-01-01", note_id=None, doc_type="domain"):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(f'''---
 schema_version: 2
 id: {note_id or "KB-" + path.stem.upper().replace("-", "_")}
 title: {path.stem}
-type: domain
+type: {doc_type}
 status: {status}
 owner: reviewer
 security_domain: {security}
@@ -445,6 +445,72 @@ class V2Tests(unittest.TestCase):
         result = self.route("architecture")
         self.assertEqual(self.selected(result), {"sys-wiki/aidp/alpha/engineering/landscape.md"})
         self.assertEqual(result["documents"][0]["selection_reasons"], ["intent-route"])
+
+
+    def test_records_take_only_leftover_slots_capped_by_max_records(self):
+        self.entry["retrieval"] = {"max_documents": 4}
+        for index in range(4):
+            self.add_note(f"2026-01-0{index + 1}-review.md", "shipping review", aliases=["shipping"], doc_type="record")
+        self.add_note("rules.md", "shipping rules")
+        self.add_note("checklist.md", "shipping checklist", doc_type="runbook")
+        result = self.route()
+        types = [d["type"] for d in result["documents"]]
+        self.assertEqual(types[:2], ["domain", "runbook"])
+        self.assertEqual(types.count("record"), 1)
+        self.assertEqual(len(types), 3)
+        self.entry["retrieval"] = {"max_documents": 4, "max_records": 0}
+        self.assertEqual([d["type"] for d in self.route()["documents"]], ["domain", "runbook"])
+        self.entry["retrieval"] = {"max_documents": 4, "max_records": 2}
+        self.assertEqual([d["type"] for d in self.route()["documents"]].count("record"), 2)
+        self.assertFalse(self.route("unrelated-topic")["documents"])
+
+    def test_matching_lesson_is_never_displaced_by_higher_scoring_records(self):
+        for index in range(3):
+            self.add_note(f"2026-02-0{index + 1}-meeting.md", "shipping shipping", aliases=["shipping"], tags=["shipping"], doc_type="record")
+        self.add_note("lesson.md", "shipping", doc_type="lesson")
+        result = self.route()
+        self.assertEqual(result["documents"][0]["type"], "lesson")
+        self.assertGreater(result["documents"][1]["score"], result["documents"][0]["score"])
+        self.assertEqual([d["type"] for d in result["documents"]], ["lesson", "record"])
+        for document in result["documents"]:
+            self.assertIn("type", document)
+
+    def test_related_record_respects_max_records_cap(self):
+        self.entry["retrieval"] = {"max_documents": 4, "max_records": 1}
+        self.add_note("2026-03-01-review.md", "shipping review", doc_type="record")
+        self.add_note("2026-03-02-review.md", "unrelated", note_id="KB-REC-LATER", doc_type="record")
+        self.add_note("rules.md", "shipping", related=["KB-REC-LATER"])
+        result = self.route()
+        self.assertEqual([d["type"] for d in result["documents"]], ["domain", "record"])
+        self.assertNotIn("related-one-hop", [r for d in result["documents"] for r in d["selection_reasons"]])
+
+    def test_warnings_summarize_rejected_documents_and_doctor_exposes_them(self):
+        self.add_note("rules.md")
+        self.assertEqual(self.route()["warnings"], [])
+        self.add_note("old.md", review="2026-06-01")
+        self.add_note("draft.md", status="provisional")
+        broken = self.add_note("broken.md")
+        broken.write_text(broken.read_text().replace("user-confirmation:2026-01-01", "repo:team/product@deadbeef/missing.py"))
+        result = self.route()
+        self.assertEqual(result["warnings"][0], "knowledge degraded: 3 documents rejected (invalid-source-ref 1, overdue 1, provisional 1)")
+        self.assertEqual(sorted(result["warnings"][1:]), sorted(f"{r['path']}: {r['reason']}" for r in result["rejected"]))
+        self.assertEqual(result["knowledge_health"], {"status": "degraded", "rejected_count": 3,
+                                                      "rejected_reasons": {"invalid-source-ref": 1, "overdue": 1, "provisional": 1}})
+        self.assertNotIn("alpha/rules.md", " ".join(result["warnings"]))
+        doctor = M.doctor(self.repo, str(self.root))
+        self.assertEqual(doctor["status"], "degraded")
+        self.assertEqual(doctor["warnings"], result["warnings"])
+
+    def test_max_records_policy_is_bounded(self):
+        for value in (-1, 5, True, "1"):
+            with self.subTest(value=value):
+                self.entry["retrieval"] = {"max_records": value}
+                self.save()
+                with self.assertRaises(M.ContextError):
+                    M.load_registry(self.root)
+        self.entry["retrieval"] = {"max_records": 4}
+        self.save()
+        self.assertEqual(M.load_registry(self.root)["projects"][0]["retrieval"]["max_records"], 4)
 
 
 if __name__ == "__main__":

@@ -147,4 +147,23 @@ class FeedbackTests(unittest.TestCase):
         self.assertEqual(list(self.root.iterdir()),[])
 
 
+    def test_since_days_window_filters_by_trace_time(self):
+        recent = self.record()
+        old = self.record()
+        path = self.root/(old+'.json')
+        value = f.read_record(path)
+        value['recorded_at'] = '2020-01-01T00:00:00Z'
+        f.write_record(path, value)
+        self.assertEqual(f.report()['traces'], 2)
+        windowed = f.report(since_days=14)
+        self.assertEqual((windowed['traces'], windowed['since_days'], windowed['outcomes']), (1, 14, {'unreported': 1}))
+        f.feedback(recent, 'not_used', [])
+        self.assertEqual(f.report(since_days=14)['outcomes'], {'not_used': 1})
+        for bad in (0, -1, f.MAX_SINCE_DAYS+1, True, 1.5):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                f.report(since_days=bad)
+        result = subprocess.run([sys.executable, str(SCRIPT), 'report', '--kind', 'development', '--since-days', '14'], capture_output=True, text=True, check=True)
+        self.assertEqual(json.loads(result.stdout)['traces'], 1)
+
+
 if __name__ == '__main__': unittest.main()
