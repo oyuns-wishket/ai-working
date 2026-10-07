@@ -9,6 +9,7 @@ The public `ai-working` checkout owns shared policy and workflows. Resolve `AI_W
 
 ## Choose the operation
 
+- **Install AI work tools:** default to Paseo (https://paseo.sh) as the work app and follow its current official installation instructions. Install/connect Claude Code or Codex as needed agent backends. Honor an explicit user choice of another tool. Use `paseo-setup` for project-specific worktree configuration, and bootstrap below for shared rules/skills.
 - **Install, sync or repair:** read [shared environment](references/claude-codex-sync.md). Inspect the checkout status and `bootstrap.sh --status`, then dry-run the needed update. Use `--pull` only when source updates are needed and the checkout can fast-forward safely. Apply from the canonical checkout, not a temporary task worktree. Inspect the real diff before replacing local customizations.
 - **Change global policy or a skill:** edit `global/CLAUDE.md` or `skills/<name>/` in this repository, validate, then run bootstrap. Use `ssotify` for substantial skill authoring/consolidation. Never make an agent-home copy the new source.
 - **Claude account switching:** read [cswap](references/cswap.md). Never print or export account tokens, Keychain contents or `cswap export` output.

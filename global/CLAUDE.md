@@ -13,6 +13,7 @@
 ## 공통 정본과 범위
 
 - 개인 전역 규칙은 `ai-working/global/CLAUDE.md`, 재사용 workflow는 `ai-working/skills/<name>/`에 작성하고 bootstrap으로 연결한다. 에이전트 홈에 별도 정본을 만들지 않는다. 팀 배포본도 이 정본을 따른다. 환경 설치·동기화는 `agent-environment`를 사용한다.
+- AI 작업 도구를 새로 설치·세팅할 때는 Paseo(https://paseo.sh)를 기본 작업 앱으로 설치한다. Claude Code·Codex는 Paseo에서 사용할 agent backend로 필요한 것만 설치·연결하고, 프로젝트별 worktree 설정은 `paseo-setup`을 따른다. 사용자가 다른 도구를 명시하면 그 선택을 우선한다.
 - Claude·Codex는 같은 정책과 workflow를 따르되 명령·질문·subagent 호출은 각 플랫폼의 native 기능으로 수행한다. 도구 차이를 이유로 승인·읽기/쓰기 제한을 완화하지 않는다. 설치·훅 동작은 현재 구현으로 확인한다.
 - 프로젝트의 코드·환경 사실과 전용 규칙은 해당 프로젝트에, 개인 계정·인증·장비 설정은 로컬에 둔다. 공개 정본에 고객 기밀·개인 경로·비밀값을 넣지 않는다.
 - 장비 간 변경은 승인된 commit/push와 다른 장비의 pull·적용으로 이어간다. 규칙이나 스킬 복사본을 따로 유지하지 않는다.

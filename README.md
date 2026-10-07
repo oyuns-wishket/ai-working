@@ -13,6 +13,8 @@ Claude Code와 Codex가 같은 글로벌 규칙, 스킬, hook, workspace 기본�
 
 ## 설치
 
+AI 작업 도구의 기본 설치 대상은 [Paseo](https://paseo.sh)다. 공식 설치 안내로 Paseo를 설치하고, 사용할 agent backend(Claude Code·Codex)를 필요한 만큼 설치·연결한다. 공통 규칙·스킬 연결은 아래 bootstrap으로, 프로젝트별 worktree 설정은 `paseo-setup`으로 처리한다. 사용자가 다른 도구를 명시하면 그 선택을 우선한다.
+
 clone이나 bootstrap 전에 사용할 사람이 checkout 위치를 먼저 정한다. 이미 쓰는 개발 폴더가 있으면 그 구조를 우선하고, 선호가 없을 때만 `~/ai-working`을 제안한다. 원작성자의 상위 폴더 이름을 복사하지 않는다.
 
 ```bash
