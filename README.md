@@ -25,6 +25,8 @@ agent-environment로 새 Mac mini를 기존 Mac mini처럼 세팅해줘.
 
 스킬이 아직 연결되지 않은 새 기기에서는 이 저장소의 `skills/agent-environment/SKILL.md`를 직접 읽도록 요청한다. 기준 장비·설치 위치가 미정이면 그 정보만 확인하고, 장비별 로그인·GUI·OS 권한 단계는 실제 설치 중 안내한다.
 
+Tailscale로 기존 Mac mini와 새 Mac의 실제 연결을 확인하면 기존 장비의 모든 환경·인프라를 이관할지 한 번 질문한다. 이관을 선택하면 로컬 인계 기록을 만들고 이후 작업은 새 Mac mini의 에이전트에서 진행한다. 기존 장비의 서비스 중단·데이터 삭제·운영 전환은 해당 영향에 대한 승인 범위를 따로 확인한다.
+
 | 선택한 작업 | 설치·설정 범위 | 담당 스킬 |
 |---|---|---|
 | 기본 AI 환경 | Paseo, 선택한 Claude Code/Codex backend, Git·Node.js·Python 3·jq | `agent-environment` |

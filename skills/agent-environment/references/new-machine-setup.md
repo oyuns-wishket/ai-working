@@ -16,6 +16,22 @@ If skills are not yet registered, read this repository's `skills/agent-environme
 
 Create a short checklist covering discovery, installation, shared configuration, projects, remote access and verification. Keep discovered device identities, paths, application inventories and progress in machine-local configuration, outside public Git. Resume from verified progress rather than repeating completed setup.
 
+### Tailscale checkpoint and execution handoff
+
+As soon as Tailscale is installed/authenticated on the intended devices and an actual connection between the new Mac and baseline Mac mini is verified, ask the user once:
+
+> Tailscale 연결을 확인했습니다. 기존 Mac mini에 설치된 모든 환경과 인프라를 새 Mac mini로 이관할까요?
+
+Offer `이관 진행`, `기본 세팅만 완료`, and `나중에 결정` through the platform's native question tool. Reuse an explicit answer already given for this migration; do not repeat the question. Tailscale installation alone is not this checkpoint: verify the intended peers and real reachability first. A broad request to make a new Mac work like the baseline does not by itself answer this full infrastructure migration question. While the answer is pending, continue independent base setup without copying infrastructure state or changing live service placement.
+
+If the user selects migration, inventory the complete baseline environment and infrastructure, including project checkouts/dirty work, runtimes, local databases and volumes, containers, launchd/background services, bots/schedules, reverse proxies/tunnels, DNS/deployment bindings, integrations and required data. Discover the actual components rather than assuming a fixed stack. Record source/target paths, ownership, dependencies, supported backup/restore route, verification, rollback and any cutover impact in a restricted machine-local migration plan. Use the appropriate project rules, `customer-infra-ops`, bot and remote skills. Migration authorization covers preparing and restoring the agreed target; it does not authorize source data deletion, duplicate live bot/schedule execution, a public endpoint cutover or unrelated production changes. Reuse an explicit approved cutover scope and ask only about new impact.
+
+Run subsequent setup/migration steps from the **new Mac mini**. If this agent is already there, verify the actual host identity before continuing. If this session is on the old Mac or viewer, prepare a non-secret resume checklist on the new Mac through the authorized connection and hand off to a terminal agent running there. Do not claim that the current session changed hosts. Include baseline/target roles, canonical checkout, completed verification, the user's migration decision, remaining tasks and the scoped rollback plan; keep private values out of the prompt and public Git. The user can resume on the new Mac with:
+
+> agent-environment: 이 새 Mac mini에서 기존 Mac mini 이관을 이어서 진행해줘. 로컬 인계 기록과 Tailscale 연결·장비 역할을 먼저 확인하고 완료된 단계는 반복하지 마.
+
+Only GUI/login/session-opening steps that cannot be performed remotely go to the user. Keep the baseline intact while the new Mac performs target-side installation, restoration and checks. If migration is declined or deferred, finish the selected base setup and record the decision without starting infrastructure transfer.
+
 1. **Discover the target and baseline.** Inspect OS, CPU, shell, user, installed tools/versions, current agent configuration, workspace paths and reachable authorized hosts. Identify which existing Mac is the baseline; ask only if it cannot be resolved. Inspect it read-only over an authorized connection, reporting non-secret settings only. Inventory actual AI apps/backends, external skills/plugins/MCPs, package managers, projects, remote products and relevant running services. Separate canonical policy from machine-local runtime settings and deprecated workflows. If the baseline is unreachable, continue independent target setup and mark parity unverified.
 
 2. **Install the work tools.** Use Paseo as the default work app. Install/connect Claude Code and Codex when selected or used on the baseline. Prepare Git, Node.js, Python 3, jq, standard shell tools, Paseo CLI and GitHub CLI for the corresponding workflows. Install package managers, Supabase/Vercel CLI, Docker, Playwright and required browsers when the baseline's actual work or selected projects require them. Inspect compatible existing installations and supported official distribution paths; account for OS/CPU differences. Record reasons for version differences rather than silently introducing major upgrades. Do terminal work directly.
