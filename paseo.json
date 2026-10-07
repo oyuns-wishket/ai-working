@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "test": { "command": "node --test tests/*.test.mjs" },
+    "test-py": { "command": "python3 -m unittest discover -s tests -p 'test_*.py'" },
+    "validate-skills": { "command": "python3 scripts/validate_skills.py" },
+    "audit": { "command": "python3 scripts/public_audit.py --history" }
+  }
+}
