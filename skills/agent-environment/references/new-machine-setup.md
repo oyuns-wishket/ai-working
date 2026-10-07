@@ -32,6 +32,8 @@ Create a short checklist covering discovery, installation, shared configuration,
 
 ## Verification and completion
 
+When Jump Desktop is selected or present on the baseline, explicitly apply `remote-setup/references/jump-desktop.md`: inspect/install the viewer client and host Connect component by device role, resolve the purchase/activation channel, and verify an actual connection. Generic VPN/SSH readiness does not establish Jump Desktop readiness.
+
 | Capability | Evidence |
 |---|---|
 | Paseo and agent backends | Start a harmless agent session through Paseo; verify each selected backend actually responds |

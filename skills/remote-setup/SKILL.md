@@ -1,6 +1,6 @@
 ---
 name: remote-setup
-description: Set up or migrate a Mac remote-desktop environment over an approved private network, including host sleep behavior, display quality, input methods, and optional clipboard-image transfer. Use when configuring a headless Mac host or a Mac viewer. Discovers accounts, hosts, and versions instead of embedding them.
+description: Set up or migrate Mac remote access, including Jump Desktop/Jump Desktop Connect, approved private networking, host sleep behavior, display quality, input and optional clipboard transfer. Use for a headless Mac host or viewer. Discovers device identities and license status locally.
 ---
 
 # Mac remote desktop setup
@@ -10,6 +10,8 @@ Interview for the viewer and host devices, remote-desktop product, private-netwo
 ## Discovery
 
 On each available Mac, inspect macOS version, CPU architecture, hostname, current user, installed app versions, SSH/remote-login state, power settings, displays, and active network nodes. Keep discovered account, hostname, address, fingerprint, and license values machine-local. Use [`../../config/remote-setup.example.env`](../../config/remote-setup.example.env) as a field list, not as a source of defaults.
+
+When the user selects Jump Desktop or it exists on the baseline Mac, read [Jump Desktop setup](references/jump-desktop.md). Distinguish the viewer's Jump Desktop client from the host's Jump Desktop Connect, inspect both roles, and resolve the client's actual purchase/activation channel. Do not omit Jump Desktop merely because generic remote access was configured.
 
 ## Configure
 
