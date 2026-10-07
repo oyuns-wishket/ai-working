@@ -15,6 +15,21 @@ Claude Code와 Codex가 같은 글로벌 규칙, 스킬, hook, workspace 기본�
 
 AI 작업 도구의 기본 설치 대상은 [Paseo](https://paseo.sh)다. 공식 설치 안내로 Paseo를 설치하고, 사용할 agent backend(Claude Code·Codex)를 필요한 만큼 설치·연결한다. 공통 규칙·스킬 연결은 아래 bootstrap으로, 프로젝트별 worktree 설정은 `paseo-setup`으로 처리한다. 사용자가 다른 도구를 명시하면 그 선택을 우선한다.
 
+환경 세팅을 요청하면 `agent-environment`가 선택한 작업에 필요한 추가 도구와 프로젝트 라이브러리까지 에이전트가 직접 설치·연결·검증하도록 담당 스킬로 연결한다. bootstrap은 공통 규칙·스킬·hook 연결을 담당하며 외부 프로그램 설치는 각 스킬의 절차로 수행한다.
+
+| 선택한 작업 | 설치·설정 범위 | 담당 스킬 |
+|---|---|---|
+| 기본 AI 환경 | Paseo, 선택한 Claude Code/Codex backend, Git·Node.js·Python 3·jq | `agent-environment` |
+| 프로젝트 개발·배포 | Paseo CLI, 프로젝트 package manager, `gh`, 필요 시 Supabase/Vercel CLI·Docker | `paseo-setup`, `dev-protocol`, `feature-flow`, `customer-infra-ops` |
+| UI·화면 검증·3D | Playwright·Chromium, 작업에 쓰는 Anime.js·Motion·Bklit·Three.js 등 프로젝트 의존성, 선택한 보조 스킬·제작 도구 | `design-workflow`, `dev-review-deck` |
+| 현재 Mac ↔ 원격 Mac 화면 접속 | 선택한 VPN·원격 데스크톱 앱, 호스트 전원·화면·입력·선택한 클립보드 설정 | `remote-setup` |
+| 원격 코드 편집 | SSH·VS Code·Remote-SSH | `remote-ssh-edit` |
+| Mac 간 파일 전송·동기화 | Tailscale·Taildrop·SSH/rsync | `mac-file-sync` |
+| 여러 Mac의 AI 환경 동기화 | 승인된 Git commit/push → 다른 Mac의 pull·bootstrap·장치별 검증 | `agent-environment` |
+| 복수 계정·봇 | 선택한 cswap, Hermes 또는 Codex 기반 bot runtime·연동 | `agent-environment`, `hermes-bot-setup`, `agent-bot-setup` |
+
+기존 설치를 재사용하고 작업에 필요한 누락 항목을 설치한다. 라이브러리는 해당 프로젝트의 packageManager·lockfile과 디자인 게이트를 따른다. 여러 Mac 구성은 현재 기기와 원격 기기 양쪽에서 확인하며, 완료 보고에 장치별 검증과 남은 로그인·GUI·OS 권한 단계를 명시한다.
+
 clone이나 bootstrap 전에 사용할 사람이 checkout 위치를 먼저 정한다. 이미 쓰는 개발 폴더가 있으면 그 구조를 우선하고, 선호가 없을 때만 `~/ai-working`을 제안한다. 원작성자의 상위 폴더 이름을 복사하지 않는다.
 
 ```bash

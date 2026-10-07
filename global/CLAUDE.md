@@ -14,6 +14,7 @@
 
 - 개인 전역 규칙은 `ai-working/global/CLAUDE.md`, 재사용 workflow는 `ai-working/skills/<name>/`에 작성하고 bootstrap으로 연결한다. 에이전트 홈에 별도 정본을 만들지 않는다. 팀 배포본도 이 정본을 따른다. 환경 설치·동기화는 `agent-environment`를 사용한다.
 - AI 작업 도구를 새로 설치·세팅할 때는 Paseo(https://paseo.sh)를 기본 작업 앱으로 설치한다. Claude Code·Codex는 Paseo에서 사용할 agent backend로 필요한 것만 설치·연결하고, 프로젝트별 worktree 설정은 `paseo-setup`을 따른다. 사용자가 다른 도구를 명시하면 그 선택을 우선한다.
+- 환경 세팅은 기본 앱뿐 아니라 선택한 작업의 CLI·브라우저·보조 도구와 프로젝트 라이브러리의 설치·연결·실행 검증까지 포함한다. `agent-environment`에서 필요한 스킬로 연결해 에이전트가 직접 수행하고, 라이브러리는 해당 프로젝트의 packageManager·lockfile과 디자인 게이트를 따른다. 여러 Mac 구성이면 현재 Mac과 원격 Mac의 역할을 확인해 `remote-setup`(원격 화면·전원·입력·클립보드), `remote-ssh-edit`(원격 편집), `mac-file-sync`(파일 전송·동기화), `agent-environment`(공통 AI 환경)를 적용한다. 기존 사용자 선택·승인을 재사용하며 장치별 검증 결과와 남은 로그인·GUI·OS 권한 단계를 구분해 보고한다.
 - Claude·Codex는 같은 정책과 workflow를 따르되 명령·질문·subagent 호출은 각 플랫폼의 native 기능으로 수행한다. 도구 차이를 이유로 승인·읽기/쓰기 제한을 완화하지 않는다. 설치·훅 동작은 현재 구현으로 확인한다.
 - 프로젝트의 코드·환경 사실과 전용 규칙은 해당 프로젝트에, 개인 계정·인증·장비 설정은 로컬에 둔다. 공개 정본에 고객 기밀·개인 경로·비밀값을 넣지 않는다.
 - 장비 간 변경은 승인된 commit/push와 다른 장비의 pull·적용으로 이어간다. 규칙이나 스킬 복사본을 따로 유지하지 않는다.
