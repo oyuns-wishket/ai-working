@@ -1,6 +1,6 @@
 ---
 name: agent-environment
-description: Set up, sync, or diagnose the shared Claude/Codex environment, global rules, hooks, skills, and cswap accounts across Macs. Includes former claude-setup and sync-consortium requests.
+description: Set up a new Mac or Mac mini like an existing Mac with Paseo, Claude/Codex, work tools, shared rules/skills/hooks, remote access and runtime verification. Also sync or diagnose an existing environment and cswap accounts. Includes former claude-setup and sync-consortium requests.
 ---
 
 # Agent environment
@@ -9,6 +9,7 @@ The public `ai-working` checkout owns shared policy and workflows. Resolve `AI_W
 
 ## Choose the operation
 
+- **New Mac / match an existing Mac:** requests such as “agent-environment로 새 Mac mini를 기존 Mac mini처럼 세팅해줘” activate the complete [new-machine setup](references/new-machine-setup.md). This single entrypoint owns discovery, tool installation, shared environment, project preparation, remote setup and runtime verification; invoke the relevant owner skills yourself without requiring the user to name them or paste a longer prompt. A status/sync-only request does not activate machine migration.
 - **Install AI work tools:** default to Paseo (https://paseo.sh) as the work app and follow its current official installation instructions. Install/connect Claude Code or Codex as needed agent backends. Honor an explicit user choice of another tool. Use `paseo-setup` for project-specific worktree configuration, and bootstrap below for shared rules/skills.
 - **Install, sync or repair:** read [shared environment](references/claude-codex-sync.md). Inspect the checkout status and `bootstrap.sh --status`, then dry-run the needed update. Use `--pull` only when source updates are needed and the checkout can fast-forward safely. Apply from the canonical checkout, not a temporary task worktree. Inspect the real diff before replacing local customizations.
 - **Change global policy or a skill:** edit `global/CLAUDE.md` or `skills/<name>/` in this repository, validate, then run bootstrap. Use `ssotify` for substantial skill authoring/consolidation. Never make an agent-home copy the new source.

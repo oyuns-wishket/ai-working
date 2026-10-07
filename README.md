@@ -17,6 +17,14 @@ AI 작업 도구의 기본 설치 대상은 [Paseo](https://paseo.sh)다. 공식
 
 환경 세팅을 요청하면 `agent-environment`가 선택한 작업에 필요한 추가 도구와 프로젝트 라이브러리까지 에이전트가 직접 설치·연결·검증하도록 담당 스킬로 연결한다. bootstrap은 공통 규칙·스킬·hook 연결을 담당하며 외부 프로그램 설치는 각 스킬의 절차로 수행한다.
 
+새 Mac을 기존 Mac처럼 구성하려면 아래 한 문장으로 [전체 세팅 절차](skills/agent-environment/references/new-machine-setup.md)를 시작한다. 필요한 하위 스킬은 에이전트가 연결하며, 긴 설치 프롬프트를 별도로 붙일 필요가 없다.
+
+```text
+agent-environment로 새 Mac mini를 기존 Mac mini처럼 세팅해줘.
+```
+
+스킬이 아직 연결되지 않은 새 기기에서는 이 저장소의 `skills/agent-environment/SKILL.md`를 직접 읽도록 요청한다. 기준 장비·설치 위치가 미정이면 그 정보만 확인하고, 장비별 로그인·GUI·OS 권한 단계는 실제 설치 중 안내한다.
+
 | 선택한 작업 | 설치·설정 범위 | 담당 스킬 |
 |---|---|---|
 | 기본 AI 환경 | Paseo, 선택한 Claude Code/Codex backend, Git·Node.js·Python 3·jq | `agent-environment` |
