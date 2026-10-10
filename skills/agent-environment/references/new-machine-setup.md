@@ -63,3 +63,17 @@ When Jump Desktop is selected or present on the baseline, explicitly apply `remo
 | Baseline comparison | Explicit differences with reasons and device-by-device verified/unverified status |
 
 Finish with installed/configured capabilities, baseline differences, verification results, remaining user actions and scoped blockers. Report completion only for capabilities actually verified. Do not claim that an existing session reloaded based solely on changed files. Clean up only temporary resources owned by this setup and preserve persistent data.
+
+## Field notes from a real migration
+
+These are failure modes observed while replacing a baseline Mac. Check for them instead of assuming a copied setup behaves the same.
+
+- **Finish the data inventory before the baseline is erased.** Treat the baseline as the only copy of unpushed commits, stashes, dirty files, service state and local spools until each is verified on the target. Report what still lives only on the baseline and get an explicit go-ahead before anyone resets it.
+- **Home path differences break copied automation.** A different account name changes every absolute path inside copied service definitions, virtual environments and Git worktree metadata. Decide once between rewriting paths and a compatibility link, record the choice, and remember that sandbox profiles match real paths, not links.
+- **Keychain secrets are not readable over SSH.** Have the owner run a transfer step in a GUI session on the baseline. `security find-generic-password -w` prints multi-line secrets as hex; decode before storing. An item is prompt-free only for the binary that created it, so re-store through the consuming helper and verify an unattended read.
+- **Watchdogs and health checks encode the baseline's variant.** A process-name or job-label check written for one distribution of an app (for example App Store versus standalone builds) silently never matches on the other. Run each check's failure path on the target, and remove checks for jobs that only existed on the baseline — a permanently failing check can trigger paid follow-up work on every cycle.
+- **Prove restart behaviour twice.** Services that bind a private-network address fail until the network client is connected; verify the reconnect path by forcing a disconnect, not only by observing one clean boot.
+- **Headless browsers may need one interactive launch.** A freshly installed browser can crash in headless mode until its profile has been initialised by a normal first run.
+- **Global npm may skip dependency install scripts.** If a tool or build fails after a clean install, rebuild or approve only the specific package rather than disabling the protection.
+- **Reinstall privileged or signed components from source.** Root-owned installs, system accounts and locally signed helper apps do not survive a file copy; use the project's own installer on the target and expect OS permission prompts to be re-granted.
+- **Scheduled agents must not change Git state in a shared checkout.** When an automation publishes from a checkout, other scheduled agents that create branches or local-only commits there stall it without an error the user sees. State the rule in those agents' instructions and add a non-destructive guard.
