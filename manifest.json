@@ -15,6 +15,12 @@
       "note": "기본 프로젝트 워크스페이스 규칙."
     },
     {
+      "repo": "workspaces/project-root/CLAUDE.md",
+      "target": "~/aidp/AGENTS.md",
+      "type": "file",
+      "note": "Codex가 같은 워크스페이스 규칙을 읽는다."
+    },
+    {
       "repo": "workspaces/project-root/erp-domain.md",
       "target": "~/aidp/erp-domain.md",
       "type": "file",
