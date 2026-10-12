@@ -23,6 +23,8 @@ Claude Code와 Codex가 **같은 규칙을 같은 순서로** 읽게 만든 개�
 4. 에이전트 행동 규칙(응답 언어, plan 진입, 승인 재사용, 검증·인계)은 전역 층에만 둔다. 프로젝트 본문에는
    프로젝트 고유 사실(스택, 명령어, 도메인·보안·인프라 불변식)만 둔다. 팀 템플릿에서 복사된 행동 규칙은 두지 않는다.
 5. Codex가 지시문으로 자동 로드하는 하위 `AGENTS.md`에 자동 생성 코드 지도 같은 비규칙 문서를 두지 않는다.
+6. Codex가 `.claude/skills`·`.claude/agents`에서 로컬 생성하는 어댑터(`/.agents/`, `/.codex/`)는 각 repo
+   `.gitignore`로 무시한다. 정본은 `.claude/`이고, 생성물을 커밋하면 사본이 갈라진다.
 
 ## 왜 바꿨나 (발견된 결함)
 
@@ -47,7 +49,9 @@ Claude Code와 Codex가 **같은 규칙을 같은 순서로** 읽게 만든 개�
 | 5 | 9개 repo: 항상 적용 `.claude/rules`를 본문으로 이동, 남은 규칙은 「규칙 파일」 절에 목록화, 죽은 참조 수정 | 각 프로젝트 repo |
 | 6 | 진입점 두 개가 다른 내용이던 repo: 합집합으로 합치고(다르면 더 엄격한 쪽) `CLAUDE.md` = `@AGENTS.md` | 해당 repo와 그 앱 하위 폴더 |
 | 7 | workspace 규칙·프로젝트 템플릿을 위 불변식으로 갱신 | `workspaces/project-root/CLAUDE.md`, `templates/project-CLAUDE.md` |
-| 8 | 템플릿 파생 repo 3개: 템플릿 행동 규칙, 템플릿 skill, `.cursor/rules`, 자동 생성 하위 `AGENTS.md`, `plansDirectory` 제거. 템플릿에 없던 프로젝트 고유 규칙만 남김 | 해당 repo |
+| 8 | 팀 템플릿에서 만든 repo 3개: 템플릿 행동 규칙, 템플릿 skill, `.cursor/rules`, 자동 생성 하위 `AGENTS.md`, `plansDirectory` 제거. 템플릿에 없던 프로젝트 고유 규칙만 남김 | 해당 repo |
+
+| 9 | Codex 로컬 어댑터 폴더를 `.gitignore`로 무시. 쓰지 않는 템플릿 파생 repo 하나는 archive | 해당 repo |
 
 알려진 부작용: workspace marker 때문에 workspace 밖 repo의 하위 폴더에서 Codex를 띄우면 repo 루트 `AGENTS.md`를
 찾지 못한다. repo 루트에서 띄우거나, 그 repo에 marker를 둔다.
@@ -89,17 +93,19 @@ codex debug prompt-input | grep -c '<전역 문서 제목>'        # → 1
 codex debug prompt-input | grep -c '<workspace 문서 제목>'   # → 1
 codex debug prompt-input | grep -c '<프로젝트 본문 고유 문구>' # → 1 이상
 
-# 7. 용량
+# 7. Codex 로컬 어댑터가 추적되지 않는가
+git check-ignore -q .agents/x .codex/x && echo ignored   # → ignored
+
+# 8. 용량
 wc -c AGENTS.md CLAUDE.md               # 본문 ≤ 32000, 전역+workspace+본문 합계 < project_doc_max_bytes
 ```
 
 2026-10-12 결과: 세 층 로드(6번)를 확인한 repo 4개에서 모두 1/1/1이었다. 단계 5·6의 PR 9개와 단계 8의 PR 3개는
 모두 CI 통과 후 병합했다. 단계 8의 repo 하나는 CI가 설정되어 있지 않아 diff 검토만 했다.
 
-## 남은 과제
+## 설계상 남겨 둔 것
 
-- 템플릿 파생 repo의 `package.json`·`scripts/env/*`·환경 문서에 1Password 기반 env 흐름이 남아 있다. 고객 소유
-  secret store로 바꿀지는 프로젝트별로 정한다.
-- 일부 repo는 규칙 파일이 커서 본문에 다 들어가지 않는다(디자인 시스템 등). 요약본을 본문에 두고 원문을 경로
-  한정으로 바꾸는 방안을 검토한다.
+- 본문 용량을 넘는 항상 적용 규칙(대형 디자인 시스템, 개발 워크플로 등)은 `.claude/rules/`에 파일로 둔다. Codex는
+  이 파일을 자동으로 읽지 않으므로, 본문 「규칙 파일」 절이 "작업 시작 시 먼저 읽는다"고 지시한다. 다음 개선 때 이
+  지시를 Codex가 실제로 따르는지 확인한다(검증 3·4번). 따르지 않으면 요약본을 본문에 두고 원문을 경로 한정으로 바꾼다.
 - 검증 6번은 Codex CLI의 `debug prompt-input`에 의존한다. 이 명령이 바뀌면 이 문서의 검증 절차도 고친다.
