@@ -93,7 +93,8 @@ codex debug prompt-input | grep -c '<프로젝트 본문 고유 문구>' # → 1
 wc -c AGENTS.md CLAUDE.md               # 본문 ≤ 32000, 전역+workspace+본문 합계 < project_doc_max_bytes
 ```
 
-2026-10-12 결과: 세 층 로드(6번)를 확인한 repo 4개에서 모두 1/1/1이었고, 수정한 repo 12개의 PR CI가 모두 통과했다.
+2026-10-12 결과: 세 층 로드(6번)를 확인한 repo 4개에서 모두 1/1/1이었다. 단계 5·6의 PR 9개와 단계 8의 PR 3개는
+모두 CI 통과 후 병합했다. 단계 8의 repo 하나는 CI가 설정되어 있지 않아 diff 검토만 했다.
 
 ## 남은 과제
 
