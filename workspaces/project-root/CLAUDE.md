@@ -37,6 +37,7 @@ This directory contains independent client, internal, and experimental projects.
 ## Standard project files
 
 - Keep project rules in one root instruction body that Claude and Codex both read: `AGENTS.md` with `CLAUDE.md` = `@AGENTS.md`, or `AGENTS.md` symlinked to `CLAUDE.md`. Do not add `@path` imports inside that body.
+- Ignore Codex adapters generated from `.claude/` (`/.agents/`, `/.codex/`) in the project's `.gitignore`.
 - Put always-applicable rules in that body. Keep `.claude/rules/` only for path-scoped rules or rules too large for the Codex project-doc budget, and list each one in the body with when to read it.
 
 When present, follow:
