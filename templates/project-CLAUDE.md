@@ -9,8 +9,9 @@
 - 기획·명세 → generate-spec · 구현 → dev-protocol · 브랜치 개발 → feature-flow.
 
 ## Rules
-- Branching/sandbox: see `.claude/rules/branching.md`.
-- Common-code / ERP domain: see `.claude/rules/erp.md`.
+<!-- This file is the single body for Claude and Codex: save it as AGENTS.md and make CLAUDE.md `@AGENTS.md`. -->
+- Always-on rules go here (branching/sandbox, common-code/ERP domain). No `@path` imports.
+- Path-scoped or very large rules stay in `.claude/rules/`; list each: `- .claude/rules/<x>.md — read when touching <paths>.`
 
 ## Infra
 - Summary here; details in `docs/infra.md` (how dev/deploy/branches work).

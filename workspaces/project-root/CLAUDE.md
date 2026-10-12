@@ -4,7 +4,7 @@ This directory contains independent client, internal, and experimental projects.
 
 ## Starting work
 
-- Read the target project's `CLAUDE.md`, `AGENTS.md`, and `.claude/rules/` before planning or editing.
+- Read the target project's root instruction body (`AGENTS.md`; `CLAUDE.md` is `@AGENTS.md` or the same file) before planning or editing. Then read every `.claude/rules/` file that body lists for the task's paths; Codex does not load `.claude/rules/` automatically.
 - Current code, migrations, tests, and verified runtime evidence override cached notes.
 - Use `project-wiki-context` before non-trivial work when the workspace has a local project-knowledge registry.
 - Treat unavailable, stale, or contested knowledge as context gaps and continue from repository evidence where safe.
@@ -36,9 +36,10 @@ This directory contains independent client, internal, and experimental projects.
 
 ## Standard project files
 
+- Keep project rules in one root instruction body that Claude and Codex both read: `AGENTS.md` with `CLAUDE.md` = `@AGENTS.md`, or `AGENTS.md` symlinked to `CLAUDE.md`. Do not add `@path` imports inside that body.
+- Put always-applicable rules in that body. Keep `.claude/rules/` only for path-scoped rules or rules too large for the Codex project-doc budget, and list each one in the body with when to read it.
+
 When present, follow:
 
-- `<project>/.claude/rules/branching.md` for branch, database, and preview rules.
-- `<project>/.claude/rules/erp.md` for ERP conventions.
 - `<project>/docs/handoff/HANDOFF.md` for cross-machine handoff.
 - `<project>/docs/infra.md` for deployment and infrastructure.
