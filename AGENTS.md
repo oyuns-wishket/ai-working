@@ -12,5 +12,15 @@ defaults, and their installation workflow.
   bootstrap tests, and `./bootstrap.sh --status` when validating an installed environment.
 - After pushing, confirm the `public-safety` run succeeded; local checks alone do not establish completion. Renaming or
   adding a skill directory also requires updating its per-skill test path in `.github/workflows/public-safety.yml`.
+- Record a work history for every change to this repository in the same commit or PR, so the next improvement or a
+  different model can re-verify it:
+  - Add `docs/impl-notes/YYYY-MM-DD-<topic>.md` covering the goal and confirmed decisions, the user's request and
+    approvals, the changes, the rationale and rejected alternatives, deviations, the verification commands with their
+    results, and open follow-ups.
+  - When the change continues a multi-step effort that already has a running history document (for example
+    `docs/rule-unification-history.md`), update that document's invariants, steps, and verification section instead
+    of only adding a new note.
+  - Link new history documents from `README.md`. History documents follow the same public-safety rules: describe
+    customer projects by role, never by name, path, or identifier.
 - Never merge or cherry-pick history from a retired private repository. Rewrite reviewed reusable content on this
   repository's public history.
