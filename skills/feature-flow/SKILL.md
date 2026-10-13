@@ -60,12 +60,10 @@ gh pr merge (feat→develop) ──> develop에 통합
 
 ## 종료 지식화
 
-운영 배포 검증·HANDOFF까지 끝난 경우에만 completion chain의 **마지막 단계로 `knowns`를 정확히 한 번** 실행한다. PR·개발 배포만 승인받은 작업에는 wiki 선택을 묻지 않고 `dev-protocol`의 개발 배포 closeout을 따른다.
+완료 보고·HANDOFF·배포 클로즈아웃은 `dev-protocol` §5 완료 절차가 소유한다. 이 skill은 `knowns`를 직접 호출하지 않고 배포 단계별 증거만 넘긴다.
 
-- 이미 `KNOWNS:` 결과가 있으면 중복 호출하지 않는다.
-- `knowns`가 제시한 후보를 바탕으로 사용자가 작업물의 의미·목표·기여와 연결점을 확정하고 exact write plan을 승인하기 전에는 wiki를 쓰지 않는다.
-- 프로젝트에 명시적으로 연결된 wiki가 없거나 durable delta가 없으면 `knowns`의 skip/no-op 결과를 그대로 보고한다.
-- `knowns`를 찾을 수 없거나 blocked이면 브랜치 결과와 별개로 wiki closeout 미완료를 최종 보고에 남긴다.
+- feat→develop 통합·개발 환경 검증까지면 `dev-protocol` §5.6의 HANDOFF `## Wiki candidates` 적재로 끝난다. wiki 선택은 묻지 않는다.
+- develop→main merge 후 운영 검증까지 끝났으면 운영 URL·헬스체크·운영 migration 결과를 증거로 `dev-protocol` §6을 실행한다. `knowns`의 한 번의 묶음 선택, 스킵, 중복 방지, blocked 보고는 그 절차를 따른다.
 
 ## 트러블슈팅
 | 증상 | 원인 | 대응 |

@@ -47,6 +47,8 @@ Docker/DB 자원을 띄우거나 HTML을 제공하거나 새 프로젝트 레이
 
 저장소에 브랜치·PR·배포 절차를 고정한 skill이 있으면 그 절차를 따른다. 이 문서는 요구사항, 승인, 구현노트, 이탈, 완료를 소유하고 프로젝트 skill은 브랜치, 머지, 배포 mechanics를 소유한다. 두 문서가 같은 승인 대상을 다뤄도 사용자에게 두 번 묻지 않는다.
 
+완료 클로즈아웃의 호출 주체도 이 문서다. `knowns`는 §6에서만 호출하고, workflow·도메인 skill(`feature-flow`, `design-workflow` 등)은 배포 증거와 wiki 후보 힌트를 넘길 뿐 직접 호출하지 않는다. 사용자가 `knowns`를 직접 요청한 경우만 예외다.
+
 저장소의 `AGENTS.md`, `CLAUDE.md`, `.claude/rules/`, `.claude/skills/`를 먼저 확인한다.
 기존 HANDOFF는 현재 `Next actions`, `Open items & blockers`, `Decisions & context`만 제한된 분량으로 읽는다.
 설치된 `hooks/handoff-context.mjs` 또는 ai-working 정본의 같은 helper로 발췌할 수 있다.

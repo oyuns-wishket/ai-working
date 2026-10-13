@@ -377,7 +377,7 @@ ERP 요청
 완료 후 계획 이탈을 검토한다. 퀴즈를 만들거나 별도 closeout을 실행하지 않고, 간단 완료 보고, 조건부
 배포 범위 선택, worktree 정리, HANDOFF, 운영배포 후 `knowns`는 최신 `dev-protocol`의 완료 절차를 따른다.
 
-실제 운영 배포를 검증한 경우에만 `knowns`를 정확히 한 번 실행한다. 그때 관리자/API/DB/ERP 실측 증거, 승인된 상태 계약과 운영 판단, unresolved·후속 범위를 후보로 삼고 최신 `knowns` 절차를 따른다. 로컬 조사, 개발 배포, read-only reconcile에는 실행하지 않는다.
+이 skill은 `knowns`를 직접 호출하지 않는다. 실제 운영 배포를 검증해 `dev-protocol` §6이 `knowns`를 실행할 때 관리자/API/DB/ERP 실측 증거, 승인된 상태 계약과 운영 판단, unresolved·후속 범위를 후보로 넘긴다. 로컬 조사, 개발 배포, read-only reconcile은 wiki closeout 대상이 아니다.
 
 ## 대표 재발 방지 패턴
 

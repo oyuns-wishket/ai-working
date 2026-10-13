@@ -66,11 +66,9 @@ git worktree remove /tmp/paseo-<repo> --force && git branch -D feat/paseo-worktr
 
 ## 종료 지식화
 
-Paseo 설정 생성·검증만으로는 `knowns`를 실행하지 않는다. 같은 작업 범위에 실제 제품 운영 배포가 포함되고 그 배포가 검증된 경우에만 최신 `dev-protocol`에 따라 `knowns`를 정확히 한 번 실행한다.
+Paseo 설정 생성·검증만으로는 wiki closeout 대상이 아니다. 같은 작업 범위에 실제 제품 운영 배포가 포함되고 검증된 경우에만 `dev-protocol` §6이 `knowns`를 실행하며, 이 skill은 직접 호출하지 않는다.
 
-- 분석한 stack과 setup 사실, 선택 근거, smoke 결과, 실패 mode를 durable 후보로 삼되 env 값과 코드 원문은 제외한다.
-- 사용자가 이 설정의 의미·목표·기여·성공 상태와 기존 운영/runbook 연결을 확인하고 exact write plan을 승인한 뒤에만 연결된 wiki를 갱신한다.
-- 이미 `KNOWNS:` 결과가 있으면 재호출하지 않는다. 연결 wiki 없음/no delta/missing/blocked 결과를 완료 보고에 명시한다.
+- 그때 넘길 후보: 분석한 stack과 setup 사실, 선택 근거, smoke 결과, 실패 mode. env 값과 코드 원문은 제외한다.
 
 ## 스택별 검증 패턴
 | 스택 | setup | 서비스 |
