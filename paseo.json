@@ -4,5 +4,10 @@
     "test-py": { "command": "python3 -m unittest discover -s tests -p 'test_*.py'" },
     "validate-skills": { "command": "python3 scripts/validate_skills.py" },
     "audit": { "command": "python3 scripts/public_audit.py --history" }
+  },
+  "metadataGeneration": {
+    "title": {
+      "instructions": "한국어로 쓴 10자 이내(공백 포함)의 짧은 작업 이름. 10자를 넘으면 단어를 줄인다. 핵심 대상과 작업만 남기고 명사형으로 끝낸다. 문장부호·따옴표·이모지는 쓰지 않는다. PR·이슈 번호나 고유 명칭은 작업을 구분하는 데 꼭 필요할 때만 넣는다. 예: \"현금영수증 취소\", \"KPI 화면 분석\", \"로그인 복구\"."
+    }
   }
 }

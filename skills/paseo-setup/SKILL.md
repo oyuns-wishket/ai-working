@@ -21,6 +21,7 @@ Paseo(https://paseo.sh)는 git worktree로 병렬 에이전트 작업공간을 �
 | 프록시 URL 형식 | `http://<script>--<branch>--<project>.localhost:<데몬포트>` |
 | 워크스페이스 생성 | `paseo workspace create --isolation worktree --mode branch-off --new-branch <br> --base <기본브랜치>` (PR 재현: `--mode checkout-pr --pr-number N`) |
 | 기존 설정 | 유효한 `paseo.json`이 이미 있으면 덮어쓰지 않고 필요한 차이만 갱신 |
+| 자동 제목 스타일 | `metadataGeneration.title.instructions` — 전역 설정 없음. setup 훅과 달리 **main checkout 디스크의 파일**을 읽는다(Paseo가 만든 worktree는 원본 repo 루트, 그 외는 해당 checkout 루트). 비Git 폴더는 바꿀 수 없다 |
 
 ## 절차
 
@@ -37,6 +38,15 @@ Paseo(https://paseo.sh)는 git worktree로 병렬 에이전트 작업공간을 �
 - `worktree.setup`: 명령어 **배열**로 (설치 → env 복사 순)
 - `scripts`: 일반 스크립트는 `{ "command": ... }`, dev 서버는 `{ "type": "service", "command": "... --port $PASEO_PORT" }` — `port` 필드는 생략(자동 할당)
 - 검증: `python3 -m json.tool paseo.json`
+- `metadataGeneration.title.instructions`에 `scripts/title_style.py`의 지시문(한국어 10자 이내 작업 이름)을 넣는다. 이 값이 없으면 Paseo는 영어 문장형 제목을 만든다.
+
+### 2-1. 제목 스타일만 적용
+`paseo.json`이 없는 repo에도 제목만 바꿀 수 있다. 제목 언어는 개인 취향이므로 팀 repo에는 커밋하지 않는 로컬 전용이 기본이다.
+```bash
+python3 scripts/title_style.py <repo>...            # 미추적 repo: paseo.json 생성 + .git/info/exclude 등록
+python3 scripts/title_style.py --tracked <repo>...  # 추적 중인 paseo.json: 작업 트리만 수정, 커밋은 팀 합의 후
+```
+`TRACKED`로 보고된 repo는 팀원의 Paseo 제목도 함께 바뀌므로 커밋 전 사용자 확인을 받는다. 적용 후 새로 만드는 워크스페이스부터 반영되고 기존 제목은 바뀌지 않는다.
 
 ### 3. 기본 브랜치 커밋 (작업 체크아웃이 dirty여도 안전한 방법)
 현재 체크아웃 브랜치·dirty 상태를 건드리지 않도록 **임시 worktree에서 1파일만 커밋**한다:
