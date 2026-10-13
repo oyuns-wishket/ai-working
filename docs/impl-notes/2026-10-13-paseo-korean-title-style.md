@@ -38,6 +38,19 @@ Paseo 사이드바의 워크스페이스 제목이 영어 문장으로 길게 �
 - 추적 중인 `paseo.json`: 개인 repo 2개는 기본 브랜치에 직접 커밋했고, 팀 repo 4개는 각 프로젝트의 통합 브랜치로
   PR을 열었다. merge는 각 프로젝트 담당·절차에 맡긴다.
 
+## 후속 2 (같은 날, 사용자 요청 "모든 워크스페이스, 새로 만들 때마다")
+- `paseo.json` 방식은 파일이 있는 repo에만 통한다. 새 clone, Git repo가 아닌 폴더, 팀 PR이 아직 merge되지 않은
+  repo가 빠진다.
+- `hooks/paseo-title.mjs`를 추가하고 `session-entry.mjs`에 연결했다. 만든 지 10분 이내인 워크스페이스에 제목
+  지시문이 없고 제목이 한국어 10자 이내가 아니면, agent에게 Paseo MCP `rename_workspace` 호출을 한 줄로 요청한다.
+- 기각한 대안: 세션 시작 hook이 `paseo.json`을 직접 써 넣는 안(시작 hook은 작업 트리를 건드리지 않는다는 기존
+  원칙 위반), Paseo 레지스트리를 감시하는 launchd agent(장비별 설치 부담, 첫 워크스페이스 경합은 그대로),
+  hook 안에서 모델을 호출해 직접 이름을 짓는 안(세션 시작 지연과 비용).
+- 검증: `node --test tests/hook-paseo-title.test.mjs` 13건 통과. 실제 세션의 Paseo 데이터로 판정 경로를 확인했고,
+  Git repo가 아닌 폴더의 워크스페이스에서 `rename_workspace`가 성공하는 것을 확인했다.
+- 한계: 이름 변경은 모델이 알림을 따를 때만 일어난다. 새 세션에서 hook 알림부터 이름 변경까지 이어지는 전체
+  흐름은 실제로 돌려 보지 않았다.
+
 ## 남은 일
 - 팀 repo PR이 merge되고 main checkout이 그 커밋을 받아야 해당 repo에 반영된다.
 - Paseo가 전역 지시문 설정을 제공하면 repo별 적용을 걷어낸다.

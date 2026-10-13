@@ -3,6 +3,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { paseoTitleNotice } from './paseo-title.mjs';
 
 let raw = '';
 for await (const chunk of process.stdin) {
@@ -23,6 +24,7 @@ for (const name of ['session-context.sh', 'session-start.sh']) {
     if (context) parts.push(name === 'session-context.sh' ? context.slice(0, 512) : context);
   } catch { /* Missing optional context must not block a session. */ }
 }
+try { const notice = paseoTitleNotice(); if (notice) parts.push(notice); } catch { /* Optional. */ }
 // Reserve the existing 8 KiB handoff budget; basic metadata is capped separately.
 const text = parts.join('\n');
 if (text) console.log(JSON.stringify({ hookSpecificOutput: {
