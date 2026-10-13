@@ -34,11 +34,23 @@ def apply(repo, include_tracked):
         return "TRACKED 팀이 공유하는 파일 — 커밋 여부를 정한 뒤 --tracked로 적용"
 
     data = json.loads(config.read_text()) if config.exists() else {}
+    fresh = "metadataGeneration" not in data
     title = data.setdefault("metadataGeneration", {}).setdefault("title", {})
     if title.get("instructions") == INSTRUCTIONS:
         return "OK      이미 적용됨"
     title["instructions"] = INSTRUCTIONS
-    config.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    rendered = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+    text = config.read_text().rstrip() if config.exists() else ""
+    if fresh and text.endswith("}"):
+        # 기존 서식을 건드리지 않도록 마지막 중괄호 앞에 블록만 끼워 넣는다.
+        block = json.dumps({"metadataGeneration": data["metadataGeneration"]}, indent=2, ensure_ascii=False)
+        patched = text[:-1].rstrip() + ",\n" + block[2:-2] + "\n}\n"
+        try:
+            if json.loads(patched) == data:
+                rendered = patched
+        except json.JSONDecodeError:
+            pass
+    config.write_text(rendered)
     if tracked or in_history:
         return "EDITED  작업 트리만 수정 — 커밋 필요"
 
