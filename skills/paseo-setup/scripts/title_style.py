@@ -25,20 +25,21 @@ def git(repo, *args):
 
 
 def apply(repo, include_tracked):
-    if git(repo, "rev-parse", "--show-toplevel").returncode != 0:
+    top = git(repo, "rev-parse", "--show-toplevel")
+    if top.returncode != 0:
         return "SKIP    Git repo가 아님(Paseo가 지시문을 읽지 않음)"
+    repo = Path(top.stdout.strip())  # 하위 폴더를 받아도 Paseo가 읽는 repo 루트에만 쓴다.
     config = repo / "paseo.json"
+    data = json.loads(config.read_text()) if config.exists() else {}
+    if data.get("metadataGeneration", {}).get("title", {}).get("instructions") == INSTRUCTIONS:
+        return "OK      이미 적용됨"
     tracked = git(repo, "ls-files", "--error-unmatch", "paseo.json").returncode == 0
     in_history = bool(git(repo, "log", "--all", "-1", "--format=%h", "--", "paseo.json").stdout.strip())
     if (tracked or in_history) and not include_tracked:
         return "TRACKED 팀이 공유하는 파일 — 커밋 여부를 정한 뒤 --tracked로 적용"
 
-    data = json.loads(config.read_text()) if config.exists() else {}
     fresh = "metadataGeneration" not in data
-    title = data.setdefault("metadataGeneration", {}).setdefault("title", {})
-    if title.get("instructions") == INSTRUCTIONS:
-        return "OK      이미 적용됨"
-    title["instructions"] = INSTRUCTIONS
+    data.setdefault("metadataGeneration", {}).setdefault("title", {})["instructions"] = INSTRUCTIONS
     rendered = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
     text = config.read_text().rstrip() if config.exists() else ""
     if fresh and text.endswith("}"):
