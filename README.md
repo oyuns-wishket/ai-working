@@ -164,7 +164,7 @@ Hook 설정은 기존 Claude/Codex 설정 전체를 덮지 않는다. ai-working
 로컬 설정과 회귀 검증 절차를 확인한다. [작업별 측정](docs/task-metrics.md)은 명시적으로 연결한 세션의
 사용량·시간·검증 결과를 machine-local 상태로 기록한다. Claude·Codex가 같은 규칙을 읽게 만든 구조와 재검증 절차는
 [규칙 통일 개선 이력](docs/rule-unification-history.md)에 있다. 전역 규칙 내용 개선은 `docs/impl-notes/`에
-날짜별로 남긴다(최근: [FDE 역할·작업 흐름 통합·교차 리뷰](docs/impl-notes/2026-10-12-global-rules-fde-cross-review.md)). skill 변경 이력도 같은 곳에 둔다(최근: [knowns 호출 주체 정리](docs/impl-notes/2026-10-13-knowns-orchestration.md), [Paseo 자동 제목 한국어화](docs/impl-notes/2026-10-13-paseo-korean-title-style.md)).
+날짜별로 남긴다(최근: [FDE 역할·작업 흐름 통합·교차 리뷰](docs/impl-notes/2026-10-12-global-rules-fde-cross-review.md)). skill 변경 이력도 같은 곳에 둔다(최근: [knowns 호출 주체 정리](docs/impl-notes/2026-10-13-knowns-orchestration.md), [Paseo 자동 제목 한국어화](docs/impl-notes/2026-10-13-paseo-korean-title-style.md), [Paseo 제목 CLI 이름 변경](docs/impl-notes/2026-10-14-paseo-title-cli-rename.md)).
 
 ## 필요한 도구
 

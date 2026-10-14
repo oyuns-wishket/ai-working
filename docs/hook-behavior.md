@@ -41,12 +41,15 @@ does not assume that Codex runs Claude's SessionStart event. The installed helpe
 
 Paseo names a workspace from the first prompt and reads its style only from the repository's
 `paseo.json` (`metadataGeneration.title.instructions`); there is no machine-wide setting. For repositories without
-that entry, non-Git folders, and new clones, the session-start hook adds one line asking the agent to call the Paseo
-MCP `rename_workspace` with a Korean title of at most ten characters. The check is read-only: it resolves
-`PASEO_AGENT_ID` to its workspace in `$PASEO_HOME` and stays silent outside Paseo, for internal agents, for workspaces
-older than ten minutes (a title the user chose is never overridden), when the repository already carries the
-instructions, and when the title is already short Korean. The rename itself is the agent's action, so it depends on
-the model following the line; `skills/paseo-setup/scripts/title_style.py` remains the deterministic path.
+that entry, non-Git folders, and new clones, the session-start hook adds one line giving the agent the exact
+`paseo workspace rename <workspaceId> "<title>"` command for a Korean title of at most ten characters. It uses the CLI
+because the Paseo MCP reaches agents only when the daemon's `mcp.injectIntoAgents` is on; a sandboxed agent that cannot
+reach the daemon retries with escalation. The check is read-only: it resolves `PASEO_AGENT_ID` to its workspace in
+`$PASEO_HOME` and stays silent outside Paseo, without `paseo` on `PATH`, for internal agents, for workspaces older than
+ten minutes (a title the user chose is never overridden), when the repository already carries the instructions, and when
+the title is already short Korean. A rename made before Paseo's own generated title arrives is kept, because Paseo
+replaces only an empty or first-prompt placeholder title. The rename itself is the agent's action, so it depends on the
+model following the line; `skills/paseo-setup/scripts/title_style.py` remains the deterministic path.
 
 ## Approval behavior
 

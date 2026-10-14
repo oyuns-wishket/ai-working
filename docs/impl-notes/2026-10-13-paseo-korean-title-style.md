@@ -58,3 +58,7 @@ Paseo 사이드바의 워크스페이스 제목이 영어 문장으로 길게 �
 ## 남은 일
 - 팀 repo PR이 merge되고 main checkout이 그 커밋을 받아야 해당 repo에 반영된다.
 - Paseo가 전역 지시문 설정을 제공하면 repo별 적용을 걷어낸다.
+
+## 후속 3 (2026-10-14)
+- 알림이 요구한 Paseo MCP가 daemon 설정상 agent에 주입되지 않아 이름 변경이 한 번도 일어나지 않았다.
+  CLI로 바꾼 수정은 [Paseo 제목 CLI 이름 변경](2026-10-14-paseo-title-cli-rename.md)에 있다.
