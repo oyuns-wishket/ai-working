@@ -415,6 +415,54 @@ def matched_intents(policy: dict, query: str) -> tuple[list[str], set[str]]:
     return sorted(matches), documents
 
 
+_OBJECT_CACHE: dict[tuple[str, str], bool] = {}
+_ANCESTOR_CACHE: dict[str, tuple[str, frozenset[str]]] = {}
+
+
+def head_ancestors(git_root: Path) -> tuple[str, frozenset[str]]:
+    """(HEAD sha, every commit reachable from HEAD) once per repository and process."""
+    key = str(git_root)
+    cached = _ANCESTOR_CACHE.get(key)
+    if cached:
+        return cached  # one process lifetime == one route; HEAD cannot move underneath it
+    ok, listing = try_git(git_root, "rev-list", "HEAD")
+    value = ("HEAD", frozenset(listing.split()) if ok else frozenset())
+    _ANCESTOR_CACHE[key] = value
+    return value
+
+
+def git_objects_exist(git_root: Path, names: list[str]) -> dict[str, bool]:
+    """One `git cat-file --batch-check` per call instead of one process per object.
+
+    Per-reference `cat-file -e` spawned ~430 processes on a 380-note namespace (5 s), which
+    exceeded the session-start hook's 3 s guard and silently dropped the wiki notice."""
+    key_root = str(git_root)
+    pending = [n for n in dict.fromkeys(names) if (key_root, n) not in _OBJECT_CACHE]
+    if pending:
+        result = subprocess.run(["git", "-C", key_root, "cat-file", "--batch-check"], input="\n".join(pending) + "\n",
+                                capture_output=True, text=True, check=False)
+        lines = result.stdout.splitlines() if result.returncode == 0 else []
+        for name, line in zip(pending, lines):
+            _OBJECT_CACHE[(key_root, name)] = not line.endswith(" missing") and not line.endswith(" ambiguous")
+        for name in pending:
+            _OBJECT_CACHE.setdefault((key_root, name), False)
+    return {n: _OBJECT_CACHE[(key_root, n)] for n in names}
+
+
+_FULL_SHA_CACHE: dict[tuple[str, str], str] = {}
+
+
+def git_objects_full(git_root: Path, sha: str) -> str:
+    """Abbreviated references in source_refs → full object id (cached, one batch-check reuse)."""
+    key = (str(git_root), sha)
+    if key not in _FULL_SHA_CACHE:
+        result = subprocess.run(["git", "-C", str(git_root), "cat-file", "--batch-check"], input=f"{sha}^{{commit}}\n",
+                                capture_output=True, text=True, check=False)
+        first = result.stdout.split()
+        _FULL_SHA_CACHE[key] = first[0] if result.returncode == 0 and len(first) >= 2 and first[1] == "commit" else ""
+    return _FULL_SHA_CACHE[key]
+
+
 def source_reference_health(path: Path, resolved: dict) -> dict:
     aliases = set(resolved["project"].get("local_aliases", []))
     aliases.add(Path(resolved["git_root"]).name)
@@ -462,16 +510,18 @@ def source_reference_health(path: Path, resolved: dict) -> dict:
                     }
                 )
                 continue
-        commit_ok, _ = try_git(Path(resolved["git_root"]), "cat-file", "-e", f"{sha}^{{commit}}")
+        git_root = Path(resolved["git_root"])
+        names = [f"{sha}^{{commit}}"] + ([f"{sha}:{referenced_path}"] if referenced_path else [])
+        exists = git_objects_exist(git_root, names)
+        commit_ok = exists[names[0]]
         path_ok = None
         changed_since = None
         ancestor = None
         if commit_ok:
-            ancestor, _ = try_git(Path(resolved["git_root"]), "merge-base", "--is-ancestor", sha, "HEAD")
+            full_sha = git_objects_full(git_root, sha)
+            ancestor = full_sha in head_ancestors(git_root)[1]
             if referenced_path:
-                path_ok, _ = try_git(
-                    Path(resolved["git_root"]), "cat-file", "-e", f"{sha}:{referenced_path}"
-                )
+                path_ok = exists[names[1]]
                 if path_ok and ancestor:
                     unchanged, _ = try_git(
                         Path(resolved["git_root"]), "diff", "--quiet", f"{sha}..HEAD", "--", referenced_path
