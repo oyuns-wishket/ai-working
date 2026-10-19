@@ -104,6 +104,8 @@ index와 이번 주제의 기존 note만 읽고 wiki 전체를 재귀 탐색하�
 - 같은 주장·적용 범위는 기존 주제에 병합하고 출처와 stable ID를 보존한다. 같은 내용이면 no-op이다.
 - 대체 관계는 실제 날짜·버전·확정 근거로 판정한다. 다른 고객·환경·기간의 지식은 적용 범위를 구분하고, 어느 쪽이 맞는지 불명확하면 contested로 제안한다. 문체나 모델 confidence로 승자를 정하지 않는다.
 - 검토 기한이 지났거나 양식만 바꾼 문서를 새로 검증했다고 표시하지 않는다. 인접한 관련 문서까지만 대조하며 raw나 위키 전체를 청소하지 않는다.
+- 추천 순서는 재사용 가치 순이다: `lesson`(재발 방지)·`decision`(결정과 결정권자)·`domain`/`runbook`(반복 업무 규칙·절차)을 먼저, 날짜 묶인 회의·리뷰·조사 메모(`record`)는 자동 ingest가 이미 남기므로 사람이 정리할 때는 후순위로 두고 보통 제외한다. 검색기는 지식 문서를 우선하고 record는 한 건만 끼우므로 record를 늘려도 다음 세션이 더 잘 찾지 못한다.
+- `review_by`는 type별 기본 간격으로 제안한다: `lesson`·`decision` 180일, `domain`·`runbook`·`system`·`reference` 90일, `charter`·`governance`·`glossary` 365일, 활발히 바뀌는 영역은 30일. 사용자가 다른 값을 주면 그대로 쓴다.
 - 위 판정과 정확한 diff를 아래 단일 묶음에 포함한다. 적용 전에 문서의 base version을 다시 대조하고, 달라졌으면 새 근거로 재검토한다. 별도 curator skill이나 추가 승인 단계를 만들지 않는다.
 
 [`assets/candidate-review.template.md`](assets/candidate-review.template.md)를 사용해 다음을 한 화면에 제시한다.
