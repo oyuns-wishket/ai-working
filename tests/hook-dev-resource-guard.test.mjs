@@ -73,6 +73,9 @@ try {
 
   fake("memory_pressure", 'printf "memory_pressure\\n" >> "$TEST_PROBE_LOG"; printf "System-wide memory free percentage: %s%%\\n" "$TEST_FREE_PERCENT"')
   fake("sysctl", 'printf "sysctl\\n" >> "$TEST_PROBE_LOG"; printf "vm.swapusage: total = 10240.00M used = %sM free = 0.00M\\n" "$TEST_SWAP_MB"')
+  fake("ps", 'printf "ps\\n" >> "$TEST_PROBE_LOG"; printf "%b" "${TEST_PS:-}"')
+  fake("footprint", 'printf "footprint %s\\n" "$*" >> "$TEST_PROBE_LOG"; printf "%b" "${TEST_FOOTPRINT:-}"')
+  fake("lsof", 'printf "lsof %s\\n" "$*" >> "$TEST_PROBE_LOG"; printf "p%s\\nfcwd\\nn/work/app-%s\\n" "$3" "$3"')
   const dockerMock = `#!${process.execPath}
 const fs = require("node:fs")
 const { createHash } = require("node:crypto")
@@ -112,6 +115,32 @@ if (args[0] === "ps") {
   )
   assert.match(pressure.hookSpecificOutput.additionalContext, /RESOURCE_PRESSURE/)
   assert.match(pressure.hookSpecificOutput.additionalContext, /other-a,other-b/)
+  assert.doesNotMatch(pressure.hookSpecificOutput.additionalContext, /LARGE_DEV_SERVERS/)
+
+  // Under memory pressure, large dev servers are measured with footprint (which
+  // counts compressed pages) and named; test runners and small servers are not.
+  const gb = 1024 ** 3
+  const servers = {
+    TEST_PS: "  101 next-server (v16.2.9)\\n  102 node /work/a/node_modules/.bin/vitest run\\n  103 node /work/b/node_modules/.bin/vite --port 5173\\n  104 /bin/zsh\\n",
+    TEST_FOOTPRINT: `node [101]: 64-bit    Footprint: ${75 * gb} B (16384 bytes per page)\\nnode [103]: 64-bit    Footprint: ${2 * gb} B (16384 bytes per page)\\n`,
+  }
+  fs.rmSync(probeLog, { force: true })
+  const heavy = invoke(
+    { session_id: "pressure", cwd: repo, hook_event_name: "UserPromptSubmit", prompt: "계속" },
+    { TEST_FREE_PERCENT: "35", TEST_SWAP_MB: String(32 * 1024), ...servers },
+  )
+  const heavyContext = heavy.hookSpecificOutput.additionalContext
+  assert.match(heavyContext, /LARGE_DEV_SERVERS: pid=101 75\.0GB cwd=\/work\/app-101/)
+  assert.doesNotMatch(heavyContext, /pid=10[234]/, "test runners and servers under 4GB are not listed")
+  assert.match(readLog(probeLog), /footprint -f bytes --noCategories --pid 101 --pid 103\n/, "only dev server candidates are measured")
+
+  fs.rmSync(probeLog, { force: true })
+  const calm = invoke(
+    { session_id: "pressure", cwd: repo, hook_event_name: "UserPromptSubmit", prompt: "계속" },
+    servers,
+  )
+  assert.match(calm.hookSpecificOutput.additionalContext, /RESOURCE_OK/)
+  assert.doesNotMatch(readLog(probeLog), /^(ps|footprint .*)$/m, "no process scan without memory pressure")
 
   const blocked = invoke(
     {
@@ -369,7 +398,7 @@ if (args[0] === "ps") {
     assert.equal(readLog(stopLog), "", `${name}: no stack cleanup`)
   }
 
-  process.stdout.write("dev-resource-guard: 29 scenarios passed\n")
+  process.stdout.write("dev-resource-guard: 31 scenarios passed\n")
 } finally {
   fs.rmSync(temp, { recursive: true, force: true })
 }

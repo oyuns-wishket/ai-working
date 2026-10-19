@@ -10,6 +10,9 @@ const DOCKER_BUSY_MS = 5 * 60 * 1000
 const DOCKER_PENDING_TTL_MS = 10 * 60 * 1000
 const SAFE_NAME = /^[a-zA-Z0-9_.-]+$/
 const CONTAINER_ID = /^[a-f0-9]{64}$/
+const DEV_SERVER_MIN_BYTES = 4 * 1024 ** 3
+// Dev servers keep compiled routes in memory; vitest and build commands do not match.
+const DEV_SERVER = /(^|[\s/])(next-server\b|next dev\b|vite(\s|$)|nuxi? dev\b|astro dev\b|remix dev\b|webpack(-dev-server\b| serve\b))/
 
 function readStdin() {
   return new Promise((resolve) => {
@@ -150,6 +153,29 @@ function memorySnapshot() {
   }
 }
 
+// Measured only in the pressure branch. RSS omits compressed and swapped pages, so use
+// footprint (macOS); where it is missing the list stays empty.
+function largeDevServers() {
+  const pids = run("ps", ["-axo", "pid=,command="], { timeout: 700 })
+    .split("\n")
+    .map((line) => line.trim().match(/^(\d+)\s+(.*)$/))
+    .filter((match) => match && DEV_SERVER.test(match[2]))
+    .map((match) => match[1])
+    .slice(0, 20)
+  if (!pids.length) return []
+  const measured = run("footprint", ["-f", "bytes", "--noCategories", ...pids.flatMap((pid) => ["--pid", pid])], { timeout: 1200 })
+  return [...measured.matchAll(/\[(\d+)\]:.*?Footprint:\s*(\d+) B/g)]
+    .map((match) => ({ pid: match[1], bytes: Number(match[2]) }))
+    .filter((server) => pids.includes(server.pid) && server.bytes >= DEV_SERVER_MIN_BYTES)
+    .sort((a, b) => b.bytes - a.bytes)
+    .slice(0, 3)
+    .map((server) => {
+      const cwd = run("lsof", ["-a", "-p", server.pid, "-d", "cwd", "-Fn"], { timeout: 300 })
+        .split("\n").find((line) => line.startsWith("n"))?.slice(1)
+      return { ...server, cwd: cwd || "unknown" }
+    })
+}
+
 function resourceSnapshot() {
   const containers = runningContainers()
   return { ...memorySnapshot(), containers, stacks: supabaseStacksOf(containers) }
@@ -174,8 +200,13 @@ function formatContext(snapshot, session) {
   ]
   if (isCritical(snapshot) || snapshot.stacks.length > 1) {
     lines.push(
-      "RESOURCE_PRESSURE: 새 dev/build/Supabase 작업 전에 사용하지 않는 local stack을 `supabase stop --project-id <id>`로 정리한다. volume은 삭제하지 않는다.",
+      "RESOURCE_PRESSURE: 새 dev/build/Supabase 작업 전에 이번 작업이 띄운 dev server와 사용하지 않는 local stack(`supabase stop --project-id <id>`)을 정리한다. volume은 삭제하지 않는다. 다른 세션의 자원은 끄지 말고 PID·용량·경로를 사용자에게 보고한다.",
     )
+    const servers = largeDevServers()
+    if (servers.length) {
+      const listed = servers.map(({ pid, bytes, cwd }) => `pid=${pid} ${(bytes / 1024 ** 3).toFixed(1)}GB cwd=${cwd}`)
+      lines.push(`LARGE_DEV_SERVERS: ${listed.join("; ")} — 여러 화면 순회는 production build 서버에서 돌린다(dev-protocol local-operations).`)
+    }
   } else {
     lines.push(
       "RESOURCE_OK: local Supabase는 동시에 한 stack만 실행하고, 소유권이 확인된 컨테이너와 유휴 Docker Desktop은 SessionEnd에서 자동 정리된다. 그 외 자원은 세션에서 직접 정리한다.",

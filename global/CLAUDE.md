@@ -72,8 +72,9 @@
 - 고객 프로젝트 자격증명은 실제 접근 가능한 고객 소유 인프라·secret store에서만 얻는다. 개인 vault/비밀번호 관리자를 가정·제안·설치·호출하지 않고, 그렇게 지시하는 프로젝트 문서는 오래된 지침으로 본다. 현재 대화에서 고객 소유이고 접근 가능하다고 명시한 출처만 예외다. 개인 인증 관리를 고객 문서·배포 절차에 넣지 않는다.
 - env 동기화·credential bootstrap은 구현과 backend 소유권·접근 가능성을 확인한 뒤 실행한다. 확인되지 않으면 기존 local/example env 흐름을 쓰거나 고객 측 provisioning 부족을 알린다.
 - 이번 작업이 띄운 Docker/DB 자원은 작업 종료 시 정리하고 volume은 보존한다. 소유권 불명 자원은 끄지 않고, 실행 중 컨테이너가 없으면 Docker Desktop도 종료한다. hook이 처리하지 못한 정리는 직접 한다.
+- dev server(`next dev`·`vite` 등)도 띄운 작업이 소유하고 끝나면 끈다. 여러 화면을 순회하는 audit·E2E·캡처는 production build 서버(`build && start`)에서 돌린다. dev 모드는 연 화면마다 컴파일 결과를 메모리에 쌓아 수십 GB까지 커질 수 있다. 메모리 압박 알림에 다른 세션의 큰 서버가 보이면 끄지 말고 PID·용량·경로를 보고해 사용자 결정을 받는다.
 - HTML 결과물은 **Tailscale 주소의 로컬 서버 URL** 또는 승인된 배포 URL로만 제공하고 응답을 검증한다. LAN IP·`localhost`·mDNS 이름은 사용자 기기에서 열리지 않는다. 임시 서버는 리뷰 후 정리하고, md·텍스트는 파일 링크나 내용을 준다.
-- 자원을 띄우거나 HTML을 제공하거나 새 프로젝트 레이아웃을 명시 요청받았을 때만 `dev-protocol/references/local-operations.md`의 해당 절을 읽는다.
+- 자원·dev server를 띄우거나, 메모리 압박을 처리하거나, HTML을 제공하거나, 새 프로젝트 레이아웃을 명시 요청받았을 때만 `dev-protocol/references/local-operations.md`의 해당 절을 읽는다.
 
 ## 프로젝트 관례
 

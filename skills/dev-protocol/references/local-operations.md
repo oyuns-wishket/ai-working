@@ -12,6 +12,17 @@ Verify whether any containers are still running. If the check succeeds and none 
 
 Active trusted hooks may help, but verify cleanup instead of assuming they handled Compose, wrappers, failed commands or ambiguous ownership. See the current hook code/docs when diagnosing missed tracking. Do not stop resources belonging to another task.
 
+## Dev servers and memory pressure
+
+A dev server (`next dev`, `vite`, `nuxt dev` and similar) belongs to the task that started it. Record its PID tree, port and checkout when starting it, and stop it at the end of the work unit unless the user is still reviewing it.
+
+Dev mode compiles each route the first time it is opened and keeps the result in memory. Crawling many routes therefore grows the server steadily. One Next 16 dev server reached 75 GB (70 GB of it compressed) during a Playwright audit and filled swap on a 48 GB Mac (2026-10-19).
+
+- Run audits, E2E suites and screen captures that visit many routes against a production build (`build` then `start`) or a deployed environment. Use a dev server only for a small set of routes. If a long crawl must use dev mode, split it into batches, restart the server between them, and check its footprint.
+- Measure real memory with `footprint --noCategories --pid <pid>` on macOS (or `top -o mem`). `ps` RSS leaves out compressed and swapped pages: it showed 6 GB for the 75 GB server.
+- When the resource guard reports `RESOURCE_PRESSURE` and lists large dev servers, stop your own task's server first. For a server you did not start, find its checkout (`lsof -a -p <pid> -d cwd`) and report its PID, size and path. Leave the decision to the user: stopping it interrupts that session's audit, browser login or HMR state.
+- After the user approves stopping it, send `TERM` to the whole tree (package-manager wrapper, CLI, server, workers), confirm the port is free, and re-measure. Tell the user if the owning session could not be notified, because a cross-session message can be held and then expire when permission modes differ.
+
 ## Sharing an HTML result
 
 Serve only the intended artifact directory, excluding credentials and unrelated files. Share the **Tailscale (VPN) address only** — discover it at runtime (`tailscale ip -4`, or the app bundle CLI on macOS). Do not present LAN IPs, `localhost`, or mDNS hostnames as the review URL: the user's device is on the tailnet, not the local LAN, so those never open (user correction 2026-09-18). If no Tailscale address is available, say so and ask how to deliver instead of falling back to LAN. Start a local HTTP server, for example `python3 -m http.server <port> --bind 0.0.0.0`, and record its process ownership so it can be stopped after review or at work-unit end.
