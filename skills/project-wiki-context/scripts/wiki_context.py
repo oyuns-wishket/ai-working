@@ -917,9 +917,12 @@ def knowledge_contract(root: Path) -> dict | None:
         for namespace, rows in sections.items():
             relative = safe_relative(namespace)
             parts = relative.parts
-            if not parts or parts[-1] in {"raw", "candidate", "my-wiki", "sys-wiki", "aidp", "index"} or namespace != relative.as_posix() or not (
+            # The AIDP common root may declare its own topic sections; a project folder named
+            # like a reserved word is still refused.
+            reserved = bool(parts) and parts[-1] in {"raw", "candidate", "my-wiki", "sys-wiki", "aidp", "index"} and namespace != "sys-wiki/aidp"
+            if not parts or reserved or namespace != relative.as_posix() or not (
                     (len(parts) == 3 and parts[:2] == ("sys-wiki", "aidp"))
-                    or (len(parts) == 2 and parts[0] == "sys-wiki" and parts[1] != "aidp")) or any(
+                    or (len(parts) == 2 and parts[0] == "sys-wiki")) or any(
                     not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", part) or len(part) > 64 for part in parts[1:]):
                 raise ValueError("canonical section namespace must name a canonical project root")
             no_symlink_directory(root, relative)

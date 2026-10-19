@@ -395,12 +395,21 @@ class V2Tests(unittest.TestCase):
         self.assertLessEqual(result["selected_bytes"], 6000)
 
     def test_undeclared_namespace_contract_fails_closed(self):
-        for namespace in (".", "sys-wiki/aidp", "raw/project", "sys-wiki/aidp/alpha/orders", "sys-wiki/../candidate", "sys-wiki/" + "a" * 65, "sys-wiki/raw", "sys-wiki/aidp/index"):
+        for namespace in (".", "sys-wiki/aidp/aidp", "raw/project", "sys-wiki/aidp/alpha/orders", "sys-wiki/../candidate", "sys-wiki/" + "a" * 65, "sys-wiki/raw", "sys-wiki/aidp/index"):
             value = contract(self.root)
             value["canonical_sections"] = {namespace: []}
             (self.root / ".system/knowledge-contract.json").write_text(json.dumps(value))
             with self.assertRaises(M.ContextError):
                 self.route()
+
+    def test_aidp_root_may_declare_topic_sections_for_the_common_scope(self):
+        # 2026-10-19: the common AIDP root is organized by topic folders (fde, sales, ...).
+        value = contract(self.root)
+        value["canonical_sections"] = {"sys-wiki/aidp": [{"slug": "fde", "title": "FDE"}]}
+        (self.root / ".system/knowledge-contract.json").write_text(json.dumps(value))
+        (self.root / "sys-wiki/aidp/fde").mkdir(parents=True, exist_ok=True)
+        note(self.root / "sys-wiki/aidp/fde/common-rule.md", "shipping", customer="common")
+        self.assertIn("sys-wiki/aidp/fde/common-rule.md", self.selected(self.route()))
 
     def test_section_terms_normalization_and_reserved_long_slugs(self):
         for row in ({"slug": "a" * 65, "title": "Long"},
