@@ -44,12 +44,9 @@ sys.exit(1)
 '; then
   BLOCKED="DROP TABLE/DATABASE in DB context"
 fi
-# force push to protected branch — 순서 무관 3조건 AND
-if echo "$SCAN" | grep -qE 'git\s+push' \
-   && echo "$SCAN" | grep -qE '(--force|--force-with-lease|(^|[[:space:]])-f([[:space:]]|$))' \
-   && echo "$SCAN" | grep -qE '(^|[[:space:]])(main|master|prod|production)([[:space:]]|$)'; then
-  BLOCKED="force push to protected branch"
-fi
+# force push: 2026-10-19 사용자 결정으로 차단하지 않는다. 승인된 history 정리(공개 저장소 denylist
+# 스크럽 등)를 에이전트가 자율 수행하되, `--force-with-lease=<branch>:<expected-sha>` 로 lease를 걸고
+# 백업 bundle을 먼저 만든다(global/CLAUDE.md 승인·배포 절).
 # git reset --hard (지정본 + bare)
 if echo "$SCAN" | grep -qE 'git\s+reset\s+--hard\s+(origin|HEAD~)'; then
   BLOCKED="git reset --hard (destructive)"
