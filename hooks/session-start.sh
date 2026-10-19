@@ -37,6 +37,10 @@ $handoff"
     wiki="$(printf '%s' "$doctor_json" | jq -r 'select(.mode=="repo-only" and .reason=="registry entry not found") | "[wiki 미연결] remote \((.normalized_remotes[0] // "없음")) 는 knowledge registry에 없어 wiki 지식 없이 repo-only로 진행한다. 연결: 개인 repo는 wiki .system/scripts/connect_project_wiki.py --personal --slug <slug> (dry-run 후 승인 시 --apply); 업무 repo는 registry에 common-only 항목을 먼저 추가하면 knowns 첫 저장 시 connect를 제안한다."' 2>/dev/null)"
     [ -n "$wiki" ] && out="$out
 $wiki"
+    # Connected: name the bounded retrieval step so the first non-trivial task starts from wiki context.
+    connected="$(printf '%s' "$doctor_json" | jq -r 'select(.mode=="wiki-bounded") | "[wiki 연결] \(.project.id) [\(.project.connection_status)] — 첫 비단순 작업 전에 project-wiki-context route --query <과제>로 관련 정본만 받아 읽고, 검증 뒤 trace를 마감한다."' 2>/dev/null)"
+    [ -n "$connected" ] && out="$out
+$connected"
     # Connected but degraded: one summary line, counts only (no document paths in the session context).
     degraded="$(printf '%s' "$doctor_json" | jq -r 'select(.mode=="wiki-bounded" and .knowledge_health.status=="degraded") | "[wiki 상태] 정본 \(.knowledge_health.rejected_count // ((.rejected // []) | length))건 제외 (\([(.knowledge_health.rejected_reasons // {}) | to_entries[] | "\(.key) \(.value)"] | join(" · "))) — 위키 점검(lint) 권장"' 2>/dev/null)"
     [ -n "$degraded" ] && out="$out

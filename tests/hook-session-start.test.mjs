@@ -239,6 +239,24 @@ function connectedWiki(t, setup) {
   return wiki
 }
 
+test("connected repositories name their namespace and the bounded route step; excluded ones stay silent", t => {
+  const setup = fixture(t, "## Next actions\ncurrent action\n", true)
+  connectedWiki(t, setup)
+  const context = setup.run()
+  assert.match(context, /\[wiki 연결\] example\.invalid\/test\/repo \[connected\] — .*project-wiki-context route --query/)
+  assert.doesNotMatch(context, /sys-wiki/)
+  assert.doesNotMatch(context, /wiki 미연결/)
+  const quiet = fixture(t, "## Next actions\ncurrent action\n", true)
+  const wiki = wikiRegistry(t, quiet, [{ id: "example.invalid/test/repo", canonical_remote: "https://example.invalid/test/repo",
+    remote_aliases: [], local_aliases: ["repo"], connection_status: "excluded", lifecycle: "active", project_kind: "workspace-tooling",
+    security_domain: "work/tooling", wiki_namespace: null, retrieval_profile: "none", customer_scope: "common",
+    canonical_write_target: null, read_scopes: [], manual_read_bindings: [] }])
+  process.env.AI_WORKING_CONTEXT_REGISTRY_PATH = wiki
+  const excluded = quiet.run()
+  assert.match(excluded, /current action/)
+  assert.doesNotMatch(excluded, /wiki 미연결|wiki 연결|wiki 상태/)
+})
+
 test("degraded connected knowledge prints one count-only status line", t => {
   const setup = fixture(t, "## Next actions\ncurrent action\n", true)
   const wiki = connectedWiki(t, setup)
