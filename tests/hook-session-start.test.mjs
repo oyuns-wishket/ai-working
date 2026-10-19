@@ -207,6 +207,16 @@ test("unregistered repositories get one bounded wiki notice; missing resolver st
   assert.doesNotMatch(setup.run(), /wiki 미연결/)
 })
 
+test("a large HANDOFF wiki-candidate backlog prints one count-only line; small backlogs stay silent", t => {
+  const few = fixture(t, "## Next actions\ncurrent action\n\n## Wiki candidates\n- one\n- two\n")
+  assert.doesNotMatch(few.run(), /wiki 후보 적체/)
+  const bullets = Array.from({ length: 12 }, (_, i) => `- candidate ${i}`).join("\n")
+  const many = fixture(t, `## Next actions\ncurrent action\n\n## Wiki candidates\n${bullets}\n\n## Decisions & context\n- d\n`)
+  const context = many.run()
+  assert.match(context, /\[wiki 후보 적체 12건\] .*knowns/)
+  assert.doesNotMatch(context, /candidate 3/)
+})
+
 test("registered repositories produce no wiki notice", t => {
   const setup = fixture(t, "## Next actions\ncurrent action\n", true)
   const wiki = wikiRegistry(t, setup, [{ id: "example.invalid/test/repo", canonical_remote: "https://example.invalid/test/repo",

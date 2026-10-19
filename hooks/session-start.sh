@@ -24,6 +24,11 @@ if in_git_repo; then
     [ -n "$handoff" ] || handoff="[인계 생략] source: docs/handoff/HANDOFF.md — bounded reader unavailable; read relevant sections on demand."
     out="$out
 $handoff"
+    # Wiki candidates waiting for a production closeout: count only, so a backlog that
+    # knowns never drained (206 bullets in one project on 2026-10-19) is visible each session.
+    pending_wiki="$(awk '/^## Wiki candidates/{s=1;next} s&&/^## /{s=0} s&&/^- /{n++} END{if(n>=10)print n}' "$hf" 2>/dev/null)"
+    [ -n "$pending_wiki" ] && out="$out
+[wiki 후보 적체 ${pending_wiki}건] HANDOFF '## Wiki candidates'가 운영 배포 closeout(knowns)을 기다린다. 다음 운영 배포 검증 뒤 dev-protocol §5.6에서 묶어 처리하고 반영분은 제거한다."
   else
     out="$out
 [인계 없음] docs/handoff/HANDOFF.md 없음 — 첫 비단순 작업 종료 시 dev-protocol §5.5가 ai-working templates/HANDOFF.md로 생성한다."
