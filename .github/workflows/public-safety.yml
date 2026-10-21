@@ -43,3 +43,4 @@ jobs:
           python3 skills/knowns/scripts/test_publish_git.py
           python3 -m unittest discover -s skills/multi-session-dev/tests -p 'test_*.py'
           python3 -m unittest discover -s skills/project-wiki-context/tests -p 'test_*.py'
+          python3 -m unittest discover -s skills/character-explainer-video/tests -p 'test_*.py'

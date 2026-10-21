@@ -110,3 +110,7 @@ AI 영상은 보통 편집 가능한 3D 형상·카메라·부품을 제공하�
 | 모델 없이 반응하는 물결 | [Fluid](https://paveldogreat.github.io/WebGL-Fluid-Simulation/) · [소스](https://github.com/PavelDoGreat/WebGL-Fluid-Simulation) | 포인터 입력과 색/유체 표현, 배경의 가독성 |
 | 사진에서 살아나는 입자 | [Until Labs](https://www.untillabs.com/) · [제작기](https://tympanus.net/codrops/2025/12/10/simulating-life-in-the-browser-creating-a-living-particle-system-for-the-untillabs-website/) | 사진·로고를 활용한 입력 반응과 복귀 |
 | 전문 제작 도구로 만든 생태 공간 | [Of the Oak](https://oftheoak.co.uk/) · [제작사](https://lusion.co/projects/of_the_oak/) | 제작 원본을 웹용 데이터로 변환하는 방식 |
+
+## 승인된 캐릭터 교육 영상 제작
+
+기존 마스코트/고양이가 업무 과정을 직접 시연하는 오프라인 설명 영상은 방향이 정해진 뒤 [character-explainer-video](../../character-explainer-video/SKILL.md)의 참조·음성 프로필, 단일 행동 생성·검수, 정상속도 편집·로컬 합성 절차로 이어간다. 새 스타일 선택은 이 디자인 workflow가 소유하고, 이미 승인된 캐릭터/방식의 재사용과 수정에서 같은 선택을 반복하지 않는다. 정지 슬라이드나 실시간 웹 캐릭터는 이 영상 스킬의 대상이 아니다.

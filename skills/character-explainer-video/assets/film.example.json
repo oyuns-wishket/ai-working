@@ -1,0 +1,18 @@
+{
+  "title": "고양이 설명 교실",
+  "panel_heading": "고양이가 하는 일",
+  "fps": 24,
+  "audio_lead": 0.25,
+  "font": {"path": "assets/korean-font.ttf", "regular_index": 0, "bold_index": 0},
+  "scenes": [{
+    "title": "근거를 옮겨 확인해요",
+    "chapter": "자료 확인",
+    "frames": 144,
+    "audio": "audio/narration.mp3",
+    "cuts": [{"video": "assets/document-transfer.mp4", "source_in": 2, "frames": 144, "speed": 1, "reviewed": false, "action": "자료를 옮겨요", "meaning": "원본과 확인할 자료를 연결", "icon": "receipt"}],
+    "captions": [{"start": 0, "end": 3.5, "text": "확인할 자료를 옮겨 볼까요?"}],
+    "panels": [{"start": 0, "end": 2, "text": "이동 전", "y": 550}, {"start": 2, "end": 6, "text": "이동 후", "y": 550}],
+    "props": [{"start": 0, "end": 6, "xy": [420, 842], "to": [1030, 842], "arrive": 2, "text": "확인할 자료"}],
+    "footnote": "동작 시점 검수 후 사용"
+  }]
+}
