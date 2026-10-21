@@ -128,13 +128,13 @@ Skill은 Agent Skills 표준 frontmatter의 `name`, `description`을 포함해�
 | 에이전트·연동 | `agent-bot-setup`, `external-consumer-sync`, `hermes-bot-setup`, `knowledge-wiki`, `online-channel-guide` |
 | 인프라·원격 | `customer-infra-ops`, `mac-file-sync`, `project-wiki-context`, `remote-setup`, `remote-ssh-edit` |
 | 개인 업무 | `calendar` |
-| 캐릭터 교육 영상 | `character-explainer-video` |
+| 캐릭터 교육 영상 | `video-exp` |
 
 [스킬 통합 기준과 이전 이름 대응표](docs/skill-consolidation.md)를 참고한다. 환경 설치·동기화는 `agent-environment`, 개발 절차는 `dev-protocol`이 소유한다.
 
 [design-workflow](skills/design-workflow/SKILL.md)는 도메인과 사용자 과업을 분석해 필요한 경우 쉬운 연출 이름·보완 요청문을 제안한다. UI 모션·차트와 [영상·스크롤 시퀀스·실시간 그래픽·게임형·혼합형](skills/design-workflow/references/graphics-production.md)을 기존 시안 과정에서 고르고, AI 제작부터 웹 전달까지 실제 무료·유료 기능에 맞춰 진행한다. 피드백은 원인을 확인해 디자인·구현 또는 재사용 지침을 개선한다.
 
-[character-explainer-video](skills/character-explainer-video/SKILL.md)는 승인된 캐릭터와 목소리로 짧은 행동 장면을 만들고, 정확한 한국어·계산·자막을 로컬에서 합성한다. 원본과 완성본 기준은 로컬 프로필로 연결하며, 재사용 렌더러와 검수 기준은 이 저장소가 소유한다. [구현·검증 이력](docs/impl-notes/2026-10-21-character-explainer-video.md).
+[video-exp](skills/video-exp/SKILL.md)는 승인된 캐릭터와 목소리로 짧은 행동 장면을 만들고, 정확한 한국어·계산·자막을 로컬에서 합성한다. 원본과 완성본 기준은 로컬 프로필로 연결하며, 재사용 렌더러와 검수 기준은 이 저장소가 소유한다. [구현·검증 이력](docs/impl-notes/2026-10-21-character-explainer-video.md).
 
 ## 개인화
 

@@ -33,3 +33,7 @@ Independent review found an old organization label in a copied icon, repair-only
 ## Remaining limits
 - New model generations cannot guarantee bit-identical motion or speaker identity. The local benchmark and visual/audio acceptance checks preserve the method and expose drift. Remote models/prices/tool schemas must be checked at use time.
 - A new session may be needed to refresh the native skill catalog. Another machine must pull/bootstrap and receive its own authorized local profile/assets; no personal paths or credentials synchronize via public Git.
+
+## Rename to video-exp
+- User requested the name “video exp”; canonical identifier is `video-exp`. Renamed the whole skill directory and frontmatter, updated README/design caller and CI test path. Historical creation records remain intact. Bootstrap replaces only the owned old skill links with the new canonical links.
+- Same scripts, profile and workflow; no generation or style change. Local profile recipe pointers are updated separately without publishing machine paths.

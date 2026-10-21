@@ -1,5 +1,5 @@
 ---
-name: character-explainer-video
+name: video-exp
 description: Create or revise character-led educational videos where an existing mascot physically demonstrates a business or learning process. Reuse approved character and voice profiles, generate short Runway action shots, and locally composite accurate Korean narration, calculations and captions. Use for the kitten explainer workflow or similar animated instruction, not static slides or ChatGPT pets.
 ---
 
