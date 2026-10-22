@@ -37,6 +37,19 @@ read completed history only for tasks that need it.
 Claude consumes the session-start hook. Codex follows the same bounded-reading policy in `dev-protocol`; this change
 does not assume that Codex runs Claude's SessionStart event. The installed helper is also callable directly.
 
+## Per-prompt wiki context
+
+`prompt-wiki-context.mjs` runs on every submitted prompt. In a project that `project-wiki-context` resolves to a
+healthy wiki binding it calls `route --record --sample-kind development` with the prompt text (code fences removed,
+at most 400 characters) and injects only titles, types, absolute paths and section line ranges of at most four
+documents, capped at 1800 bytes. Bodies are never injected; the agent opens only what the task needs. Documents
+already suggested in the same session are skipped, so follow-up prompts stay silent unless the topic changes.
+
+The hook is silent for prompts shorter than 12 characters, slash commands, unconnected or unhealthy projects, and
+resolver failures or timeouts (4 seconds). `AI_WORKING_PROMPT_WIKI=0` disables it. Session state lives in
+`~/.local/state/ai-working/prompt-wiki/`. Each injection carries the route trace id so retrieval feedback can be
+closed as described in `project-wiki-context`.
+
 ## Paseo workspace title
 
 Paseo names a workspace from the first prompt and reads its style only from the repository's

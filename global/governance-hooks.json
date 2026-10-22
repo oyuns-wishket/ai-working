@@ -19,6 +19,15 @@
             "timeout": 6
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/prompt-wiki-context.mjs",
+            "timeout": 6
+          }
+        ]
       }
     ],
     "PreToolUse": [

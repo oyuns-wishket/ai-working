@@ -463,6 +463,54 @@ def git_objects_full(git_root: Path, sha: str) -> str:
     return _FULL_SHA_CACHE[key]
 
 
+def prefetch_source_objects(paths: list[Path], resolved: dict) -> None:
+    """Resolve every repo source_ref object of a namespace with ONE batch-check process.
+
+    Per-document batching still spawned ~100 cat-file processes per route (2026-10-22, 2.5 s);
+    per-prompt routing needs the whole route well under the hook's few-second budget."""
+    git_root = Path(resolved["git_root"])
+    names: list[str] = []
+    for path in paths:
+        try:
+            # Open only regular files: a FIFO would block here before the route loop rejects it.
+            if path.is_symlink() or not path.is_file():
+                continue
+            refs = frontmatter_list(path, "source_refs")
+        except (OSError, UnicodeError):
+            continue
+        for reference in refs:
+            match = SOURCE_REF_RE.match(reference)
+            if not match:
+                continue
+            _, sha, referenced_path = match.groups()
+            names.append(f"{sha}^{{commit}}")
+            if referenced_path and not Path(referenced_path).is_absolute() and ".." not in Path(referenced_path).parts:
+                names.append(f"{sha}:{referenced_path}")
+    if names:
+        git_objects_exist(git_root, names)
+        heads = [f"HEAD:{name.split(':', 1)[1]}" for name in names if ':' in name and not name.endswith('^{commit}')]
+        blob_ids(git_root, [name for name in names if ':' in name and not name.endswith('^{commit}')] + heads)
+
+
+_BLOB_CACHE: dict[tuple[str, str], str | None] = {}
+
+
+def blob_ids(git_root: Path, names: list[str]) -> dict[str, str | None]:
+    """Blob id of `rev:path` for many names in one process (None when missing)."""
+    key_root = str(git_root)
+    pending = [n for n in dict.fromkeys(names) if (key_root, n) not in _BLOB_CACHE]
+    if pending:
+        result = subprocess.run(["git", "-C", key_root, "cat-file", "--batch-check"], input="\n".join(pending) + "\n",
+                                capture_output=True, text=True, check=False)
+        lines = result.stdout.splitlines() if result.returncode == 0 else []
+        for name, line in zip(pending, lines):
+            parts = line.split()
+            _BLOB_CACHE[(key_root, name)] = parts[0] if len(parts) >= 2 and parts[1] == "blob" else None
+        for name in pending:
+            _BLOB_CACHE.setdefault((key_root, name), None)
+    return {n: _BLOB_CACHE[(key_root, n)] for n in names}
+
+
 def source_reference_health(path: Path, resolved: dict) -> dict:
     aliases = set(resolved["project"].get("local_aliases", []))
     aliases.add(Path(resolved["git_root"]).name)
@@ -523,10 +571,9 @@ def source_reference_health(path: Path, resolved: dict) -> dict:
             if referenced_path:
                 path_ok = exists[names[1]]
                 if path_ok and ancestor:
-                    unchanged, _ = try_git(
-                        Path(resolved["git_root"]), "diff", "--quiet", f"{sha}..HEAD", "--", referenced_path
-                    )
-                    changed_since = not unchanged
+                    then, now = f"{sha}:{referenced_path}", f"HEAD:{referenced_path}"
+                    blobs = blob_ids(git_root, [then, now])
+                    changed_since = blobs[then] != blobs[now]
         checked.append(
             {
                 "reference": reference,
@@ -1296,6 +1343,8 @@ def routed_v2(resolved: dict, query: str) -> dict:
         except (ValueError, OSError) as error:
             raise ContextError(f"invalid scoped directories: {error}") from error
         paths = [root / scope["path"]] if manual else sorted(path for parent in parents for path in parent.glob("*.md"))
+        if not manual:
+            prefetch_source_objects(paths, resolved)
         for path in paths:
             if path in seen:
                 continue

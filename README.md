@@ -156,6 +156,7 @@ skills/personal-ai-ssot/SKILL.md를 읽고 한 번에 한 질문씩 인터뷰해
 | `dev-resource-guard.mjs` | local DB/Docker 자원 점검과 세션 소유 자원 정리 |
 | `pre-tool.sh` | 승인 범위를 검증한 DB 변경의 실행 표시 확인 |
 | `session-entry.mjs` | Git 정보와 최대 8 KiB HANDOFF를 한 번 제공 |
+| `prompt-wiki-context.mjs` | wiki 연결 프로젝트에서 요청마다 관련 wiki 문서 경로를 최대 4건 제시(본문 미주입, 세션 내 중복 제외) |
 | `handoff-sync.sh` | 비활성 호환 진입점; 파일 수정·commit·push 없음 |
 | `scripts/statusline.mjs` | 선택적 모델·프로젝트·컨텍스트 사용률 표시; 외부 플러그인 불필요 |
 
@@ -167,7 +168,7 @@ Hook 설정은 기존 Claude/Codex 설정 전체를 덮지 않는다. ai-working
 로컬 설정과 회귀 검증 절차를 확인한다. [작업별 측정](docs/task-metrics.md)은 명시적으로 연결한 세션의
 사용량·시간·검증 결과를 machine-local 상태로 기록한다. Claude·Codex가 같은 규칙을 읽게 만든 구조와 재검증 절차는
 [규칙 통일 개선 이력](docs/rule-unification-history.md)에 있다. 전역 규칙 내용 개선은 `docs/impl-notes/`에
-날짜별로 남긴다(최근: [FDE 역할·작업 흐름 통합·교차 리뷰](docs/impl-notes/2026-10-12-global-rules-fde-cross-review.md)). skill 변경 이력도 같은 곳에 둔다(최근: [knowns 호출 주체 정리](docs/impl-notes/2026-10-13-knowns-orchestration.md), [Paseo 자동 제목 한국어화](docs/impl-notes/2026-10-13-paseo-korean-title-style.md), [wiki-context 공통 루트 주제 섹션](docs/impl-notes/2026-10-19-wiki-context-common-root-sections.md), [force push 가드 해제·history 스크럽](docs/impl-notes/2026-10-19-allow-force-push-and-scrub-history.md), [wiki-context Git 조회 batching](docs/impl-notes/2026-10-19-wiki-context-git-batching.md), [knowns 한국어 제목 규칙](docs/impl-notes/2026-10-20-knowns-korean-titles.md), [Paseo 제목 CLI 이름 변경](docs/impl-notes/2026-10-14-paseo-title-cli-rename.md), [dev server 메모리 누적 재발 방지](docs/impl-notes/2026-10-19-dev-server-memory-guard.md)).
+날짜별로 남긴다(최근: [FDE 역할·작업 흐름 통합·교차 리뷰](docs/impl-notes/2026-10-12-global-rules-fde-cross-review.md)). skill 변경 이력도 같은 곳에 둔다(최근: [knowns 호출 주체 정리](docs/impl-notes/2026-10-13-knowns-orchestration.md), [Paseo 자동 제목 한국어화](docs/impl-notes/2026-10-13-paseo-korean-title-style.md), [wiki-context 공통 루트 주제 섹션](docs/impl-notes/2026-10-19-wiki-context-common-root-sections.md), [force push 가드 해제·history 스크럽](docs/impl-notes/2026-10-19-allow-force-push-and-scrub-history.md), [wiki-context Git 조회 batching](docs/impl-notes/2026-10-19-wiki-context-git-batching.md), [요청별 wiki 맥락 hook](docs/impl-notes/2026-10-22-prompt-wiki-context.md), [knowns 한국어 제목 규칙](docs/impl-notes/2026-10-20-knowns-korean-titles.md), [Paseo 제목 CLI 이름 변경](docs/impl-notes/2026-10-14-paseo-title-cli-rename.md), [dev server 메모리 누적 재발 방지](docs/impl-notes/2026-10-19-dev-server-memory-guard.md)).
 
 ## 필요한 도구
 
