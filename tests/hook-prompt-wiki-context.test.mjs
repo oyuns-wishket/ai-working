@@ -32,7 +32,7 @@ test("connected project prompt gets document titles and paths, not bodies", () =
   const out = JSON.parse(run(home, { prompt: "이카운트 컷오버 최종 보고 정리해줘", cwd: "/p", session_id: "s1" }))
   const text = out.hookSpecificOutput.additionalContext
   assert.equal(out.hookSpecificOutput.hookEventName, "UserPromptSubmit")
-  assert.match(text, /GJ 규칙 \[domain\] \/w\/sys-wiki\/aidp\/gj\/a\.md/)
+  assert.match(text, /GJ 규칙 \[domain\]\n  \/w\/sys-wiki\/aidp\/gj\/a\.md/)
   assert.match(text, /메모 \[내 메모\]/)
   assert.match(text, /trace t1/)
   fs.rmSync(home, { recursive: true, force: true })
@@ -62,5 +62,31 @@ test("pasted code blocks are stripped from the routing query", () => {
   const query = fs.readFileSync(path.join(home, "query.txt"), "utf8")
   assert.doesNotMatch(query, /Traceback/)
   assert.match(query, /세금계산서 발행/)
+  fs.rmSync(home, { recursive: true, force: true })
+})
+
+test("each document line carries the note's own summary so relevance is visible without opening it", () => {
+  const wiki = fs.mkdtempSync(path.join(os.tmpdir(), "prompt-wiki-root-"))
+  const home = fixture({ ...routed, wiki_root: wiki })
+  fs.mkdirSync(path.join(wiki, "sys-wiki/aidp/gj"), { recursive: true })
+  fs.writeFileSync(path.join(wiki, "sys-wiki/aidp/gj/a.md"),
+    "---\ntitle: \"GJ 규칙\"\n---\n\n# GJ 규칙\n\n> 세금계산서는 종사업장 번호로 발행한다.\n\n## 핵심 지식\n")
+  fs.mkdirSync(path.join(wiki, "my-wiki"), { recursive: true })
+  fs.writeFileSync(path.join(wiki, "my-wiki/m.md"), "# 메모\n\n## 요약\n\n" + "가".repeat(400) + "\n")
+  const text = JSON.parse(run(home, { prompt: "이카운트 컷오버 최종 보고 정리해줘", cwd: "/p", session_id: "s6" })).hookSpecificOutput.additionalContext
+  assert.match(text, /GJ 규칙 \[domain\] — 세금계산서는 종사업장 번호로 발행한다\./)
+  assert.match(text, /메모 \[내 메모\] — 가{150,159}…/)
+  assert.match(text, /설계·구현 결정 전에 Read로 읽으세요/)
+  fs.rmSync(home, { recursive: true, force: true }); fs.rmSync(wiki, { recursive: true, force: true })
+})
+
+test("a multi-session lane prompt is routed by its task section, not its boilerplate", () => {
+  const home = fixture(routed)
+  const lane = "# Lane `ux` of task `t`\n\nYou are one lane session spawned by a Lead session.\n\n## Where you are\n\n- Repository: /tmp/x\n\n## Acceptance criteria\n\n- 발주서에 배송 구간 칼럼이 보인다\n\n## Task\n\n도선료 정산 로직을 고친다.\n\n## Return format\n\nJSON only.\n"
+  run(home, { prompt: lane, cwd: "/p", session_id: "s7" })
+  const query = fs.readFileSync(path.join(home, "query.txt"), "utf8")
+  assert.match(query, /배송 구간 칼럼/)
+  assert.match(query, /도선료 정산 로직/)
+  assert.doesNotMatch(query, /Lead session|Return format|JSON only/)
   fs.rmSync(home, { recursive: true, force: true })
 })
