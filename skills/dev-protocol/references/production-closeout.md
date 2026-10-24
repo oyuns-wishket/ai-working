@@ -1,6 +1,6 @@
 ## 6. 운영배포 후 knowns wiki closeout
 
-운영배포를 승인받아 검증까지 성공한 경우에만, HANDOFF 뒤 `knowns`를 정확히 한 번 실행한다. PR까지만 또는 개발서버까지만 진행했거나 운영배포가 실패·보류되면 wiki를 묻지 않는다. 문서 반영 후 task worktree 정리는 §5.4를 따른다.
+운영배포를 승인받아 검증까지 성공한 경우에만, HANDOFF 뒤 `knowns`를 정확히 한 번 실행한다. PR까지만 또는 개발서버까지만 진행했거나 운영배포가 실패·보류되면 wiki를 묻지 않는다. task worktree와 작업 자원은 개발배포 직후 §5.4에서 이미 정리돼 있어야 하며, 여기서 다시 묻거나 미루지 않는다. 남아 있으면 같은 안전 조건으로 정리하고 결과만 보고한다.
 
 1. 설치된 `knowns/SKILL.md`를 끝까지 읽고 적용한다. 없으면 `wiki closeout 미실행`을 blocker로 남긴다.
 2. read-only 분석으로 후보, 연결, exact wiki write·검증·commit·push·배포 계획과 항목별 AI 추천을 만든다. `docs/handoff/HANDOFF.md`의 `## Wiki candidates` 적재분이 있으면 후보 입력에 포함한다.

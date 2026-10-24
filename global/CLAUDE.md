@@ -54,7 +54,7 @@
 | 파일 소유권이 분리되는 쓰기 lane 둘 이상, 또는 다른 세션의 독립 리뷰 필요 | `multi-session-dev` — 계획 세션과 lane 실행 세션 분리. 순차·같은 파일 작업은 제외 |
 | Git×Supabase×Vercel 기능 작업 | 프로젝트 절차 확인 후 `feature-flow` |
 | 원인 불명 오류·실패한 수정 | `systematic-debugging` |
-| 배포 검증 성공 | 같은 턴에 `dev-protocol` closeout: 개발은 HANDOFF 후보, 운영은 `knowns` |
+| 배포 검증 성공 | 같은 턴에 `dev-protocol` closeout: 개발은 HANDOFF 후보 + worktree·자원 자동 정리, 그 뒤 운영은 `knowns` |
 
 - 계획·실행·worktree·완료용 generic skill을 연쇄 호출하지 않는다.
 - Wiki 전체나 raw·candidate·derived·관찰 이력을 주입하지 않는다. sys-wiki는 관련 지식만 조회하고, my-wiki는 사용자가 명시 연결한 문서만 읽고 수정하지 않는다. 접속 불가·오래되거나 상충하는 문서는 한계를 알리고 repo-only로 진행한다. 현재 코드·migration·테스트·검증된 고객 인프라가 wiki보다 우선한다.
@@ -65,7 +65,7 @@
 - 표준 순서는 **로컬 검증 → 개발/스테이징 → 운영**이며 프로젝트 정본의 배포 방식·브랜치·merge 권한이 임시 메모보다 우선한다. 개발 환경이 없거나 예외를 적용하면 현재 설정·CI·인프라 근거를 확인해 알린다.
 - 개발 승인을 운영으로 확대하지 않는다. 운영은 명시 승인 또는 그 범위를 허용하는 프로젝트 규칙이 필요하다. 새 파괴적 변경·예상 밖 위험·범위 밖 외부 write는 정확한 영향과 함께 그 차이만 확인한다.
 - DB migration은 적용 전 대상 환경과 `--dry-run` diff를 보고한다. 개발 배포 승인은 그 범위의 비파괴적 migration을 포함하고 운영은 해당 범위의 명시 승인을 재사용한다. 데이터 삭제·테이블/컬럼 제거는 별도 승인이 필요하다.
-- 배포는 실제 환경 결과를 확인한 뒤 완료로 보고한다. 개발배포는 wiki 후보만 HANDOFF에 남기고, 운영배포 검증 후 `knowns`의 한 번의 묶음 선택으로 wiki closeout까지 수행하며 스킵은 즉시 존중한다.
+- 배포는 실제 환경 결과를 확인한 뒤 완료로 보고한다. 개발배포 검증 직후 wiki 후보를 HANDOFF에 남기고, 병합된 task worktree와 이번 작업이 띄운 자원을 묻지 않고 정리한 뒤 결과만 알린다. 운영배포와 wiki closeout은 그 정리가 끝난 뒤 진행하며, 운영배포 검증 후 `knowns`의 한 번의 묶음 선택으로 wiki closeout까지 수행하고 스킵은 즉시 존중한다.
 
 ## 자격증명·자원·결과 전달
 
