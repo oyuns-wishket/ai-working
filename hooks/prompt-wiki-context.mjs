@@ -13,6 +13,9 @@ const MIN_PROMPT_CHARS = 12;      // "ㅇㅋ", "다음", "커밋해" carry no re
 const MAX_DOCS = 4;
 const MAX_CONTEXT_BYTES = 3200;
 const SUMMARY_CHARS = 160;
+// 2026-10-25: generic prompts ("커밋하고 PR 올려줘") matched every note at 30; real topics scored 60+.
+const MIN_SCORE = 40;
+const ISSUE_TIMEOUT_MS = 2500;
 const ROUTE_TIMEOUT_MS = 4000;
 
 let raw = '';
@@ -35,13 +38,28 @@ function intent(text) {
   const sections = [...text.matchAll(/^## (Task|Acceptance criteria|Goal)[^\n]*\n([\s\S]*?)(?=^## |$(?![\s\S]))/gm)].map((m) => m[2]);
   return sections.length ? sections.join(' ') : text;
 }
-const query = intent(prompt).replace(/```[\s\S]*?```/g, ' ').replace(/\s+/g, ' ').slice(0, 400);
+// Lane prompts are written in English while the wiki is Korean: an English-only query matched
+// nothing above noise. Issue numbers name the work, so their (Korean) titles join the query.
+function issueTitles(text, dir) {
+  const numbers = [...new Set([...text.matchAll(/(?<![\w/])#(\d{2,6})\b/g)].map((m) => m[1]))].slice(0, 3);
+  const titles = [];
+  for (const number of numbers) {
+    const r = spawnSync('gh', ['issue', 'view', number, '--json', 'title', '-q', '.title'],
+      { cwd: dir, encoding: 'utf8', timeout: ISSUE_TIMEOUT_MS });
+    if (r.status === 0 && r.stdout.trim()) titles.push(r.stdout.trim().slice(0, 120));
+  }
+  return titles;
+}
+const focus = intent(prompt).replace(/```[\s\S]*?```/g, ' ');
+const hangul = (focus.match(/[가-힣]/g) || []).length;
+const extra = hangul < 20 && fs.existsSync(cwd) ? issueTitles(focus, cwd) : [];
+const query = [...extra, focus].join(' ').replace(/\s+/g, ' ').slice(0, 400);
 const result = spawnSync('python3', [resolver, 'route', '--project', cwd, '--query', query,
   '--record', '--sample-kind', 'development'], { encoding: 'utf8', timeout: ROUTE_TIMEOUT_MS, maxBuffer: 2 * 1024 * 1024 });
 let routed;
 try { routed = JSON.parse(result.stdout); } catch { process.exit(0); }
 if (!routed || routed.mode !== 'wiki-bounded') process.exit(0);
-const docs = (routed.documents || []).filter((d) => d && d.relative_path).slice(0, MAX_DOCS);
+const docs = (routed.documents || []).filter((d) => d && d.relative_path && (d.score ?? MIN_SCORE) >= MIN_SCORE).slice(0, MAX_DOCS);
 if (!docs.length) process.exit(0);
 
 // Same document already offered in this session → do not repeat it.
