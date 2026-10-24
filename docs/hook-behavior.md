@@ -41,8 +41,10 @@ does not assume that Codex runs Claude's SessionStart event. The installed helpe
 
 `prompt-wiki-context.mjs` runs on every submitted prompt. In a project that `project-wiki-context` resolves to a
 healthy wiki binding it calls `route --record --sample-kind development` with the prompt text (code fences removed,
-at most 400 characters) and injects only titles, types, absolute paths and section line ranges of at most four
-documents, capped at 1800 bytes. Bodies are never injected; the agent opens only what the task needs. Documents
+at most 400 characters; a multi-session lane prompt contributes only its `## Task`/`## Acceptance criteria`/`## Goal`
+sections) and injects titles, types, the note's own one-line summary (first `> ` line or `## 요약` paragraph, at most 160
+characters), absolute paths and section line ranges of at most four documents, capped at 3200 bytes. Bodies are never
+injected; the summary lets the agent judge relevance and open only what the task needs before deciding. Documents
 already suggested in the same session are skipped, so follow-up prompts stay silent unless the topic changes.
 
 The hook is silent for prompts shorter than 12 characters, slash commands, unconnected or unhealthy projects, and
