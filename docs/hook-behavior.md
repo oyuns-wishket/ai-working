@@ -43,7 +43,9 @@ does not assume that Codex runs Claude's SessionStart event. The installed helpe
 healthy wiki binding it calls `route --record --sample-kind development` with the prompt text (code fences removed,
 at most 400 characters; a multi-session lane prompt contributes only its `## Task`/`## Acceptance criteria`/`## Goal`
 sections) and injects titles, types, the note's own one-line summary (first `> ` line or `## 요약` paragraph, at most 160
-characters), absolute paths and section line ranges of at most four documents, capped at 3200 bytes. Bodies are never
+characters), absolute paths and section line ranges of at most four documents scoring at least 40 (generic prompts such
+as "commit and open a PR" match every note at about 30), capped at 3200 bytes. A mostly non-Korean prompt that names
+issues (`#1754`) is enriched with up to three issue titles from `gh issue view` (2.5 s each) because the wiki is Korean. Bodies are never
 injected; the summary lets the agent judge relevance and open only what the task needs before deciding. Documents
 already suggested in the same session are skipped, so follow-up prompts stay silent unless the topic changes.
 
