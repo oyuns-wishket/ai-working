@@ -1383,7 +1383,11 @@ def routed_v2(resolved: dict, query: str) -> dict:
             intent = path.name in intent_documents or rel in intent_documents
             if not manual:
                 intent = intent or path.relative_to(root / scope["path"]).as_posix() in intent_documents
-            score = len(overlap) * 10 + min(2, len(phrases)) * 10 + (30 if intent else 0)
+            # 2026-10-25: a long unspaced Korean phrase from the query found verbatim in the note
+            # ("발주수신허용메일" → "발주 수신 허용 메일") names one concept; it outweighs a broad intent
+            # word ("발주") that matches dozens of notes. Short phrases keep the old weight.
+            specific = sum(1 for term in phrases if len(term) >= 6)
+            score = len(overlap) * 10 + min(2, len(phrases)) * 10 + min(2, specific) * 30 + (30 if intent else 0)
             score += min(2, len(alias_matches)) * 30 + min(2, len(tag_matches)) * 20
             reasons = (["query-overlap"] if overlap else []) + (["spacing-phrase"] if phrases else [])
             reasons += (["alias-match"] if alias_matches else []) + (["tag-match"] if tag_matches else []) + (["intent-route"] if intent else [])

@@ -456,6 +456,18 @@ class V2Tests(unittest.TestCase):
         self.assertEqual(result["documents"][0]["selection_reasons"], ["intent-route"])
 
 
+    def test_a_specific_unspaced_phrase_beats_a_broad_intent_word(self):
+        # 2026-10-25 real prompt "발주수신허용메일?": the note naming that exact setting must outrank
+        # notes that only share the broad intent word "발주".
+        self.sections([{"slug": "procurement", "title": "Procurement"}])
+        self.add_note("procurement/mail-flow.md", body="예전 `발주 수신 허용 메일` 칸은 하나로 합쳤다.")
+        for name in ("a", "b", "c"):
+            self.add_note(f"procurement/{name}.md", body="발주 처리 일반")
+        self.entry["retrieval"]["intent_routes"] = {"procurement": {"terms": ["발주"], "documents": [
+            "procurement/a.md", "procurement/b.md", "procurement/c.md"]}}
+        result = self.route("이게 뭐였더라?? 발주수신허용메일?")
+        self.assertEqual(result["documents"][0]["relative_path"], "sys-wiki/aidp/alpha/procurement/mail-flow.md")
+
     def test_records_take_only_leftover_slots_capped_by_max_records(self):
         self.entry["retrieval"] = {"max_documents": 4}
         for index in range(4):
