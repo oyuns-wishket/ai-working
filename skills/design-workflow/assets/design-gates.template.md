@@ -16,7 +16,7 @@
 | Scoped acceptance evidence | 허용/제외 범위·보존 계약·관련 상태·행동 → 반응 → 완료 조건·정본 |
 | Intent refinement | 충분히 명확/기존 근거 재사용 또는 쉬운 경험 제안·보완 요청문과 실제 결정 |
 
-scoped 작업이면 아래 Product interview·Design-direction interview·Visual-world decision·High-fidelity comps를 `N/A`와 기존 정본/보존 근거로 기록한다. **이는 신규 전용 게이트의 N/A이며 조사·새 표현의 동작 시안·검증 생략이 아니다.** 새 모션·차트·그래픽·3D 방향이면 같은 데이터/콘텐츠의 **동작 시안 정확히 세 개**를 다음 Relevant experience evidence에 기록한다. 새 시각 세계관이나 대표 화면 전면 교체이면 full 게이트를 적용한다. scoped 작업에서 새 표현 없이 승인 패턴 또는 (새 표현 판정에 따른) 기존 코드 패턴을 재사용하면 **동작 시안만** 생략한다. 승인 여부·재사용 근거(승인 패턴 이름·기록 위치, 또는 원 코드·동작 동일성·판정 근거)·보존 범위·신규 전용 항목의 N/A를 gate template에 기록하고 구현 잠금을 해제한다. full 게이트는 이 분기로 생략하지 않는다.
+scoped 작업이면 아래 Product interview·Design-direction interview·Visual-world decision·High-fidelity comps를 `N/A`와 기존 정본/보존 근거로 기록한다. **이는 신규 전용 게이트의 N/A이며 조사·새 표현의 동작 시안·검증 생략이 아니다.** 새 정보 구조·배치·탐색 UX 또는 새 모션·차트·그래픽·3D 방향이면 같은 데이터/콘텐츠의 **동작 시안 정확히 세 개**를 다음 Relevant experience evidence에 기록한다. 새 시각 세계관이나 대표 화면 전면 교체이면 full 게이트를 적용한다. scoped 작업에서 새 표현 없이 승인 패턴 또는 (새 표현 판정에 따른) 기존 코드 패턴을 재사용하면 **동작 시안만** 생략한다. 승인 여부·재사용 근거(승인 패턴 이름·기록 위치, 또는 원 코드·동작 동일성·판정 근거)·보존 범위·신규 전용 항목의 N/A를 gate template에 기록하고 구현 잠금을 해제한다. full 게이트는 이 분기로 생략하지 않는다.
 
 ## Relevant experience evidence
 
@@ -26,6 +26,7 @@ scoped 작업이면 아래 Product interview·Design-direction interview·Visual
 
 | Experience | Evidence |
 |---|---|
+| UI structure and navigation | 변경 전후 그룹·순서·콘텐츠 귀속·주요 행동 위치·탐색/상태; 스타일 재사용과 구조 재사용의 개별 판정; 미정 UX와 같은 콘텐츠의 시안 정확히 세 개·AI 추천·제시 후 실제 사용자 결정 또는 구체적으로 결정된 구조/기존 패턴의 원 화면·코드·변경 전후 대응·새 UX 아님 근거; 새 브랜드 인터뷰 N/A는 이 행의 면제 근거가 아님 |
 | Motion | 과업/브랜드 추천·같은 콘텐츠의 동작 시안 정확히 세 개·AI 추천·실제 사용자 결정 또는 기존 승인 preset·변경 상태 검증 또는 기존 코드 패턴 재사용(미승인): 원 코드·동작 동일성·새 표현 아님 판정 근거·변경 상태 검증; Anime.js 연출이면 대상 속성 소유권·Motion과의 분담·GSAP 예외 근거([DESIGN Motion decisions](DESIGN.template.md#motion-decisions-web-ui) 링크; GSAP이 없으면 그 예외 필드만 N/A) |
 | Charts | Bklit 경로/확인한 호환성 예외·같은 데이터의 동작 시안 정확히 세 개·AI 추천·실제 결정 또는 승인 패턴·변경 상태 검증 또는 기존 코드 패턴 재사용(미승인): 원 코드·동작 동일성·새 표현 아님 판정 근거·변경 상태 검증; 레거시 엔진 인벤토리·이관 화면·parity·전체 이관 제안·사용자 결정(또는 기록된 예외)은 아래 Legacy chart engine migration 링크 |
 | Legacy chart engine migration | 인벤토리(패키지·wrapper·전체 사용 route)·대상 화면 이관·parity·전체 이관 제안·실제 사용자 결정·고유 route 기준 이관률 N/M·별도 파일/import 수·실제 레거시 잔존 사용처/기록된 예외/미처리 이관 대상·잔여 route/재검토 조건·제거 증거 링크; 상태는 `이관 완료 / 이관(parity 미실행) / 이관(parity 실패) / 기록된 예외: 사유 / 제안 중`; `이관(parity 미실행)`·`이관(parity 실패)`·`기록된 예외`는 N에서 제외. 레거시도 호환성 예외도 없으면 조사 근거와 N/A; 레거시 없이 호환성 예외만 있으면 판정·대안·실제 결정을 기록하고 이관/parity/제거만 N/A |
@@ -36,7 +37,7 @@ scoped 작업이면 아래 Product interview·Design-direction interview·Visual
 
 확인된 개별 차트 예외가 없는 화면은 모든 레거시 차트를 함께 이관한다. 개별 차트의 비호환 예외(필수 기능 부재·실측 성능)가 기록된 화면은 해당 차트에 한해 공존을 허용하고, 예외 범위·의존 비용·재검토 조건을 기록한다. 해당 route는 `기록된 예외`로 집계하며 `이관 완료`나 레거시 import 0건으로 표시하지 않는다. `new`는 기준선 화면이 없으므로 대상 화면 이관·parity는 N/A이지만, 같은 저장소에 레거시 엔진이 있으면 인벤토리·판정·전체 이관 제안·공존 기록은 그대로 적용한다.
 
-상세 필드와 판단은 [work UI](../references/work-ui-surfaces.md), [차트 교체](../references/data-surfaces.md), [검증](../references/verification.md)을 따른다. [DESIGN의 Official example comparison](DESIGN.template.md#official-example-comparison)에 관찰·채택·대조 결과를 기록했으면 아래 표에서 해당 기록을 링크한다. 아래 표는 새 표현이면 필수이며 승인 패턴 재사용이면 기존 관찰을 링크하고 변경 결과를 대조한다. 기록 없는 기존 코드 패턴도 새 표현이 아니면 위의 미승인 재사용 근거와 변경 결과를 이 표에 연결하고, 공식 관찰 이력 부재를 명시한다. 표현 대상 자체가 없을 때만 N/A다. 새 표현 판정은 [SKILL.md의 공통 원칙](../SKILL.md#공통-원칙)을 따른다.
+상세 필드와 판단은 [work UI](../references/work-ui-surfaces.md), [차트 교체](../references/data-surfaces.md), [검증](../references/verification.md)을 따른다. [DESIGN의 Official example comparison](DESIGN.template.md#official-example-comparison)에 관찰·채택·대조 결과를 기록했으면 아래 표에서 해당 기록을 링크한다. 아래 표는 새 표현이면 필수이며 승인 패턴 재사용이면 기존 관찰을 링크하고 변경 결과를 대조한다. 기록 없는 기존 코드 패턴도 새 표현이 아니면 위의 미승인 재사용 근거와 변경 결과를 이 표에 연결하고, 공식 관찰 이력 부재를 명시한다. 기존 UI 구성의 재배치만 있으면 현재 화면·과업 관찰을 UI structure and navigation 행에 연결하고 공식 기술 예제 표는 N/A로 둘 수 있다. 그 외에는 표현 대상 자체가 없을 때만 N/A다. 새 표현 판정은 [SKILL.md의 공통 원칙](../SKILL.md#공통-원칙)을 따른다.
 
 | URL | 행동 | 관찰 | 채택 | 대조 결과 |
 |---|---|---|---|---|
@@ -112,7 +113,8 @@ scoped 작업이면 아래 Product interview·Design-direction interview·Visual
 
 필수: 모든 구현 모드. audit는 `no`를 유지하고 이 파일을 생성하지 않는다. 증거 없는 N/A로 잠금을 풀지 않는다.
 
-- Required gates and valid scoped N/A reviewed; 새 방향이면 공식 실행 예제 직접 관찰 완료 증거(미완료이면 잠금 유지):
+- UI structure/navigation decision or reuse evidence reviewed; style reuse alone is insufficient:
+- Required gates and valid scoped N/A reviewed; 새 모션·차트·그래픽·3D 기술 방향이면 공식 실행 예제 직접 관찰 완료 증거(미완료이면 잠금 유지):
 - combine/revise이면 조합/수정한 시안 하나의 재제시·사용자 승인 증거(또는 해당 없음):
 - Approved implementation scope; any pending/unapproved scope remains locked:
 - Implementation unlocked: `yes / no`

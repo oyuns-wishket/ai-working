@@ -1,6 +1,6 @@
 ---
 name: design-workflow
-description: Use for web UI, ERP, commerce and consumer sites, charts, dashboards, landing pages, AI-assisted 3D and interactive graphics, scroll video, game-like web experiences, redesigns and visual audits; also standalone decks and visual reports. Skip logic-only changes and ordinary tool explanations.
+description: Use before planning or implementing UI changes, including menu/tab reorganization, information architecture, navigation and layout within an existing design system. Also use for ERP, commerce and consumer sites, charts, dashboards, landing pages, AI-assisted 3D and interactive graphics, scroll video, game-like web experiences, redesigns and visual audits; also standalone decks and visual reports. Skip logic-only changes and ordinary tool explanations.
 ---
 
 # Design Workflow
@@ -8,6 +8,17 @@ description: Use for web UI, ERP, commerce and consumer sites, charts, dashboard
 웹사이트를 사용하는 사람이 **목적을 이해하고, 필요한 정보를 찾고, 다음 행동을 쉽게 완료**하도록 설계한다. 시각 완성도는 정렬·타이포·정보 위계·일관성으로, 체감 품질은 즉각적인 피드백·안정된 레이아웃·명확한 상태·빠른 반응으로 만든다. 만족도 향상을 실측 없이 단정하지 않는다.
 
 정본은 `ai-working/skills/design-workflow/`다. Claude/Codex가 같은 소스를 읽는다. 웹 개발을 기본 경로로 하고, 덱·시각 리포트는 요청 시 [standalone-visuals.md](references/standalone-visuals.md)를 추가로 읽는다. 일반 도구 설명이나 로직 전용 변경에는 디자인 게이트를 적용하지 않는다.
+
+## UI 변경 사전 판정
+
+계획 확정·application source 첫 수정 전에 이 절을 적용한다. “기능 추가”, “메뉴 정리”, “기존 스타일 그대로”도 실제 화면의 분류·배치·탐색이 바뀌면 대상이다. UI 작업이 진행 중 추가되면 그 구간의 source 수정 전에 다시 판정한다.
+
+1. **변경과 보존 분리**: 모드·대상 구간, 스타일/컴포넌트, 정보 구조/배치/탐색, 상태/동작을 각각 비교한다. 기존 토큰·탭 컴포넌트가 있다는 사실만으로 내부 분류·배치가 재사용이라고 판정하지 않는다.
+2. **미정 UX 식별**: 메뉴 묶음·탭별 콘텐츠 귀속·채널/단계의 축·노출 순서·주요 행동 위치가 달라지거나 미정이면 새 UX 표현이다. “탭 3개”는 개수의 결정이며 내부 구성의 결정이 아니다. 코드·앞선 답으로 확인 가능한 값은 묻지 않는다.
+3. **시안 또는 재사용 근거**: 새 UX 표현이면 기존 브랜드 안에서 바뀌는 구간만 같은 콘텐츠의 구조가 다른 시안 정확히 세 개와 AI 추천·이유를 제시하고 사용자 결정을 받는다. 메뉴·탭 시안은 실제 전환과 대표 상태를 비교할 수 있게 만든다. 새 브랜드 인터뷰·시각 세계관 라운드는 추가하지 않으며 모션 등 다른 새 표현도 같은 세 시안에 통합한다. 기존 UI 구성만 재배치하는 경우 공식 기술 예제의 신규 채택은 해당 없으며 현재 화면·과업을 관찰 근거로 삼는다. 새 모션·차트 등 기술 표현을 채택할 때는 아래 공식 예제 관찰 규칙도 적용한다. 재사용이면 동일한 정보 위계·그룹·순서·탐색·상태가 적용되는 원 화면/코드와 변경 전후 대응을 근거로 남긴다. 결과가 확정된 라벨·수치 치환이나 같은 배치의 항목 추가는 새 시안 없이 처리할 수 있다. 이미 구체적으로 결정된 구조·승인 시안이 있으면 그 근거를 재사용하고 재질문하지 않는다.
+4. **구현 전 알림·기록**: “모드 / 바뀌는 구간 / 재사용·미정 UX / 시안 필요 여부·근거 / 다음 행동”을 짧게 알리고 [gate template](assets/design-gates.template.md)의 `UI structure and navigation`에 기록한다. 앞선 구체적 구조 결정은 `기존 결정 재사용`으로 기록하며 아직 제시하지 않은 새 시안의 승인으로 소급하지 않는다. 필수 시안 결정 또는 유효한 재사용 근거가 없으면 해당 구간의 application source는 잠금을 유지한다. 문서·격리된 시안 제작·독립적인 로직 작업은 계속할 수 있다.
+
+**누락 복구**: 구현 뒤 이 스킬을 읽은 것은 사전 적용이 아니다. 해당 구간의 추가 구현·배포를 멈추고 이미 바뀐 diff와 누락한 결정을 분리한다. 기존 사용자 결정이 있으면 그 증거를 연결하고, 없으면 현재 구현을 후보 하나로 포함할 수 있는 세 시안을 제시해 결정받는다. 다른 세션의 변경을 되돌리거나 현재 구현을 승인된 기준선으로 삼지 않는다. 실제 누락·복구 결과를 구현노트에 기록한다.
 
 ## 성능 원칙: 범위는 좁게, 강도는 전부
 
@@ -83,7 +94,7 @@ description: Use for web UI, ERP, commerce and consumer sites, charts, dashboard
 
 **승인된 패턴의 정의**: DESIGN.md·구현노트·gate 기록에 **사용자 결정이 남아 있는** 패턴만 승인된 패턴이다. 기록 없는 기존 코드 패턴은 재사용할 수 있지만 "승인됨"으로 기록하지 않고, 그 패턴을 적용한 결과가 새 표현인지를 아래 판정으로 정한다. 새 표현이면 동작 시안 세 개와 사용자 결정, 아니면 "기존 코드 패턴 재사용(미승인, 사용자 결정 기록 없음)"으로 적고 원 코드 위치·동작 동일성·새 표현이 아니라는 판정 근거·변경 상태 검증을 연결한다. 이 세 번째 분기(승인 패턴 재사용 / 기존 코드 패턴 재사용(미승인) / 새 표현)는 gate template과 DESIGN의 Motion·Charts 필드에도 같은 이름으로 있다.
 
-**새 표현 판정**: 같은 컴포넌트 유형에 같은 동작(구조·순서·타이밍 범위)이 이미 운영 화면에 있고 바뀌는 것이 엔진·구현뿐이면 새 표현이 아니다. 동작·구조·강조 방식이 하나라도 바뀌면 새 표현이다. 재사용이면 재사용 근거를 기록한다. 예: CSS transition 탭을 같은 indicator 이동·같은 타이밍 범위로 Motion에 재구현 → 새 표현 아님; 탭 전환에 없던 패널 slide·공유 요소 이동을 추가 → 새 표현. ECharts 선 차트를 같은 정보 위계·같은 tooltip 동작으로 Bklit에 재구현 → 새 표현 아님; KPI 연동 hover·기간 brush를 추가 → 새 표현. 판정 결과와 근거는 gate template의 해당 `Relevant experience evidence` 행에 적는다.
+**새 표현 판정**: 정보 구조·배치·탐색은 `## UI 변경 사전 판정`을 별도로 적용한다. 아래의 동작 동일성만으로 메뉴/탭 내부 구성의 시안을 생략하지 않는다. 구체적으로 결정된 구조의 재사용·단순 치환 예외도 위 사전 판정에서 따로 확인한다. 같은 컴포넌트 유형에 같은 동작(구조·순서·타이밍 범위)이 이미 운영 화면에 있고 바뀌는 것이 엔진·구현뿐이면 새 표현이 아니다. 동작·구조·강조 방식이 하나라도 바뀌면 새 표현이다. 재사용이면 재사용 근거를 기록한다. 예: CSS transition 탭을 같은 indicator 이동·같은 타이밍 범위로 Motion에 재구현 → 새 표현 아님; 탭 전환에 없던 패널 slide·공유 요소 이동을 추가 → 새 표현. ECharts 선 차트를 같은 정보 위계·같은 tooltip 동작으로 Bklit에 재구현 → 새 표현 아님; KPI 연동 hover·기간 brush를 추가 → 새 표현. 판정 결과와 근거는 gate template의 해당 `Relevant experience evidence` 행에 적는다.
 
 사용자가 방향을 선택한 뒤에는 승인된 시안·토큰·상태 동작을 프로젝트의 기준선으로 삼아 필요한 부분을 보강한다. 다른 차트 종류나 화면으로 확장할 때도 이 기준선을 먼저 적용하며, 승인된 표현과 새로 결정할 표현을 구분한다. 상세 재사용·확장 기준은 [data-surfaces.md](references/data-surfaces.md)를 따른다.
 
@@ -93,6 +104,7 @@ description: Use for web UI, ERP, commerce and consumer sites, charts, dashboard
 
 | 규칙 | 소유 파일 |
 |---|---|
+| UI 진입 판정·정보 구조/탐색 시안·재사용 근거·누락 복구 | SKILL.md `## UI 변경 사전 판정` |
 | 변경 모드 5개의 정의·보존 범위 | SKILL.md `## 작업 분류`; 모호 사례·모드별 범위 가드는 [mode-selection.md](references/mode-selection.md) |
 | 주 목적 6개와 참조 라우팅 | [experience-routing.md](references/experience-routing.md) |
 | 절대 게이트 5단계, 승인의 정의, `ㄱㄱ`/위임/요약 확인/부분 승인/subagent 처리, 사용자 발화·질문·추천·채택의 기록 위치 규칙, 게이트 정지 형식 | SKILL.md `## 신규·리브랜딩 절대 게이트` |
@@ -136,7 +148,7 @@ description: Use for web UI, ERP, commerce and consumer sites, charts, dashboard
 4. **고해상도 시안 정확히 세 개**: 선택된 방향 안에서 composition·density·hierarchy가 다른 시안을 함께 보여주고 `승인 / 조합 / 수정 / 폐기` 결정을 받는다. 같은 레이아웃의 색상 변경만으로 세 개를 채우지 않는다.
 5. **구현 잠금 해제**: 선택·채택/비채택 요소·승인 근거를 [gate template](assets/design-gates.template.md)에 기록한 뒤 application source를 수정한다.
 
-`small-feature`와 보존형 `refactor`는 1·2·3·4를 `N/A`(근거 포함)로 표시하는 scoped 게이트를 쓴다. 단 새 모션·차트·그래픽 표현이 들어가면 그 구간의 동작 시안 세 개와 사용자 결정은 scoped 게이트 안에서 그대로 필요하다. `audit`는 게이트 파일을 만들지 않고 잠금 상태를 유지한다.
+`small-feature`와 보존형 `refactor`는 1·2·3·4를 `N/A`(근거 포함)로 표시하는 scoped 게이트를 쓴다. 단 새 정보 구조·배치·탐색 UX 또는 새 모션·차트·그래픽 표현이 들어가면 그 구간의 동작 시안 세 개와 사용자 결정은 scoped 게이트 안에서 그대로 필요하다. `audit`는 게이트 파일을 만들지 않고 잠금 상태를 유지한다.
 
 **잠금 해제 전 기록과 구현 후 갱신의 구분**(full·scoped 공통): 잠금 해제 전에는 인벤토리·범위·예외 판정·시안 결정·실행 계획을 기록한다. 실제 이관·parity·제거·변경 후 검증과 완료 보고 시 받을 전체 이관 결정은 `구현 후 갱신 예정`으로 표시하며 초기 잠금 해제 조건에 포함하지 않는다. 해당 결과는 완료 판정 전에 갱신한다. 판정: gate template의 `Legacy chart engine migration`·`Work UI evidence`·`Verification evidence`에서 구현이 있어야 채워지는 값이 비어 있다는 이유로 잠금 해제를 미루지 않고, 반대로 그 값이 `구현 후 갱신 예정`인 채로 완료를 보고하지 않는다.
 
@@ -188,7 +200,7 @@ description: Use for web UI, ERP, commerce and consumer sites, charts, dashboard
 필수 게이트가 비어 있거나 승인 조건이 맞지 않으면 application source write를 멈추고, **누락된 게이트의 산출물 하나**를 제시한다. 산출물은 게이트에 따라 다르다: 1·2단계가 비면 **질문 하나**(저장소 증거로 추정한 항목이 여러 개면 항목별 값·추정 근거를 열거한 요약 확인 라운드도 질문 하나로 센다), 3단계가 비면 **시각 방향 세 개**, 4단계가 비면 **고해상도 시안 세 개**, scoped 작업에서 새 표현의 동작 시안이 비면 **동작 시안 세 개**, 조합/수정 뒤면 **조합·수정안 하나**. 이 문서에서 **이번 산출물**은 이 목록 중 지금 제시하는 하나를 뜻한다. 한 번에 두 게이트의 산출물을 섞지 않는다. 시안·검증용 코드는 분리된 임시 경로에서 계속 준비할 수 있다.
 
 ```
-게이트 정지 — 모드 `<mode>`, 미완료: <단계 번호. 단계 이름(빈 항목) | Relevant experience evidence(<Motion|Charts|3D|Graphics>) 동작 시안 | 조합·수정안 재제시>
+게이트 정지 — 모드 `<mode>`, 미완료: <단계 번호. 단계 이름(빈 항목) | Relevant experience evidence(<UI structure and navigation|Motion|Charts|3D|Graphics>) 동작 시안 | 조합·수정안 재제시>
 <사용자 메시지 | 판정 근거>: <착수 승인으로 처리 | 면제로 처리하지 않음 | 정지 이미지뿐이라 미제시로 판정>, 아직 보여드리지 않은 <방향|시안>의 승인으로 처리하지 않았습니다. application source는 수정하지 않습니다.
 이번 산출물: <질문 하나 | 시각 방향 세 개 | 고해상도 시안 세 개 | 동작 시안 세 개 | 조합·수정안 하나>
 <질문이면> 질문 하나: <결과를 바꾸는 질문> (추천: <AI 추천과 이유>) — 답을 받는 동안 <그다음 게이트의 산출물>을 임시 경로에서 준비합니다.
@@ -228,6 +240,7 @@ description: Use for web UI, ERP, commerce and consumer sites, charts, dashboard
 
 ### 0. 규칙·범위·잠금 확인
 
+- 먼저 `## UI 변경 사전 판정`으로 UX 시안/재사용을 판정하고 구현 전 알림·근거를 남긴다.
 - 실제 Git 루트와 `AGENTS.md`, `CLAUDE.md`, 중첩 규칙, HANDOFF, 기존 제품·디자인 정본을 확인한다. 다중 프로젝트 workspace 루트에 설치하지 않는다.
 - 구현에는 설치된 `dev-protocol`을 함께 적용한다. 경로를 현재 환경에서 찾고, plugin 번들에만 있다고 가정하지 않는다. 사용자 승인 범위·worktree·구현노트·배포는 그 스킬을 따른다. Git×Supabase×Vercel이면 해당 프로젝트의 `feature-flow`를 적용한다.
 - dirty 파일을 보존한다. 모드·범위·주 목적·유지할 계약을 한 줄로 알린다. `audit`는 구현노트나 정본 파일도 만들지 않고 결과를 대화로 보고한다. 사용자가 별도 보고서 저장을 요청하면 그 문서만 저장한다.
@@ -304,7 +317,7 @@ description: Use for web UI, ERP, commerce and consumer sites, charts, dashboard
 1. 읽는 파일: SKILL.md → [mode-selection.md](references/mode-selection.md)(`small-feature` 범위 가드) → [experience-routing.md](references/experience-routing.md)(업무 UI) → [project-audit.md](references/project-audit.md) → [design-context.md](references/design-context.md) → [work-ui-surfaces.md](references/work-ui-surfaces.md) → [motion-design.md](references/motion-design.md) → [web-quality.md](references/web-quality.md) → [tooling.md](references/tooling.md)(Motion 설치 버전·연결) → [verification.md](references/verification.md).
 2. 판정: `small-feature`, 주 목적 업무 UI. 범위 = 탭 목록 + 새 탭 패널 + 인접 탭 패턴 ≤ 2. 전역 토큰·공통 Tabs 컴포넌트의 계약은 변경 금지(변경이 필요하면 영향 범위를 캡처하고 검증).
 3. 조사·확인: 인접 탭 패턴에서 typography·spacing·indicator·상태 패턴을 추출한다. 모션 인벤토리로 `motion`/`framer-motion` 설치 버전과 승인된 탭 전환 패턴 유무를 확인한다. 탭 선택의 URL 반영·권한별 노출·초기 탭은 코드로 확인하고, 발견할 수 없는 것만 질문 하나.
-4. 시안(세 분기 중 하나, 판정 기준은 `### 공통 원칙`의 **새 표현 판정**): (a) 사용자 결정이 기록된 **승인된** 탭 전환 Motion 패턴이 있으면 재사용하고 "재사용: <패턴 이름>, 기록 위치"를 적는다(시안 없음). (b) 기록 없는 기존 탭 패턴(예: CSS transition 탭)이 있고 새 표현이 아니면(같은 indicator 이동·같은 타이밍 범위를 Motion으로 재구현) 재사용할 수 있다. "기존 코드 패턴 재사용(미승인)"으로 표시하고 원 코드 위치·동작 동일성·새 표현이 아니라는 판정 근거·변경 상태 검증을 연결한다(시안 없음). (c) 기존 패턴이 없거나 새 표현이면(없던 패널 slide·공유 요소 이동·완료 피드백 추가) 공식 Motion 예제 관찰 후 같은 콘텐츠로 동작 시안 세 개(indicator 이동·패널 전환·완료 피드백 차이)를 만들어 사용자 결정을 받는다.
+4. 시안: 먼저 `## UI 변경 사전 판정`으로 탭 내부 분류·배치·탐색의 재사용 여부를 확인한다. 아래는 **모션만의** 세 분기이며 UX 시안 면제가 아니다. 모션 판정 기준은 `### 공통 원칙`의 **새 표현 판정**: (a) 사용자 결정이 기록된 **승인된** 탭 전환 Motion 패턴이 있으면 재사용하고 "재사용: <패턴 이름>, 기록 위치"를 적는다(시안 없음). (b) 기록 없는 기존 탭 패턴(예: CSS transition 탭)이 있고 새 표현이 아니면(같은 indicator 이동·같은 타이밍 범위를 Motion으로 재구현) 재사용할 수 있다. "기존 코드 패턴 재사용(미승인)"으로 표시하고 원 코드 위치·동작 동일성·새 표현이 아니라는 판정 근거·변경 상태 검증을 연결한다(시안 없음). (c) 기존 패턴이 없거나 새 표현이면(없던 패널 slide·공유 요소 이동·완료 피드백 추가) 공식 Motion 예제 관찰 후 같은 콘텐츠로 동작 시안 세 개(indicator 이동·패널 전환·완료 피드백 차이)를 만들어 사용자 결정을 받는다.
 5. 구현: gate template scoped 기록 → 잠금 해제 → 탭 추가, Motion으로 indicator·패널 전환, 방향키/Home/End·focus-visible·ARIA tabs 패턴, 탭 패널의 표·폼은 work-ui-surfaces 기준(열 정렬·숫자 정렬·오류 위치·저장 상태) 적용.
 6. 검증: build/lint/test, source/URL detector, Playwright desktop/mobile 전후, 키보드만으로 탭 이동 → 패널 과업 완료, reduced motion, 권한별 상태(비노출/읽기 전용), 공통 컴포넌트를 건드렸으면 다른 화면 회귀 캡처.
 7. 기록: 구현노트에 gate evidence와 검증 결과. DESIGN은 (a)면 변경 없음, (b)면 `Motion decisions`에 "기존 코드 패턴 재사용(미승인)"과 판정 근거, (c)면 세 시안 URL·AI 추천·사용자 선택 기록.
@@ -326,6 +339,7 @@ description: Use for web UI, ERP, commerce and consumer sites, charts, dashboard
 
 ## 완료 기준
 
+- UI 사전 판정이 application source 수정 전에 기록되었고, 정보 구조/탐색 시안의 실제 결정 또는 구체적인 재사용 근거가 있다. 누락 복구는 사전 적용과 구분한다.
 - 모드·목적·범위와 diff가 일치하고 필요한 실제 사용자 승인 근거(사용자 메시지 원문, 제시 이후 시점)가 gate template에 있다.
 - 기존 디자인/기능 계약을 보존하거나 승인된 변경으로 기록했다.
 - 정렬·가독성·반응형·관련 UI 상태와 핵심 과업을 실제 화면에서 확인했다.

@@ -26,6 +26,7 @@
 - "ERP 표 가독성 개선": 표 하나·한 화면이면 `small-feature`, 여러 화면의 표 체계(열 정렬·밀도·고정 헤더·숫자 정렬 규칙)를 통일하면 보존형 `refactor`. 범위 = 대상 표 + 인접 표 패턴 ≤ 2(또는 대표 표 flow). 브랜드·전역 토큰은 변경 금지. 읽을 참조: [work-ui-surfaces.md](work-ui-surfaces.md), [web-quality.md](web-quality.md), [project-audit.md](project-audit.md)(표 라이브러리 인벤토리).
 - "폼 정리": 폼 하나면 `small-feature`, 폼 패턴(라벨·그룹·오류 위치·저장 상태)을 앱 전체에서 통일하면 보존형 `refactor`. 범위 = 대상 폼 + 인접 폼 패턴 ≤ 2. 입력값 보존·검증 규칙·제출 계약은 보존 대상. 읽을 참조: [work-ui-surfaces.md](work-ui-surfaces.md), [web-quality.md](web-quality.md), [motion-design.md](motion-design.md)(저장/오류 피드백 전환).
 - "필터 UX": 필터바 하나면 `small-feature`, 목록 화면 전반의 필터 모델(적용/초기화·URL 반영·저장된 조건)을 바꾸면 보존형 `refactor`. 범위 = 필터바 + 그 결과가 반영되는 표/카드/차트. URL·뒤로가기·검색어 유지 계약은 보존. 읽을 참조: [work-ui-surfaces.md](work-ui-surfaces.md), [data-surfaces.md](data-surfaces.md)(필터와 집계 일치), [motion-design.md](motion-design.md).
+- "기존 스타일로 메뉴를 탭 3개로 재구성": 좁은 구간은 `small-feature`, 여러 화면의 탐색 체계면 보존형 `refactor`. 브랜드 인터뷰는 재개하지 않는다. 탭 개수와 내부 분류·배치는 별개이며, 미정인 채널/단계 축·콘텐츠 귀속·행동 위치는 SKILL.md `## UI 변경 사전 판정`의 세 시안으로 결정한다. 탭 컴포넌트·모션 재사용만으로 구조 시안을 면제하지 않는다.
 - "메뉴 추가하면서 전반적으로 정리": 먼저 `small-feature`; 전반 정리는 별도 `refactor` 제안. 한 작업에 두 모드를 섞지 않는다.
 - "브랜드 컬러만 바꿔": token 영향 범위를 확인한다. 전체 인상을 바꾸려는 목적이면 `rebrand`, 지정 토큰 치환이면 좁은 보존형 `refactor`.
 - "레퍼런스처럼 만들어": 기능·콘텐츠 구조가 같지 않으면 시각 요소만 분해해 채택한다. 복제 요청으로 해석하지 않는다. 읽을 참조: [design-context.md](design-context.md)의 `## 레퍼런스`.
@@ -56,7 +57,7 @@
 - 사용자 flow, route, API, analytics event, permission을 acceptance criterion에 보존 대상으로 적는다.
 - DOM 구조 변경이 테스트나 접근성에 미치는 영향을 확인한다.
 - DOM 변경량만으로 새 시각 세계관이라고 판단하지 않는다. 기존 chart의 숫자/범례 정리, 브랜드를 유지한 모션 축소, 레거시 차트 엔진의 Bklit 이관(같은 정보 위계 유지)은 **보존형**이다. 대표 화면의 composition 자체를 전면 교체하거나 palette·typography·layout 원리를 새로 정하면 **전면 교체형**으로 SKILL.md의 full 게이트를 따른다.
-- 보존형이라도 새 차트·모션 표현이 들어가는 구간은 같은 데이터/콘텐츠로 동작 시안 세 개를 비교한다.
+- 보존형이라도 새 정보 구조·배치·탐색 UX는 SKILL.md `## UI 변경 사전 판정`을 따른다. 새 차트·모션 표현이 들어가는 구간은 같은 데이터/콘텐츠로 동작 시안 세 개를 비교한다.
 
 ### Small feature
 
