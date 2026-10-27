@@ -4,7 +4,7 @@ Select a mode only after reading the target wiki's governing rules. The target c
 
 ## V2 contract mode — canonical system knowledge
 
-Prefer this mode when the owner declares `.system/knowledge-contract.json`. Use its canonical schema/template/validator and the registry's `canonical_write_target`; never write `my-wiki`, even if it is explicitly linked for reading. Preserve stable topic ID, provenance, security domain, customer scope and actual verification dates. Search and update the existing topic; create only a new topic. The same owner validator applies to scheduled automatic ingestion and development closeout. The raw pipeline runs independently and does not invoke the interactive knowns approval workflow for each batch.
+Prefer this mode when the owner declares `.system/knowledge-contract.json`. Use its canonical schema/template/validator and the registry's `canonical_write_target`; never write `my-wiki`, even if it is explicitly linked for reading. Preserve stable topic ID, provenance, security domain, customer scope and actual verification dates. Run the owner's closeout comparison checker when present (SKILL step 3a); update the existing topic for `append`, write nothing for `noop`, and create a note only for `new`. The same owner validator applies to scheduled automatic ingestion and development closeout. The raw pipeline runs independently and does not invoke the interactive knowns approval workflow for each batch.
 
 Update an existing topic in its current declared category. For a new topic, choose the business area from the owner's `canonical_sections` or applicable `default_project_sections`; keep the namespace root only when the owner permits it. Do not invent category folders or write below one category level. If the area is unclear, hold that proposal for clarification within the existing batch. The owner validator is the final authority on declared paths.
 
@@ -65,5 +65,6 @@ Run the target validation first, then pass both `--repo <wiki-git-root>` and `--
 - Verified code/runtime fact: use the target's canonical or verified status only with actual evidence.
 - User meaning/goal/contribution: attribute it as a user-approved project intent.
 - Inference: mark provisional unless the user explicitly confirms it.
-- Conflict: preserve both sources and use contested/contradiction workflow.
+- Existing-knowledge comparison: every candidate carries a `new | append | noop | contested` verdict from SKILL step 3a before the write plan. When the target wiki owns a closeout checker, its result is the verdict; never downgrade its `needs_decision` items to `new`.
+- Conflict: apply only the contested resolution chosen in the single batch (keep existing, replace with evidence, split scope, or mark contested). Without a choice, do not write that candidate.
 - Supersession: update links and archives only when the target rules allow it and the exact move/rename/archive was approved.

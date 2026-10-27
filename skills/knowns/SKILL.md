@@ -99,20 +99,32 @@ index와 이번 주제의 기존 note만 읽고 wiki 전체를 재귀 탐색하�
 | 연결 | supports, implements, supersedes, depends-on, contradicts, extends |
 | 제외 | secret, PII, code dump, transient, duplicate, unverified |
 
-기존 정본에 병합 가능한지 먼저 보고, 새 주제일 때만 새 note를 추천한다.
+### 3a. 기존 지식 대조 — 필수, read-only
 
-- 같은 주장·적용 범위는 기존 주제에 병합하고 출처와 stable ID를 보존한다. 같은 내용이면 no-op이다.
-- 대체 관계는 실제 날짜·버전·확정 근거로 판정한다. 다른 고객·환경·기간의 지식은 적용 범위를 구분하고, 어느 쪽이 맞는지 불명확하면 contested로 제안한다. 문체나 모델 confidence로 승자를 정하지 않는다.
-- 검토 기한이 지났거나 양식만 바꾼 문서를 새로 검증했다고 표시하지 않는다. 인접한 관련 문서까지만 대조하며 raw나 위키 전체를 청소하지 않는다.
+후보마다 같은 쓰기 범위의 기존 정본과 대조해 `new`·`append`·`noop`·`contested` 중 하나로 판정하고, 대조한 문서와 판정 근거를 단일 묶음의 **기존 지식 대조** 표에 싣는다. 대조 근거가 없는 후보는 새 note로 추천하지 않는다.
+
+1. 위키가 closeout 대조 검사기를 소유하면 그것을 쓴다. 후보를 `key`·`title`·`summary`·`knowledge`·`scope`·`evidence` JSON 목록으로 만들어 위키 규칙이 지정한 명령으로 실행한다(예: `.system/scripts/check_closeout_knowledge.py --candidates <file> --project-id <registry id>`). 범위는 registry의 쓰기 대상과 같게 준다. 검사기가 없으면 index와 같은 범위 note 제목·aliases를 훑고, 겹치는 문서 본문을 직접 읽어 같은 기준으로 판정한다.
+2. 판정 기준:
+   - `noop`: 같은 범위에 같은 의미가 이미 있다. 쓰지 않는다. 기존 문서의 검증일도 올리지 않는다.
+   - `append`: 기존 주제를 바꾸지 않는 호환 추가다. 그 문서에 최소 delta만 병합하고 출처와 stable ID를 보존한다. 동의어 제목으로 새 주제를 만들지 않는다.
+   - `contested`: 기존 규칙·결정·값을 바꾸거나 대체하거나, 둘 다 현재 규칙으로 읽힐 수 있다. 문체·최신성·모델 confidence로 승자를 정하지 않는다.
+   - `new`: 같거나 인접한 주제가 없다.
+3. 검사기 결과의 `needs_decision`(contested·오류·미판정)을 `new`로 바꿔 추천하지 않는다. 각 항목은 명시적 결정 항목으로 단일 묶음 안에 두고 다음 선택지 중 추천을 표시한다: **기존 유지**(후보 제외), **대체**(기존 문서를 실제 날짜·버전·확정 근거와 함께 갱신하고 이전 내용은 위키 규칙의 supersede 절차로 처리), **범위 분리**(적용 고객·환경·기간을 명시해 둘 다 유지), **contested 표시**. 사용자가 `추천대로`라고 답하면 표시한 추천 선택지를 적용한다. 모델 호출이 실패하면 `--offline` 결과의 대조 문서를 직접 읽어 판정하고 그 사실을 표에 적는다.
+4. 다른 고객·보안 범위의 문서는 대조 대상도 근거도 아니다. 인접한 관련 문서까지만 대조하며 raw나 위키 전체를 청소하지 않는다. 대조 중 발견한 기존 문서끼리의 중복은 이번 write에 섞지 않고 완료 보고의 `NEXT`에 lint 제안으로만 남긴다.
+
+### 3b. 추천 작성
+
+- 검토 기한이 지났거나 양식만 바꾼 문서를 새로 검증했다고 표시하지 않는다.
 - 추천 순서는 재사용 가치 순이다: `lesson`(재발 방지)·`decision`(결정과 결정권자)·`domain`/`runbook`(반복 업무 규칙·절차)을 먼저, 날짜 묶인 회의·리뷰·조사 메모(`record`)는 자동 ingest가 이미 남기므로 사람이 정리할 때는 후순위로 두고 보통 제외한다. 검색기는 지식 문서를 우선하고 record는 한 건만 끼우므로 record를 늘려도 다음 세션이 더 잘 찾지 못한다.
 - **제목은 한국어로, 핵심 주제를 담는다**(예: "반품 검수 후 수량 확정 규칙", "관리자 MFA — 90일 신뢰 브라우저 유지"). 제품명·이슈 번호·식별자는 그대로 두되 영어 문장 제목은 쓰지 않는다. 본문 `# 제목`도 같게 맞춘다. 연결된 위키의 validator가 한글 없는 제목을 거부한다(2026-10-19 사용자 결정 — 다른 세션에서 영어 제목이 반복 생성된 데 대한 교정).
 - **파일명과 본문도 한국어다**(2026-10-22·25 사용자 교정). 파일명은 제목과 같은 한글 kebab-case(`반품-검수-후-수량-확정-규칙.md`, 공백 대신 `-`)로 짓고 영어 slug 파일명을 만들지 않는다. 요약·핵심 지식·판단 근거 본문도 한국어로 쓴다. 코드 식별자·파일 경로·원문 인용만 원래 언어로 둔다. 세부 규칙은 위키 `CLAUDE.md`가 정본이다.
 - `review_by`는 type별 기본 간격으로 제안한다: `lesson`·`decision` 180일, `domain`·`runbook`·`system`·`reference` 90일, `charter`·`governance`·`glossary` 365일, 활발히 바뀌는 영역은 30일. 사용자가 다른 값을 주면 그대로 쓴다.
-- 위 판정과 정확한 diff를 아래 단일 묶음에 포함한다. 적용 전에 문서의 base version을 다시 대조하고, 달라졌으면 새 근거로 재검토한다. 별도 curator skill이나 추가 승인 단계를 만들지 않는다.
+- 3a 판정과 정확한 diff를 아래 단일 묶음에 포함한다. 적용 전에 문서의 base version을 다시 대조하고, 달라졌으면 3a를 다시 실행한다. 별도 curator skill이나 추가 승인 단계를 만들지 않는다.
 
 [`assets/candidate-review.template.md`](assets/candidate-review.template.md)를 사용해 다음을 한 화면에 제시한다.
 
 - 추천 wiki와 연결 근거
+- 기존 지식 대조 표(후보별 판정·대조 문서·근거)와 결정이 필요한 contested 항목의 추천 선택지
 - 넣을 것, 제외할 것, 기존 연결과 status
 - 의미, 목표, 기여, 성공 상태의 AI 추천 문장
 - 생성·갱신할 정확한 파일과 link/index/log 변화
@@ -137,10 +149,10 @@ index와 이번 주제의 기존 note만 읽고 wiki 전체를 재귀 탐색하�
 
 - raw/source가 필요한 wiki는 선택된 source snapshot을 새 파일로 추가한 뒤 수정·이동·삭제하지 않는다.
 - 첫 지식의 연결 생성이 단일 묶음에 포함됐으면 dry-run helper가 반환한 연결 계획 검토 hash(`registry_sha256`)를 `--expected-registry-sha256`으로 넘겨 위키 소유 연결 helper를 `--apply`한다. registry·부모 index·대상 폴더가 바뀌면 새 상태를 대사하며, 연결 후 helper를 다시 실행해 실제 canonical 쓰기 대상을 확인한다. 연결·index·주제 문서를 같은 승인 범위로 검증·발행한다.
-- 기존 정본을 먼저 갱신하고 새 주제일 때만 새 note를 만든다.
+- 3a 판정을 따른다: `noop`은 쓰지 않고, `append`는 지정한 기존 문서에만 병합하며, `new`만 새 note를 만든다. 선택된 contested 처리 외에는 기존 문장을 바꾸지 않는다.
 - 출처, Git SHA, 날짜, status, sensitivity, review metadata는 wiki schema를 따른다. v2는 위키가 소유한 공통 양식·검증기로 자동 ingest와 동일하게 처리하고, security_domain과 customer_scope를 보존한다.
 - `my-wiki`는 명시 읽기 연결이 있어도 knowns의 생성·수정 대상이 아니다. 연결된 정본 쓰기 디렉터리 밖으로 확대하지 않는다.
-- 충돌은 조용히 덮지 않고 contested/contradiction 절차를 따른다.
+- 충돌은 조용히 덮지 않는다. 단일 묶음에서 고른 contested 선택지만 적용하고, 선택이 없으면 해당 후보를 쓰지 않는다.
 - index·log·manifest·HANDOFF가 계약에 포함되면 같은 pass에서 갱신한다.
 - 승인된 단일 묶음 범위 밖 변경이 필요하면 write를 멈추고 `blocked`로 보고한다.
 
@@ -176,6 +188,7 @@ python3 <knowns-root>/scripts/publish_git.py \
 KNOWNS: ingested | no-op | skipped | blocked
 WIKI: <resolved path or none>
 MEANING: <selected meaning>
+CHECK: <new N / append N / noop N / contested N and how each contested was resolved>
 FILES: <created/updated>
 LINKS: <added/changed>
 EVIDENCE: <validation and production deployment evidence>
@@ -189,6 +202,8 @@ NEXT: <remaining recovery only>
 
 - [ ] 운영배포 성공 증거가 있다.
 - [ ] explicit wiki connection과 governing rules를 확인했다.
+- [ ] 모든 후보를 같은 범위의 기존 정본과 대조했고 판정·대조 문서를 표시했다.
+- [ ] contested·미판정 후보는 추천 선택지와 함께 결정 항목으로 올렸다.
 - [ ] 단일 묶음에 후보·추천·exact write/publish/deploy plan을 모두 표시했다.
 - [ ] 사용자 답이 `추천대로`, 일괄 수정, 스킵 중 하나다.
 - [ ] 스킵이면 어떤 write도 하지 않고 종료했다.
