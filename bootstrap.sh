@@ -179,10 +179,10 @@ for d in "$REPO_DIR"/skills/*/; do [ -d "$d" ] || continue; [ "$claude_ready" = 
 [ "$codex_ready" = 1 ] && prune_stale_skills "$CODEX_SKILLS" codex
 
 HOOK_TARGET="$(target_path '~/.claude/hooks')"
-HOOK_NAMES="$(for f in "$REPO_DIR"/hooks/*.sh "$REPO_DIR"/hooks/*.mjs; do [ -f "$f" ] && basename "$f"; done | sort -u | paste -sd, -)"
+HOOK_NAMES="$(for f in "$REPO_DIR"/hooks/*.sh "$REPO_DIR"/hooks/*.mjs "$REPO_DIR"/hooks/*.py; do [ -f "$f" ] && basename "$f"; done | sort -u | paste -sd, -)"
 copy_hooks(){
   local source target backup
-  for source in "$REPO_DIR"/hooks/*.sh "$REPO_DIR"/hooks/*.mjs; do
+  for source in "$REPO_DIR"/hooks/*.sh "$REPO_DIR"/hooks/*.mjs "$REPO_DIR"/hooks/*.py; do
     [ -f "$source" ] || continue; target="$HOOK_TARGET/$(basename "$source")"
     if [ -f "$target" ] && cmp -s "$source" "$target"; then ok=$((ok+1)); continue; fi
     if [ "$STATUS" = 1 ]; then say "$c_warn" "  ! hook 갱신 필요: $(basename "$source")"; problems=$((problems+1)); continue; fi

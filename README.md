@@ -61,6 +61,10 @@ bootstrap은 다음을 수행한다.
 - 기존 memory symlink의 내용을 보존한 뒤 machine-local real directory로 전환
 - 교체되는 파일을 `~/.claude/backups/ai-working-<timestamp>/`에 백업
 
+Paseo 보관 시 native 종료 훅이 누락되는 환경에서는 선택적으로
+[보관 자원 정리 플러그인](plugins/paseo-resource-cleanup/README.md)을 설치한다.
+설계·권한 범위·검증 이력은 [구현노트](docs/impl-notes/2026-10-26-paseo-archive-cleanup.md)에 있다.
+
 다른 경로의 시험용 home에서 검증할 수 있다.
 
 ```bash
@@ -187,3 +191,5 @@ Hook 설정은 기존 Claude/Codex 설정 전체를 덮지 않는다. ai-working
 ## 되돌리기
 
 변경 전 파일은 `~/.claude/backups/`에 보존된다. 설치 연결을 해제할 때는 먼저 `./bootstrap.sh --status`로 현재 대상을 확인하고 필요한 symlink/import/hook만 제거하거나 백업을 복원한다. machine-local memory 디렉토리는 자동 삭제하지 않는다.
+
+- [Resource cleanup completion](docs/impl-notes/2026-10-28-resource-cleanup-completion.md): session-owned temporary servers, disposable containers and cleanup receipts.

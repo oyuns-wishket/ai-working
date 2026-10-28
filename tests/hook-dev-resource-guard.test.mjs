@@ -82,7 +82,9 @@ const { createHash } = require("node:crypto")
 const args = process.argv.slice(2)
 if (["ps", "inspect"].includes(args[0])) fs.appendFileSync(process.env.TEST_PROBE_LOG, args.join(" ") + "\\n")
 if (args[0] === "ps") {
-  process.stdout.write((args[1] === "-q" ? process.env.TEST_STACKS_AFTER : process.env.TEST_STACKS) || "")
+  if (args[1] === "-aq") process.stdout.write((process.env.TEST_STACKS || "").split("\\n").filter(Boolean).map(name => createHash("sha256").update(name).digest("hex")).join("\\n"))
+  else if (args.includes("--filter")) process.stdout.write((process.env.TEST_STACKS || "").split("\\n").filter(Boolean).map(name => createHash("sha256").update(name).digest("hex")).join("\\n"))
+  else process.stdout.write((args[1] === "-q" ? process.env.TEST_STACKS_AFTER : process.env.TEST_STACKS) || "")
 } else if (args[0] === "inspect") {
   const names = (process.env.TEST_STACKS || "").split("\\n").filter(Boolean)
   const entries = names.map(name => ({name, id: createHash("sha256").update(name).digest("hex"), running: true}))
@@ -90,14 +92,17 @@ if (args[0] === "ps") {
   const match = entries.find(entry => entry.name === args.at(-1) || entry.id === args.at(-1))
   if (!match) process.exit(1)
   const project = match.projectId ?? (match.name.startsWith("supabase_db_") ? match.name.slice(12) : "<no value>")
-  process.stdout.write(match.id + " /" + match.name + " " + match.running + " " + project)
+  const log = fs.existsSync(process.env.TEST_DOCKER_LOG) ? fs.readFileSync(process.env.TEST_DOCKER_LOG, "utf8") : ""
+  if (args[2] === "{{.State.Running}}") process.stdout.write(log.includes("stop -t 3 " + match.id) ? "false" : String(match.running))
+  else if (args[2].includes("ai-working.disposable")) process.stdout.write("false")
+  else process.stdout.write(match.id + " /" + match.name + " " + match.running + " " + project)
 } else {
   fs.appendFileSync(process.env.TEST_DOCKER_LOG, "docker " + args.join(" ") + "\\n")
 }
 `
   fs.writeFileSync(path.join(bin, "docker"), dockerMock)
   fs.chmodSync(path.join(bin, "docker"), 0o755)
-  fake("supabase", 'printf "%s\\n" "$*" >> "$TEST_STOP_LOG"')
+  fake("supabase", 'printf "%s\\n" "$*" >> "$TEST_STOP_LOG"; if [ -n "$TEST_SUPABASE_CWD_LOG" ]; then pwd > "$TEST_SUPABASE_CWD_LOG"; fi')
   fake("osascript", 'printf "osascript %s\\n" "$*" >> "$TEST_DOCKER_LOG"')
 
   const pressure = invoke(
@@ -202,6 +207,7 @@ if (args[0] === "ps") {
     { TEST_STACKS: "supabase_db_example-erp" },
   )
   waitFor(() => /stop --project-id example-erp/.test(readLog(stopLog)), "supabase stop")
+  waitFor(() => !fs.existsSync(path.join(cache, "sessions", "observer.json")), "supabase cleanup completion")
 
   fs.rmSync(probeLog, { force: true })
   const unrelated = invoke({
@@ -252,6 +258,7 @@ if (args[0] === "ps") {
     { TEST_STACKS: "app-web\nbystander" },
   )
   waitFor(() => readLog(dockerLog).includes(`docker stop -t 3 ${cid("app-web")}`), "docker stop")
+  waitFor(() => !fs.existsSync(path.join(cache, "sessions", "docker-owner.json")), "docker owner cleanup completion")
   assert.equal(readLog(dockerLog).includes(cid("bystander")), false, "never stop concurrent bystanders")
   assert.doesNotMatch(readLog(dockerLog), /desktop stop/, "KEEP=1이면 앱을 종료하지 않는다")
 
@@ -367,7 +374,8 @@ if (args[0] === "ps") {
     fs.rmSync(dockerLog, { force: true })
     invoke({ session_id: name, cwd: repo, hook_event_name: "SessionEnd" }, { TEST_STACKS: `${name}\nbystander` })
     waitFor(() => readLog(dockerLog).includes(cid(name)), `native ${kind} cleanup`)
-    assert.equal(readLog(dockerLog).includes(cid("bystander")), false)
+    waitFor(() => !fs.existsSync(path.join(cache, "sessions", "docker-owner.json")), "docker owner cleanup completion")
+  assert.equal(readLog(dockerLog).includes(cid("bystander")), false)
   }
 
   const nativeUnknown = [
@@ -398,7 +406,24 @@ if (args[0] === "ps") {
     assert.equal(readLog(stopLog), "", `${name}: no stack cleanup`)
   }
 
-  process.stdout.write("dev-resource-guard: 31 scenarios passed\n")
+  // Workspace archive can delete a worktree before this asynchronous cleanup.
+  // Explicit project identity still scopes stop; no broad --all or volume deletion.
+  const removedProject = "removed-worktree"
+  fs.writeFileSync(path.join(cache, "sessions", `${removedProject}.json`), JSON.stringify({
+    sessionId: removedProject, ownershipVersion: 2, owns: true,
+    root: path.join(temp, "already-removed-worktree"), projectId: removedProject,
+    supabaseContainerIds: [cid(`supabase_db_${removedProject}`)], lastSeenAt: Date.now(),
+  }))
+  fs.rmSync(stopLog, { force: true })
+  const cleanupCwdLog = path.join(temp, "cleanup-cwd.log")
+  invoke({ session_id: removedProject, cwd: repo, hook_event_name: "SessionEnd" },
+    { TEST_STACKS: `supabase_db_${removedProject}`, TEST_SUPABASE_CWD_LOG: cleanupCwdLog })
+  waitFor(() => readLog(stopLog).includes(`stop --project-id ${removedProject}`), "removed worktree cleanup")
+  waitFor(() => readLog(cleanupCwdLog).trim(), "removed worktree fallback cwd")
+  assert.equal(fs.realpathSync(readLog(cleanupCwdLog).trim()), fs.realpathSync(os.tmpdir()))
+  assert.doesNotMatch(readLog(stopLog), /--all|--no-backup/)
+
+  process.stdout.write("dev-resource-guard: 32 scenarios passed\n")
 } finally {
   fs.rmSync(temp, { recursive: true, force: true })
 }

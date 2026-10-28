@@ -6,7 +6,7 @@ Read only the section relevant to the current task. Global policy owns authoriza
 
 Before starting, inspect existing resources with `docker ps -a` and record which resources this task owns. A restarting container is not permission to remove another session's work: confirm ownership and impact first. Clean up this task's restarting loops when appropriate.
 
-At the end of the work unit, stop this task's stack using its actual project identity, for example `docker compose down` in the owning compose project or `supabase stop --project-id <id>`. Preserve volumes. Hand off ownership explicitly if another session must continue using a resource.
+At the end of the work unit, stop this task's stack using its actual project identity, for example `docker compose down` in the owning compose project or `supabase stop --project-id <id>`. For new disposable test containers, use `--label ai-working.disposable=true` so confirmed owned containers can also be removed after stopping; never label data-bearing containers as disposable. Preserve volumes. Hand off ownership explicitly if another session must continue using a resource.
 
 Verify whether any containers are still running. If the check succeeds and none remain, stop Docker Desktop itself; stopping containers alone leaves the VM resident. Use the installed CLI's supported stop command (for example `docker desktop stop --detach --force`), or the Mac application's quit action. An unavailable or failed Docker probe does not establish an empty machine.
 
@@ -14,7 +14,7 @@ Active trusted hooks may help, but verify cleanup instead of assuming they handl
 
 ## Dev servers and memory pressure
 
-A dev server (`next dev`, `vite`, `nuxt dev` and similar) belongs to the task that started it. Record its PID tree, port and checkout when starting it, and stop it at the end of the work unit unless the user is still reviewing it.
+A dev server (`next dev`, `vite`, `nuxt dev` and similar) belongs to the task that started it. Use `python3 ~/.claude/hooks/managed-server.py --session <native-session-id> start -- <command>` with the native ID supplied by `TEMP_SERVER` hook context. This registers an isolated process group for archive/SessionEnd cleanup. Record its port and checkout; run the same helper with `cleanup` at the end of review. If the helper/context is unavailable, record the PID tree and clean it manually; never guess a session ID.
 
 Dev mode compiles each route the first time it is opened and keeps the result in memory. Crawling many routes therefore grows the server steadily. One Next 16 dev server reached 75 GB (70 GB of it compressed) during a Playwright audit and filled swap on a 48 GB Mac (2026-10-19).
 

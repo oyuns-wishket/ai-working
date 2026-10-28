@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
 import fs from "node:fs"
+import { createHash } from "node:crypto"
 import os from "node:os"
 import path from "node:path"
 import { execFileSync, spawn } from "node:child_process"
+import { fileURLToPath } from "node:url"
 
 const RECENT_SESSION_MS = 45 * 60 * 1000
 const DOCKER_BUSY_MS = 5 * 60 * 1000
@@ -209,7 +211,7 @@ function formatContext(snapshot, session) {
     }
   } else {
     lines.push(
-      "RESOURCE_OK: local Supabase는 동시에 한 stack만 실행하고, 소유권이 확인된 컨테이너와 유휴 Docker Desktop은 SessionEnd에서 자동 정리된다. 그 외 자원은 세션에서 직접 정리한다.",
+      "RESOURCE_OK: local Supabase는 동시에 한 stack만 실행하고, 추적된 컨테이너는 종료하고 ai-working.disposable=true 컨테이너만 삭제한다(volume 보존). managed-server.py로 시작한 임시 서버도 종료한다. 미등록 자원은 직접 정리하며 결과는 ~/.cache/ai-working-resource-guard/*-results/에서 확인한다.",
     )
   }
   return lines.join("\n")
@@ -361,27 +363,47 @@ function shellQuote(value) {
   return `'${String(value).replace(/'/g, "'\\''")}'`
 }
 
-function buildCleanupScript({ containers, supabase, quitApp }) {
-  const steps = []
-  if (containers.length) {
-    steps.push(`docker stop -t 3 ${containers.join(" ")} >/dev/null 2>&1`)
-  }
-  if (supabase) {
-    steps.push(
-      `cd ${shellQuote(supabase.root)} && supabase stop --project-id ${supabase.projectId} >/dev/null 2>&1`,
-    )
-  }
-  if (quitApp) {
-    // 남은 컨테이너가 정말 하나도 없을 때만 Docker Desktop(VM 포함)을 내린다.
-    steps.push(
-      `sleep 2; remaining=$(docker ps -q 2>/dev/null) && if [ -z "$remaining" ]; then docker desktop stop --detach --force >/dev/null 2>&1 || osascript -e 'quit app "Docker"' >/dev/null 2>&1; fi`,
-    )
-  }
-  return steps.join("; ")
+function dispatchCleanup(plan) {
+  const directory = path.dirname(fileURLToPath(import.meta.url))
+  const child = spawn("python3", [
+    path.join(directory, "resource-cleanup-lock.py"),
+    path.join(cacheRoot(), "worker-locks", `${plan.sessionId}.lock`),
+    process.execPath, path.join(directory, "resource-cleanup-worker.mjs"),
+  ], { detached: true, stdio: ["pipe", "ignore", "ignore"] })
+  child.on("error", () => {}) // Ownership remains available for retry.
+  child.stdin.on("error", () => {})
+  child.stdin.end(JSON.stringify(plan))
+  child.unref()
+}
+
+function cleanupProcesses(input) {
+  const sessionId = safeSessionId(input)
+  const directory = path.join(cacheRoot(), "processes", sessionId)
+  if (!fs.existsSync(directory) || !fs.readdirSync(directory).some(n => n.endsWith(".json"))) return
+  const helper = path.join(path.dirname(fileURLToPath(import.meta.url)), "managed-server.py")
+  return detach(`python3 ${shellQuote(helper)} --session ${shellQuote(sessionId)} cleanup`)
 }
 
 function cleanupSession(input) {
+  const processCleanup = cleanupProcesses(input)
   const file = sessionFile(input)
+  if (!fs.existsSync(file)) return processCleanup ? "dispatched" : "absent"
+  // flock releases on process death, unlike stale PID files. The helper execs
+  // this same program with the lock inherited for the duration of cleanup.
+  if (process.argv.includes("--cleanup-locked")) {
+    cleanupOwnedSession(input, file)
+    return "dispatched"
+  }
+  const script = fileURLToPath(import.meta.url)
+  const output = execFileSync("python3", [
+    path.join(path.dirname(script), "resource-cleanup-lock.py"),
+    path.join(cacheRoot(), "cleanup-locks", `${safeSessionId(input)}.lock`),
+    process.execPath, script,
+  ], { input: JSON.stringify(input), encoding: "utf8", timeout: 15000 })
+  return JSON.parse(output).status
+}
+
+function cleanupOwnedSession(input, file) {
   const session = readJson(file)
   if (session?.ownershipVersion !== 2) {
     removeFile(file)
@@ -393,14 +415,15 @@ function cleanupSession(input) {
   // cleanup. In particular, never claim containers just because they appeared.
   const owned = session?.ownershipVersion === 2
     ? (session.dockerOwned || []).filter((id) => CONTAINER_ID.test(id)) : []
-  removeFile(file)
-
   const claimedElsewhere = new Set(
     otherRecentSessions(file).flatMap(({ value }) => value.dockerOwned || []),
   )
-  const toStop = owned.filter((id) => !claimedElsewhere.has(id) && inspectContainer(id)?.running)
+  const exclusive = owned.filter((id) => !claimedElsewhere.has(id))
+  const toStop = exclusive.filter((id) => inspectContainer(id)?.running)
+  const disposable = exclusive // Worker reads the opt-in label; failed probes retain evidence.
 
   let supabase = null
+  let unresolvedSupabase = false
   if (session?.ownershipVersion === 2 && session.owns && SAFE_NAME.test(session.projectId || "")) {
     const observers = supabaseObservers(session.projectId, file)
     if (observers.length) {
@@ -413,7 +436,9 @@ function cleanupSession(input) {
       const current = scopedContainers(containers, session.projectId).map((container) => container.id).sort()
       const expected = [...(session.supabaseContainerIds || [])].filter((id) => CONTAINER_ID.test(id)).sort()
       if (expected.length && JSON.stringify(current) === JSON.stringify(expected)) {
-        supabase = { root: session.root, projectId: session.projectId }
+        supabase = { root: session.root, projectId: session.projectId, ids: expected }
+      } else {
+        unresolvedSupabase = true
       }
     }
   }
@@ -426,8 +451,16 @@ function cleanupSession(input) {
   const quitApp =
     !keepApp && (toStop.length > 0 || supabase !== null) && dockerEngineUp() && remaining <= 0 && !dockerBusyElsewhere(file)
 
-  if (!toStop.length && !supabase && !quitApp) return
-  detach(buildCleanupScript({ containers: toStop, supabase, quitApp }))
+  if (!exclusive.length && !supabase && !quitApp && !unresolvedSupabase) {
+    removeFile(file)
+    return
+  }
+  dispatchCleanup({
+    containers: exclusive, disposable, supabase, quitApp, unresolvedSupabase,
+    cache: cacheRoot(), file, sessionId: safeSessionId(input),
+    fingerprint: createHash("sha256").update(fs.readFileSync(file)).digest("hex"),
+  })
+
 }
 
 async function main() {
@@ -439,7 +472,10 @@ async function main() {
   if (!input.session_id && event !== "UserPromptSubmit") return
 
   if (event === "SessionEnd") {
-    cleanupSession(input)
+    const status = cleanupSession(input)
+    if (process.argv.includes("--archive-cleanup")) {
+      process.stdout.write(`${JSON.stringify({ status })}\n`)
+    }
     return
   }
 
@@ -465,7 +501,8 @@ async function main() {
       `${JSON.stringify({
         hookSpecificOutput: {
           hookEventName: "UserPromptSubmit",
-          additionalContext: formatContext(snapshot, session),
+          additionalContext: formatContext(snapshot, session) + (input.session_id
+            ? `\nTEMP_SERVER: python3 ~/.claude/hooks/managed-server.py --session ${safeSessionId(input)} start -- <server-command> (현재 세션 임시 서버는 이 launcher로 실행)` : ""),
         },
       })}\n`,
     )
@@ -515,4 +552,4 @@ async function main() {
   }
 }
 
-main().catch(() => process.exit(0))
+main().catch(() => process.exit(process.argv.includes("--archive-cleanup") ? 1 : 0))

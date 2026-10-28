@@ -94,6 +94,17 @@ The resource guard exits before OS/Docker probes for unrelated tool calls. Owner
 
 Native Codex maps exec_command to Bash and runs hooks for nested code-mode calls; write_stdin input has no separate PreToolUse. SessionEnd is main-thread-only and capped at three seconds, so cleanup is detached. The shell pattern guard is best effort, not an execution sandbox; quoted SQL and newline command boundaries have regression coverage.
 
+Paseo archive can terminate a provider without its native SessionEnd hook running.
+The optional [Paseo resource cleanup plugin](../plugins/paseo-resource-cleanup/README.md)
+handles the official archive event for Claude and Codex, waits for a matching
+archived/closed snapshot, and invokes only the resource guard with the native
+session ID. It does not synthesize other SessionEnd hooks. Native and plugin
+cleanup share an OS `flock` via the installed Python helper; dead processes release
+the lock without PID-based reclamation races. Docker ownership markers are kept until the detached worker verifies completion.
+Failures keep markers for retry. Worker execution has a separate per-session lock.
+Archive success is not a cleanup-completion receipt; check plugin logs and actual
+resources. Installation/reload is explicit and machine-local, not automatic in bootstrap.
+
 Changing a Codex hook definition can invalidate native trust. Run `python3 scripts/codex_hook_trust.py --ensure-instructions` to inspect, then `--apply --ensure-instructions` after reviewing the authorized installed changes. It uses native currentHash/version checks and re-reads readiness. It preserves disabled hooks and refuses to trust unknown definitions. A matching bootstrap status and a zero managed trust-review count are separate checks; neither proves every possible shell command is covered.
 
 ## Local plugin and preference profile
@@ -107,3 +118,36 @@ External app status hooks are preserved. Native UI definitions whose registratio
 A selected local `omc_mode: "removed"` prevents OMC routing settings from being restored and disables any lingering plugin entry. Native plugin uninstall is a separate reviewed operation; bootstrap does not delete plugin registries, caches, memory or project data. The optional `native_statusline` display reads Claude's supplied JSON only and does not call a plugin, shell command or network API. Existing sessions can retain old MCP processes until they end; no cross-session process termination is performed.
 
 Use shared native subagent contracts for exploration, implementation and independent review. Read-only instructions supplied to a general-purpose worker are a behavioral contract, not an OS-enforced sandbox; use explicit native tool restrictions when enforcement is needed. Specialized LSP/AST plugin capabilities are not claimed to be identical to shell/code-search substitutes.
+
+## Temporary servers and disposable containers
+
+Temporary HTTP/dev/build servers must use the installed launcher with the native
+session ID shown in `TEMP_SERVER` context:
+
+```sh
+python3 ~/.claude/hooks/managed-server.py --session <native-session-id> start -- python3 -m http.server 8791 --bind 0.0.0.0
+python3 ~/.claude/hooks/managed-server.py --session <native-session-id> cleanup
+```
+
+The launcher creates a new process group and records its supervisor PID, UID,
+group ID and start time. It never adopts arbitrary PIDs. Native SessionEnd and
+Paseo archive terminate registered groups, including ordinary child processes.
+A program that explicitly creates a new OS session escapes the group and is not
+supported by this launcher. Identity mismatches are preserved for investigation.
+The supervisor terminates descendants when the main command exits as well.
+Successful cleanup removes the temporary server log; failures retain it.
+
+For disposable local test containers, use `docker run/create` with
+`--label ai-working.disposable=true`. Immutable-ID ownership must still be
+confirmed by the hook. The worker stops owned containers, then removes only
+those with this label, without `-v`, `--force`, image deletion or global prune.
+Unmarked container writable layers and all volumes remain preserved. Shell
+wrappers and ambiguous outputs still require explicit cleanup; a label alone
+never establishes session ownership.
+
+Machine-local receipts are stored under
+`~/.cache/ai-working-resource-guard/cleanup-results/<session-id>.json` and
+`process-results/<session-id>.json`. `failed` retains ownership for another
+SessionEnd/archive attempt. `stop-requested` for Docker Desktop is a CLI request,
+not a verified VM shutdown. Missing receipts are not proof of completion.
+Old, unowned servers/containers are not retroactively adopted or pruned.
