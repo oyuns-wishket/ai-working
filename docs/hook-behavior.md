@@ -49,7 +49,8 @@ issues (`#1754`) is enriched with up to three issue titles from `gh issue view` 
 injected; the summary lets the agent judge relevance and open only what the task needs before deciding. Documents
 already suggested in the same session are skipped, so follow-up prompts stay silent unless the topic changes.
 
-The hook is silent for prompts shorter than 12 characters, slash commands, unconnected or unhealthy projects, and
+The hook is silent for prompts shorter than 12 characters, slash commands, system-generated turns (background task
+notifications, cross-session messages, interruption notices — `UserPromptSubmit` fires for those too), unconnected or unhealthy projects, and
 resolver failures or timeouts (4 seconds). `AI_WORKING_PROMPT_WIKI=0` disables it. Session state lives in
 `~/.local/state/ai-working/prompt-wiki/`. Each injection carries the route trace id so retrieval feedback can be
 closed as described in `project-wiki-context`.
