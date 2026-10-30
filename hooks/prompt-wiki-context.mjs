@@ -28,6 +28,10 @@ try { input = JSON.parse(raw || '{}'); } catch { process.exit(0); }
 if (process.env.AI_WORKING_PROMPT_WIKI === '0') process.exit(0);
 const prompt = String(input.prompt || '').trim();
 if (prompt.length < MIN_PROMPT_CHARS || prompt.startsWith('/')) process.exit(0);
+// 2026-10-31: UserPromptSubmit also fires for system-generated turns — background task
+// notifications, cross-session messages, interruption notices. Routing those produced 26
+// injections for 7 real prompts in one session, mostly unrelated notes. Only a human prompt routes.
+if (/^(<task-notification>|<cross-session-message|<system-reminder>|<command-|\[Request interrupted|Caveat:)/.test(prompt)) process.exit(0);
 const cwd = input.cwd || process.cwd();
 const resolver = path.join(os.homedir(), '.claude', 'skills', 'project-wiki-context', 'scripts', 'wiki_context.py');
 if (!fs.existsSync(resolver)) process.exit(0);
@@ -98,7 +102,7 @@ const lines = fresh.map((d) => {
   return `- ${d.title} [${kind}]${gist ? ` — ${gist}` : ''}\n  ${file}${where}`;
 });
 const trace = routed.retrieval_feedback?.trace_id;
-let text = `[wiki 관련 문서] 이 프로젝트 wiki에서 요청과 맞는 문서입니다. 요약을 보고 관련 있는 문서는 설계·구현 결정 전에 Read로 읽으세요(sections 범위만). 관련 없으면 무시하고, 현재 코드·migration·운영 증거와 다르면 코드를 따릅니다.\n${lines.join('\n')}`;
+let text = `[wiki 관련 문서] 이 프로젝트 wiki에서 요청과 맞는 문서입니다. 요약을 보고 관련 있는 문서는 설계·구현 결정 전에 Read로 읽으세요(sections 범위만). 사용자에게 되묻기 전에 아래 요약에 답이 있는지 먼저 확인합니다. 관련 없으면 무시하고, 현재 코드·migration·운영 증거와 다르면 코드를 따릅니다.\n${lines.join('\n')}`;
 if (trace) text += `\n(trace ${trace} — 완료 보고 때 실제로 쓴 문서는 used, 안 쓴 건 not_used로 retrieval_feedback.py feedback 마감)`;
 if (Buffer.byteLength(text) > MAX_CONTEXT_BYTES) text = Buffer.from(text).subarray(0, MAX_CONTEXT_BYTES).toString('utf8').replace(/\uFFFD$/, '');
 console.log(JSON.stringify({ hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: text } }));

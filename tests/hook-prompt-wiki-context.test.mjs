@@ -114,3 +114,14 @@ test("an English prompt that names issues is enriched with their titles", () => 
   assert.match(fs.readFileSync(path.join(home, "query.txt"), "utf8"), /^유통 발주 택배비 매입정산 연결 Fix #1754/)
   fs.rmSync(home, { recursive: true, force: true }); fs.rmSync(dir, { recursive: true, force: true })
 })
+
+test("system-generated turns (task notifications, cross-session messages, interruptions) are not routed", () => {
+  const home = fixture(routed)
+  for (const prompt of [
+    "<task-notification>\n<task-id>abc</task-id>\n<summary>Background command finished with lots of text</summary>\n</task-notification>",
+    "<cross-session-message from=\"worker\">이카운트 컷오버 최종 보고 정리해줘</cross-session-message>",
+    "[Request interrupted by user for tool use] 이카운트 컷오버 최종 보고 정리해줘",
+  ]) assert.equal(run(home, { prompt, cwd: "/p", session_id: "s11" }), "", prompt.slice(0, 20))
+  assert.notEqual(run(home, { prompt: "이카운트 컷오버 최종 보고 정리해줘", cwd: "/p", session_id: "s11" }), "")
+  fs.rmSync(home, { recursive: true, force: true })
+})
