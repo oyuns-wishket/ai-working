@@ -8,6 +8,8 @@ Use one native agent loop for terminal and chat. Keep model, effort, tools, sour
 
 Start with the authorized repository containing project rules, plan, specification, implementation, tests and handoff. If detailed workflow integration is deferred, implement the CLI foundation and record unconnected capabilities accurately. The target flow may be request → development/tests → preview URL → development PR; no-merge means no merge capability in tools or credentials, not merely a sentence in the prompt. Verify preview reachability and PR base/head before reporting them. A model claim is not deployment evidence.
 
+A preview URL must be reachable from the intended employee's own browser/device with the required access controls. A remote worker's localhost is only its internal address. Before delivery, inspect the actual rendered UI and important interactions; HTTP success alone does not establish usable behavior. When the agreed workflow includes employee review before PR, record that confirmation and incorporate feedback before creating the development PR. Associate the preview with task/revision, verification time and access/expiry policy so review does not silently target a different build. Keep unimplemented preview/chat adapters explicitly pending when the user defers connection.
+
 For nondevelopers, explain what changed, how to check it and what is left in familiar language. Preserve precise links and necessary technical names. Persist both progress and the final response obligation; timeout, restart, budget exhaustion or transport loss must not silently discard a request.
 
 ## Durable memory

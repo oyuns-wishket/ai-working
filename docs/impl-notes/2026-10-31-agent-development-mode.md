@@ -11,3 +11,6 @@ Run skill validation, public history audit, existing JS/Python/guard checks and 
 
 ## DEVIATION
 No new permission gate or default model is imposed on unrelated organizations. Separate development guidance avoids weakening the existing investigation guard.
+
+## 2026-11-01 preview clarification
+User authorized preserving the final workflow before later bot integration. Clarified employee-device reachability, worker-localhost limits, rendered UI/interaction verification and the agreed employee-review-before-PR order. Link each preview to the reviewed task/revision; deferred adapters remain pending. Documentation-only change; no runtime guard behavior changes.
