@@ -193,3 +193,5 @@ Hook 설정은 기존 Claude/Codex 설정 전체를 덮지 않는다. ai-working
 변경 전 파일은 `~/.claude/backups/`에 보존된다. 설치 연결을 해제할 때는 먼저 `./bootstrap.sh --status`로 현재 대상을 확인하고 필요한 symlink/import/hook만 제거하거나 백업을 복원한다. machine-local memory 디렉토리는 자동 삭제하지 않는다.
 
 - [Resource cleanup completion](docs/impl-notes/2026-10-28-resource-cleanup-completion.md): session-owned temporary servers, disposable containers and cleanup receipts.
+
+- [Agent bot development mode](skills/agent-bot-setup/references/development-mode.md): CLI-first native development, durable task memory, scoped writes and daily maintenance. [Change record](docs/impl-notes/2026-10-31-agent-development-mode.md).
