@@ -195,3 +195,4 @@ Hook 설정은 기존 Claude/Codex 설정 전체를 덮지 않는다. ai-working
 - [Resource cleanup completion](docs/impl-notes/2026-10-28-resource-cleanup-completion.md): session-owned temporary servers, disposable containers and cleanup receipts.
 
 - [Agent bot development mode](skills/agent-bot-setup/references/development-mode.md): CLI-first native development, durable task memory, scoped writes and daily maintenance. [Change record](docs/impl-notes/2026-10-31-agent-development-mode.md).
+- [Agent quality and recovery evidence](docs/impl-notes/2026-11-01-agent-quality-evidence.md): measured parity, delivery receipts, bounded recovery and nondeveloper acceptance.
