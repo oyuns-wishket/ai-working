@@ -13,3 +13,6 @@ Passed: skill validation (25 skills), public contents/full-history audit, hook t
 
 ## Deviations and follow-up
 No new entrypoint or personal/customer values. Implementation-specific thresholds remain project policy. Real paired trials and human usability checks are required in the consuming project before claiming product readiness.
+
+## Screenshot follow-up
+The user additionally required screenshot-plus-text development with terminal-like visual capability. Added generic contracts for authenticated original ingestion, native image input, cold visual recall, committed attachment backups and pixel-only independent acceptance. File count is checked before reads; unsupported formats and partial downloads must be explicit. Existing investigation permissions are unchanged. Customer implementation and synthetic answers remain outside this public repository. Run the same validation/publication checks for this follow-up.
