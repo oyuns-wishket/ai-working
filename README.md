@@ -198,3 +198,5 @@ Hook 설정은 기존 Claude/Codex 설정 전체를 덮지 않는다. ai-working
 - [Agent quality and recovery evidence](docs/impl-notes/2026-11-01-agent-quality-evidence.md): measured parity, delivery receipts, bounded recovery and nondeveloper acceptance.
 
 - [Organization-wide agent scope and durable recovery](docs/impl-notes/2026-11-02-agent-organization-scope.md)
+
+- [Invited-channel mention admission](docs/impl-notes/2026-11-02-agent-mention-admission.md): authenticated participants, conversation continuity and shared execution/delivery policy.
