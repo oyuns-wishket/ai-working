@@ -18,6 +18,23 @@ A preview URL must be reachable from the intended employee's own browser/device 
 
 For nondevelopers, explain what changed, how to check it and what is left in familiar language. Preserve precise links and necessary technical names. Persist both progress and the final response obligation; timeout, restart, budget exhaustion or transport loss must not silently discard a request.
 
+## Preview and publication without a development environment
+
+When the customer retires the separate development server (hosted preview platform, shared dev database, `develop` branch) for cost, the bot must still deliver request → PR → preview → confirmation. Verified pattern (2026-11-03):
+
+- **Branch base is the production branch.** Re-pin every catalog entry's `base` and the host's source projections in the same change; a catalog edit without a projection re-sync leaves tasks pinned to the old branch. Treat a missing base branch as a publication outage, not a model error: the host's PR creation fails with 422 and the employee only sees "담당자 확인 필요".
+- **Host order matters.** If the host is already running a newer release than the repository's main (a feature branch deployed for verification), merging main-only changes and redeploying crash-loops both services on unknown config keys. Diff the deployed revision against main before tagging a deploy.
+- **Preview on the production web host, read-only.** One container per PR on the production instance, routed by a reverse proxy, with the database reached through a dedicated read-only API role. Enforce read-only per request (PostgREST opens writes with `BEGIN READ WRITE`, so a role-level `default_transaction_read_only` alone is bypassed; a pre-request function that sets `transaction_read_only=on` is what actually blocks). Allow only login/session auth paths and GET on storage. Inject no external-write credentials (cron secret, mail, ticket widget, AI keys). Skip previews for PRs that change migrations. Verify with the service role, not anon: anon writes hit RLS first and prove nothing about read-only.
+- **Hostnames when DNS has no wildcard.** Register a small fixed pool (`preview1..N`) once, assign PRs to slots (same PR keeps its slot; evict the slot with the oldest *last update*), and reserve the slot *before* the build because the API URL is baked into the bundle. One certificate per slot, reused.
+- **Deliver the URL through a GitHub deployment** (`environment: preview`, success status with `environment_url`) plus a PR comment. The bot polls deployment statuses; no platform-specific SSO probe. A reverse-proxy redirect to the same host's login page is "open", not "blocked".
+- **Cost:** no new compute, DNS or paid service; CI build minutes per PR commit are the only variable.
+
+## Result validation and stuck tasks
+
+The host validates the model's final answer before publishing. A validation rejection after a successful turn must not discard the answer or block the task: filter unknown evidence citations (and dependent lessons) and record the count instead of raising. Keep the validation rule name as the run's failure kind so diagnostics show *which* rule rejected the answer, and provide an offline re-validation step that prints rule name and sizes without message content.
+
+`reconciliation_required` is never cleared by the bot itself and a new employee request does not resume it; provide an operator path that runs the existing `reconcile` CLI on the host (a `workflow_dispatch` with task, operator identity and an evidence note), then let the employee continue in the same thread.
+
 ## Durable memory
 
 - **Raw:** append input before execution; preserve actor, time, event/conversation/task/run IDs, observable tool/progress results and final answer. Do not capture hidden chain-of-thought. Store privately, outside source control.
