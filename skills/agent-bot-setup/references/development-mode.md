@@ -60,6 +60,17 @@ Three layers feed each turn, in this order of trust: durable task constraints, t
 - **Host-digest repository rules instead of hoping the model reads them.** From each pinned source projection, split `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/onboarding.md`, handoff and `.claude/rules/*.md` by heading, cache by projection commit, and inject only request-relevant sections with `path#heading` so the model can open the full file. The digest must come from the same immutable projection the model edits.
 - Keep evidence per lesson, not per result; record `doc_sections` and knowledge counts in metrics/diagnostics so the effect is observable without server access.
 
+### Wiki that already lives on the customer's own server
+
+When the bot runs on a customer-owned host (e.g. `cntv-dev-agent` on the collector instance), that host and its organization usually already hold knowledge: the bot's own `knowledge` table, an organization `knowledge`/wiki repository in the catalog, another bot's wiki (an investigation bot's verified lessons), and runbooks under the deployed release. Treat these as **first-class context sources on the same server**, not as something to re-create or to pull from the engineer's personal wiki.
+
+- **Inventory before designing.** List every knowledge store reachable from the host without new credentials: bot SQLite tables, org repositories whose catalog `base` is set, sibling bots' state directories, docs in the deployed release. Record owner, write path, and freshness for each. An empty org wiki repository is still a declared source: wire the adapter so it fills in later, and mark it `empty` in capabilities rather than silently skipping it.
+- **Read through the same projection and ACL path.** An org wiki repository is read like any other pinned projection (immutable commit, host-digested by heading, request-ranked). Do not give the model direct file access to another bot's state; expose it through the host's knowledge reader with the same evidence ID discipline (`wiki-`/`raw-` style, citable, readable).
+- **One ranking, several sources.** Merge bot lessons, org wiki sections and repository rule sections into one relevance-ranked list under one char budget, each item carrying its source and locator. Separate buckets with their own limits starve whichever source is largest.
+- **Write-back stays on the server.** Employee-confirmed lessons are written to the bot's own table on that host; promotion to the org wiki repository (if the customer wants a human-readable wiki) is a reviewed PR by the publisher identity, never a direct push. The engineer's personal wiki is not a sink and not a source.
+- **Keep sources distinguishable in the answer.** The model must be able to say "저장소 규칙" vs "과거 작업 교훈" vs "조직 위키"; carry a `source` field and instruct the model to cite it.
+- Verify with the diagnostics tag: per-source counts, last refresh commit/time, and the number of sections injected in the latest runs. A source with zero injections over a day is either empty or mis-ranked; check which before adding more sources.
+
 ## Authority and lifecycle
 
 Run the model worker as a separate OS account from the deployment runner. Provide a task worktree or reviewed source projection with exact path/hash manifest. Reject credential paths, escaping symlinks and arbitrary untracked files. Keep native state/auth outside the writable workspace. Disable unnecessary plugins, hooks, host skill discovery and inherited environment.
