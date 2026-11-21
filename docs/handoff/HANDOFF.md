@@ -18,7 +18,7 @@
 - Wiki binding explicitly excludes this tooling repository; knowledge remains in the repository.
 
 ## Open items & blockers
-- The design-workflow copy shipped in the company marketplace plugin is maintained separately and has diverged from this source in both directions. Only the standard-deck judgment is being carried over there, through that repository's own merge request; nothing else is synchronized.
+- The design-workflow copy shipped in the company marketplace plugin is maintained separately and has diverged from this source in both directions. Only the standard-deck judgment was carried over there, in a merge request that is open and waiting for that skill's maintainer; nothing else is synchronized. That repository's CI runs only on its main branch, so the merge request itself has no CI result.
 - Second Mac, Codex: none of the 11 managed hooks has ever been trusted there, so the guards do not run in Codex on that Mac. Run `codex_hook_trust.py --apply` there before using Codex on it.
 - When the work app re-registers its hooks, Codex's position-based trust keys shift and the shifted managed hooks stop running in Codex until `./bootstrap.sh` restores the order. `bootstrap --status` reports it as a hook manifest that needs an update.
 - `hook-dev-resource-guard` test fails on a cold first run on the second Mac (dev server cwd reported as `unknown`) and passes when rerun at once. Suspected cause: the 300 ms `lsof` probe limit; not verified.
