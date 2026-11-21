@@ -67,7 +67,7 @@ The first input call of each user request (`prompt_id` on Claude, `turn_id` on C
 carries the full text of `global/flowpass-input-rules.md`, so the agent reads the rules before anything reaches the
 server and then calls the same tool again. Context attached to this event would arrive next to the tool result, after
 the save, so the hook denies instead. Further input calls in the same request run normally. Three cases repeat the
-hold: a call that arrives within four seconds of the delivery (issued in the same message, composed before the rules
+hold: a call that arrives within 1.5 seconds of the delivery (issued in the same message, composed before the rules
 were seen) is denied with a one-line notice; a subagent (`agent_id`) gets its own delivery; and a request that is still
 running ten minutes later, or a runtime that reports no request id, gets the rules again.
 
@@ -78,6 +78,8 @@ records live in `~/.local/state/ai-working/flowpass-input-rules/<session-id>.jso
 
 The hook sees MCP tool calls only. Input sent to Flowpass another way, such as a direct HTTP call from a shell, is
 covered by the global rule that points to the same file, not by this hook.
+
+Bootstrap installs the hook on every machine. On a machine with no Flowpass MCP server it never fires.
 
 ## Paseo workspace title
 

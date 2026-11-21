@@ -13,7 +13,9 @@ const LOOKUP_TOOLS = new Set(['flowpass_start', 'flowpass_status', 'flowpass_rea
   'flowpass_guide', 'flowpass_board', 'flowpass_options', 'flowpass_context', 'flowpass_begin_run',
   'flowpass_feedback_list']);
 // Calls issued in the same assistant message were composed before the rules were seen.
-const SAME_MESSAGE_MS = 4000;
+// 2026-11-21: parallel calls reached the hook 0.1 s apart and a retry 2.0 s or more after the
+// hold. A 4 s window held every retry a second time.
+const SAME_MESSAGE_MS = 1500;
 // A request that runs longer than this, or a runtime that reports no request id, gets the rules again.
 const REPEAT_AFTER_MS = 10 * 60 * 1000;
 const TAG = '[Flowpass 입력 규칙]';

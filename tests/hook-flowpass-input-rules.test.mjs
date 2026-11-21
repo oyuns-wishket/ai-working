@@ -73,6 +73,9 @@ test("a call issued alongside the held one is held too, without repeating the ru
   const sibling = run(home, { ...call, tool_name: "mcp__plugin_flowpass_flowpass__flowpass_schedule" })
   assert.equal(sibling.hookSpecificOutput.permissionDecision, "deny")
   assert.equal(reason(sibling).includes(rules), false)
+  // A retry reaches the hook about two seconds after the hold and must not be held again.
+  age(home, "s4", 2 * SECOND)
+  assert.equal(run(home, call), null)
 })
 
 test("Codex server naming and turn ids work the same way", t => {
