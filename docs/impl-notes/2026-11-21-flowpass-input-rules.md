@@ -62,16 +62,18 @@
 - CI `public-safety`: 감사 단계에서 실패했다. 지목된 파일은 위 검증 항목의 기존 문서 한 건이고, 그 단계에서 멈춰 뒤의 테스트 단계는 실행되지 않았다.
 - 두 번째 Mac: 깨끗한 main을 14 commit fast-forward했다(이번 commit과 2026-10-27~11-03의 13개). bootstrap dry-run은 문제 0개였고, 적용으로 규칙 파일 링크 1개, hook 파일 6개, Claude·Codex hook manifest가 바뀌었다. 적용 뒤 `--status`는 정상 80개다.
 - 두 번째 Mac의 설치본에 모의 호출: 첫 입력 호출은 거부되며 규칙 전문이 실렸고, 조회 호출은 통과했고, 5초 뒤 재시도는 통과했다.
-- 두 번째 Mac에서 확인하지 못한 것:
-  - Flowpass 플러그인·토큰·Codex 서버 설정이 그 장비에 없어 실제 Flowpass 호출로는 확인하지 못했다.
-  - Codex: 관리 hook 11건이 모두 `untrusted`다. `config.toml`의 신뢰 기록 14건은 현재 배치에서 ai-working이 아닌 hook 14건의 위치와 정확히 겹친다. ai-working hook은 그 장비의 Codex에서 신뢰 등록된 적이 없다고 추정한다(hash 대조는 하지 못했다).
+- 두 번째 Mac의 남은 상태:
+  - Flowpass 플러그인·토큰·Codex 서버 설정이 그 장비에 없다. 연결 전에는 hook이 걸릴 호출이 없다.
+  - Codex: 관리 hook 11건이 모두 `untrusted`다. 11건의 현재 hash는 첫 번째 Mac과 같고, 그 장비 `config.toml`의 신뢰 hash 14건 어디에도 없다. 기존 10건의 정의는 그 장비가 있던 commit 이후 바뀌지 않았으므로 설치 전에도 신뢰되지 않은 상태였다. Codex 실행 로그에서 실제로 돈 UserPromptSubmit hook 수는 신뢰된 수와 같았다(첫 번째 Mac 4건 중 3건, 두 번째 Mac 5건 중 1건).
   - Codex 실측: 임시 로컬 MCP 서버 호출이 "timed out negotiating with the code-mode host"로 끝나 보류 동작을 관측하지 못했다.
-  - Claude Code 실측: SSH 세션에서 띄운 `claude -p`가 "Not logged in"으로 끝났다.
-  - 테스트: 전체 실행 두 번이 각각 91건 중 1건 실패했고 실패한 테스트가 서로 달랐다(자원 가드 파일, 그다음은 세션 시작 테스트 하나가 560초). 신규 9건은 두 번 모두 통과했다. 실행 중 그 장비가 네트워크에서 여러 번 사라졌고 원인은 확인하지 못했다.
+  - Claude Code 실측: SSH 세션에서 띄운 `claude -p`가 "Not logged in"으로 끝났다. SSH에서 login Keychain을 읽지 못해서라고 추정한다. 그 장비의 터미널에서 직접 실행하면 가를 수 있다.
+  - 테스트: 자원 가드 테스트 파일이 그 장비에서 쉬었다가 처음 돌릴 때 3번 모두 실패했고 바로 이어 돌린 2번은 통과했다. dev server 작업 폴더가 `unknown`으로 나온다. hook과 테스트는 이번 commit에서 바뀌지 않았다. `lsof` 조회의 300ms 제한을 첫 실행이 넘긴다고 추정한다. 세션 시작 테스트 1건의 560초 실패는 그 장비의 562초 절전 구간과 겹쳤고 단독 실행은 두 commit 모두 통과했다. 신규 9건은 매번 통과했다.
+  - 그 장비는 덮개를 닫은 배터리 상태에서 절전과 깨어남을 반복해 네트워크에서 자주 사라졌다. 덮개를 연 뒤에는 연결이 유지됐다.
 
 ## 다음에 참고
 - bootstrap은 관리 hook을 각 이벤트의 끝에 다시 붙인다. 다른 앱이 그 사이에 hook을 등록했으면 순서가 바뀌고, Codex의 위치 기반 신뢰 키가 밀린다. bootstrap 뒤에는 `codex_hook_trust.py`로 상태를 확인한다.
 - 다른 장비 작업은 스크립트를 올려 분리 실행하고 로그의 종료 표식을 기다린다. 연결이 끊겨도 원격 실행이 끝까지 간다.
+- Codex hook hash는 정의가 같으면 장비와 CLI 버전(0.154, 0.160)이 달라도 같다. 다른 장비의 신뢰 여부는 hash로 대조한다.
 - Codex는 MCP 도구를 code-mode의 `tools.<name>()`으로 호출한다. `codex exec`로 검증할 때 "도구를 호출하라"고만 하면 모델이 도구가 없다고 답한다. `ALL_TOOLS`에서 이름을 찾게 하고 호출 형태를 지정한다.
 - `codex exec`는 stdin을 `< /dev/null`로 닫고 실행한다. 열어 둔 첫 실행은 4분 안에 끝나지 않았다(원인은 stdin 대기로 추정, 미확인).
 - 규칙 본문을 고칠 때는 `global/flowpass-input-rules.md`만 수정한다. symlink라 다음 호출부터 반영된다.

@@ -15,7 +15,8 @@
 - Wiki binding explicitly excludes this tooling repository; knowledge remains in the repository.
 
 ## Open items & blockers
-- Second Mac, Codex: all 11 managed hooks are untrusted and appear never to have been trusted there. `codex_hook_trust.py --apply` would turn on every guard at once, so it waits for the owner's decision. Live checks with Claude Code and Codex on that Mac are pending too.
+- Second Mac, Codex: all 11 managed hooks are untrusted, and no trust record there matches any of their definitions, so the guards have not been running in Codex on that Mac. `codex_hook_trust.py --apply` would turn on all 11 at once and waits for the owner's decision. Live checks with Claude Code and Codex on that Mac are pending too.
+- `hook-dev-resource-guard` test fails on a cold first run on the second Mac (dev server cwd reported as `unknown`) and passes when rerun at once. Suspected cause: the 300 ms `lsof` probe limit; not verified.
 - `public-safety` stops at the audit step on an existing agent-bot reference document, so CI has not reached the test steps since 2026-11-03.
 - No UI workflow implementation blocker. Other machines require their normal pull/bootstrap; no remote-machine changes requested.
 - No implementation blocker. Plugin runtime remains asynchronous; inspect persisted worker receipts for actual cleanup outcomes.
