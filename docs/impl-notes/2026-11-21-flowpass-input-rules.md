@@ -38,7 +38,7 @@
 - Skill 도구 호출에 주입: Codex에는 Skill 도구가 없고, skill 없이 MCP를 직접 부르는 경로를 놓친다.
 
 ## ⚠️ DEVIATION
-- 없음
+- ⚠️ 두 번째 Mac의 Codex 신뢰 등록을 적용하지 않았다 → 대응: 그 장비의 Codex에는 ai-working hook의 신뢰 기록이 없어, `codex_hook_trust.py --apply`가 새 hook 1건이 아니라 가드 11건을 한꺼번에 처음 켠다. 승인받은 범위(새 hook 반영)보다 큰 변경이라 상태만 기록했다 → 리뷰: 사용자 결정 필요.
 
 ## 변경
 - `global/flowpass-input-rules.md`: 규칙 본문(사용자 제공 원문, 절 제목만 붙임).
@@ -57,7 +57,21 @@
 - Codex 실측: `codex_hook_trust.py --apply`로 새 hook 1건을 신뢰 등록했다(`review_required` 1 → 0). 임시 로컬 MCP 서버의 `mcp__flowpass_hookcheck__flowpass_write`가 1차 보류, 2차 실행됐고 서버에 닿은 호출은 1건이다. 실제 Flowpass 도구 `mcp__flowpass__flowpass_check`(인자 없는 요건 조회)도 1차 보류, 2차 실행됐다.
 - 설치 전 `bootstrap --status`는 Claude·Codex hook manifest 2건이 갱신 필요였고 Codex 관리 hook 5건이 `modified` 상태였다. 설치와 신뢰 등록 뒤 둘 다 0건이다.
 
+## 공개와 두 번째 Mac 반영
+- push: 이번 변경만 골라 한 commit으로 올렸다. 같은 checkout에 있던 다른 세션의 미커밋 작업은 그대로 두었다.
+- CI `public-safety`: 감사 단계에서 실패했다. 지목된 파일은 위 검증 항목의 기존 문서 한 건이고, 그 단계에서 멈춰 뒤의 테스트 단계는 실행되지 않았다.
+- 두 번째 Mac: 깨끗한 main을 14 commit fast-forward했다(이번 commit과 2026-10-27~11-03의 13개). bootstrap dry-run은 문제 0개였고, 적용으로 규칙 파일 링크 1개, hook 파일 6개, Claude·Codex hook manifest가 바뀌었다. 적용 뒤 `--status`는 정상 80개다.
+- 두 번째 Mac의 설치본에 모의 호출: 첫 입력 호출은 거부되며 규칙 전문이 실렸고, 조회 호출은 통과했고, 5초 뒤 재시도는 통과했다.
+- 두 번째 Mac에서 확인하지 못한 것:
+  - Flowpass 플러그인·토큰·Codex 서버 설정이 그 장비에 없어 실제 Flowpass 호출로는 확인하지 못했다.
+  - Codex: 관리 hook 11건이 모두 `untrusted`다. `config.toml`의 신뢰 기록 14건은 현재 배치에서 ai-working이 아닌 hook 14건의 위치와 정확히 겹친다. ai-working hook은 그 장비의 Codex에서 신뢰 등록된 적이 없다고 추정한다(hash 대조는 하지 못했다).
+  - Codex 실측: 임시 로컬 MCP 서버 호출이 "timed out negotiating with the code-mode host"로 끝나 보류 동작을 관측하지 못했다.
+  - Claude Code 실측: SSH 세션에서 띄운 `claude -p`가 "Not logged in"으로 끝났다.
+  - 테스트: 전체 실행 두 번이 각각 91건 중 1건 실패했고 실패한 테스트가 서로 달랐다(자원 가드 파일, 그다음은 세션 시작 테스트 하나가 560초). 신규 9건은 두 번 모두 통과했다. 실행 중 그 장비가 네트워크에서 여러 번 사라졌고 원인은 확인하지 못했다.
+
 ## 다음에 참고
+- bootstrap은 관리 hook을 각 이벤트의 끝에 다시 붙인다. 다른 앱이 그 사이에 hook을 등록했으면 순서가 바뀌고, Codex의 위치 기반 신뢰 키가 밀린다. bootstrap 뒤에는 `codex_hook_trust.py`로 상태를 확인한다.
+- 다른 장비 작업은 스크립트를 올려 분리 실행하고 로그의 종료 표식을 기다린다. 연결이 끊겨도 원격 실행이 끝까지 간다.
 - Codex는 MCP 도구를 code-mode의 `tools.<name>()`으로 호출한다. `codex exec`로 검증할 때 "도구를 호출하라"고만 하면 모델이 도구가 없다고 답한다. `ALL_TOOLS`에서 이름을 찾게 하고 호출 형태를 지정한다.
 - `codex exec`는 stdin을 `< /dev/null`로 닫고 실행한다. 열어 둔 첫 실행은 4분 안에 끝나지 않았다(원인은 stdin 대기로 추정, 미확인).
 - 규칙 본문을 고칠 때는 `global/flowpass-input-rules.md`만 수정한다. symlink라 다음 호출부터 반영된다.

@@ -1,7 +1,7 @@
 # HANDOFF — ai-working
 
 ## Next actions
-- Flowpass input rules hook is published. A machine picks it up with pull, bootstrap and `codex_hook_trust.py --apply`; a rule text change needs only `global/flowpass-input-rules.md` and a pull. See `docs/impl-notes/2026-11-21-flowpass-input-rules.md`.
+- Flowpass input rules hook is published and installed on both Macs. On the second Mac it cannot act yet: Flowpass is not connected there and Codex has not trusted the managed hooks. A rule text change needs only `global/flowpass-input-rules.md` and a pull. See `docs/impl-notes/2026-11-21-flowpass-input-rules.md`.
 - Resource cleanup completion: managed temporary servers and explicitly disposable owned containers now have cleanup workers and receipts; installed locally and verified with a real temporary HTTP server. See `docs/impl-notes/2026-10-28-resource-cleanup-completion.md`.
 - UI workflow preflight is strengthened and linked to both agents; validators and 80 Node/90 Python tests pass. No pending UI implementation; published changes are verified by public-safety CI. See `docs/impl-notes/2026-10-27-ui-workflow-preflight.md`.
 - Paseo archive resource cleanup is locally installed and verified. SSOT publication authorized; other machines need pull/bootstrap plus explicit plugin installation/reload.
@@ -15,6 +15,8 @@
 - Wiki binding explicitly excludes this tooling repository; knowledge remains in the repository.
 
 ## Open items & blockers
+- Second Mac, Codex: all 11 managed hooks are untrusted and appear never to have been trusted there. `codex_hook_trust.py --apply` would turn on every guard at once, so it waits for the owner's decision. Live checks with Claude Code and Codex on that Mac are pending too.
+- `public-safety` stops at the audit step on an existing agent-bot reference document, so CI has not reached the test steps since 2026-11-03.
 - No UI workflow implementation blocker. Other machines require their normal pull/bootstrap; no remote-machine changes requested.
 - No implementation blocker. Plugin runtime remains asynchronous; inspect persisted worker receipts for actual cleanup outcomes.
 
