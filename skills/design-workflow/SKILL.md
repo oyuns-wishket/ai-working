@@ -132,7 +132,7 @@ description: Use before planning or implementing UI changes, including menu/tab 
 | 조사 read order·정적/시각/런타임 인벤토리 | [project-audit.md](references/project-audit.md) |
 | PRODUCT/DESIGN 정본의 기록 항목 | [design-context.md](references/design-context.md); 필드는 [PRODUCT](assets/PRODUCT.template.md)·[DESIGN](assets/DESIGN.template.md) 템플릿 |
 | 의도 구체화(쉬운 경험 이름·보완 요청문) | [intent-to-experience.md](references/intent-to-experience.md) |
-| 덱·제안서·시각 리포트 | [standalone-visuals.md](references/standalone-visuals.md) |
+| 덱·제안서·시각 리포트, 표준 덱 스킬과의 역할 분담 | [standalone-visuals.md](references/standalone-visuals.md) |
 | 게이트 증거 기록 필드 | [design-gates.template.md](assets/design-gates.template.md) |
 | 감사 보고 필드 | [design-audit.template.md](assets/design-audit.template.md) |
 

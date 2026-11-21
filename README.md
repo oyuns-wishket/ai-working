@@ -204,3 +204,5 @@ Hook 설정은 기존 Claude/Codex 설정 전체를 덮지 않는다. ai-working
 - [Invited-channel mention admission](docs/impl-notes/2026-11-02-agent-mention-admission.md): authenticated participants, conversation continuity and shared execution/delivery policy.
 
 - [Flowpass input rules](docs/impl-notes/2026-11-21-flowpass-input-rules.md): a hook holds the first Flowpass input call of each request and delivers the rules file.
+
+- [Standard deck skills and design-workflow](docs/impl-notes/2026-11-21-design-workflow-standard-deck-skill.md): a deck spec supplied by a standard deck skill counts as the deck master, so the skill supplies values and design-workflow supplies mode, records, verification and delivery.
