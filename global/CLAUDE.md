@@ -57,6 +57,7 @@
 | 원인 불명 오류·실패한 수정 | `systematic-debugging` |
 | 배포 검증 성공 | 같은 턴에 `dev-protocol` closeout: 개발은 HANDOFF 후보 + worktree·자원 자동 정리, 그 뒤 운영은 `knowns` |
 
+- Flowpass에 쓰는 내용(주간 기록·체크 근거·넘김 메모·일정·피드백 등)은 `global/flowpass-input-rules.md`를 따른다. MCP 입력 호출은 hook이 요청마다 한 번 보류하며 규칙을 전달하고, hook이 닿지 않는 경로(HTTP 직접 호출 등)는 입력 전에 그 파일을 직접 읽는다.
 - 계획·실행·worktree·완료용 generic skill을 연쇄 호출하지 않는다.
 - Wiki 전체나 raw·candidate·derived·관찰 이력을 주입하지 않는다. sys-wiki는 관련 지식만 조회하고, my-wiki는 사용자가 명시 연결한 문서만 읽고 수정하지 않는다. 접속 불가·오래되거나 상충하는 문서는 한계를 알리고 repo-only로 진행한다. 현재 코드·migration·테스트·검증된 고객 인프라가 wiki보다 우선한다.
 

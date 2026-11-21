@@ -31,6 +31,12 @@
       "target": "~/.claude/statusline.mjs",
       "type": "file",
       "note": "Minimal native Claude status display; no orchestration plugin dependency."
+    },
+    {
+      "repo": "global/flowpass-input-rules.md",
+      "target": "~/.claude/hooks/flowpass-input-rules.md",
+      "type": "file",
+      "note": "Flowpass 입력 규칙 본문. flowpass-input-rules.mjs가 같은 디렉토리에서 읽는다."
     }
   ],
   "imports": [

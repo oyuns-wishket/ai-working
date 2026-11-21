@@ -95,6 +95,7 @@ cd "<처음 선택한 ai-working checkout 경로>"
 ai-working/
 ├── global/
 │   ├── CLAUDE.md
+│   ├── flowpass-input-rules.md  # delivered by a hook before Flowpass input
 │   └── governance-hooks.json  # one definition, native runtime adapters
 ├── hooks/
 ├── skills/
@@ -165,6 +166,7 @@ skills/personal-ai-ssot/SKILL.md를 읽고 한 번에 한 질문씩 인터뷰해
 | `prompt-wiki-context.mjs` | wiki 연결 프로젝트에서 요청마다 관련 wiki 문서를 최대 4건, 한 줄 요약·경로와 함께 제시(본문 미주입, 세션 내 중복 제외) |
 | `handoff-sync.sh` | 비활성 호환 진입점; 파일 수정·commit·push 없음 |
 | `scripts/statusline.mjs` | 선택적 모델·프로젝트·컨텍스트 사용률 표시; 외부 플러그인 불필요 |
+| `flowpass-input-rules.mjs` | Flowpass MCP 입력 호출을 요청마다 한 번 보류하고 `global/flowpass-input-rules.md`를 거부 사유로 전달(조회 도구는 통과) |
 
 매 편집 lint·문서 알림은 기본 등록에서 제외한다. 필요한 검증은 작업 완료 시 실행한다. 열린 이슈·디스크 시작 조회는 각각 `AI_WORKING_STARTUP_ISSUES=1`, `AI_WORKING_STARTUP_DISK=1`로 선택한다.
 
@@ -200,3 +202,5 @@ Hook 설정은 기존 Claude/Codex 설정 전체를 덮지 않는다. ai-working
 - [Organization-wide agent scope and durable recovery](docs/impl-notes/2026-11-02-agent-organization-scope.md)
 
 - [Invited-channel mention admission](docs/impl-notes/2026-11-02-agent-mention-admission.md): authenticated participants, conversation continuity and shared execution/delivery policy.
+
+- [Flowpass input rules](docs/impl-notes/2026-11-21-flowpass-input-rules.md): a hook holds the first Flowpass input call of each request and delivers the rules file.

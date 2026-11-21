@@ -55,6 +55,30 @@ resolver failures or timeouts (4 seconds). `AI_WORKING_PROMPT_WIKI=0` disables i
 `~/.local/state/ai-working/prompt-wiki/`. Each injection carries the route trace id so retrieval feedback can be
 closed as described in `project-wiki-context`.
 
+## Flowpass input rules
+
+`flowpass-input-rules.mjs` runs before every Flowpass MCP tool call (`^mcp__.*flowpass.*` matches the Claude plugin
+name `mcp__plugin_flowpass_flowpass__*` and the Codex server name `mcp__flowpass__*`). Lookup tools pass untouched:
+`flowpass_start`, `flowpass_status`, `flowpass_read`, `flowpass_discover`, `flowpass_guide`, `flowpass_board`,
+`flowpass_options`, `flowpass_context`, `flowpass_begin_run`, `flowpass_feedback_list`. Every other tool counts as
+input, including ones the plugin adds later.
+
+The first input call of each user request (`prompt_id` on Claude, `turn_id` on Codex) is denied once. The denial reason
+carries the full text of `global/flowpass-input-rules.md`, so the agent reads the rules before anything reaches the
+server and then calls the same tool again. Context attached to this event would arrive next to the tool result, after
+the save, so the hook denies instead. Further input calls in the same request run normally. Three cases repeat the
+hold: a call that arrives within four seconds of the delivery (issued in the same message, composed before the rules
+were seen) is denied with a one-line notice; a subagent (`agent_id`) gets its own delivery; and a request that is still
+running ten minutes later, or a runtime that reports no request id, gets the rules again.
+
+The rules file is linked to `~/.claude/hooks/flowpass-input-rules.md` by `manifest.json`, so an edit to the canonical
+file applies to the next call without rerunning bootstrap. If the file cannot be read or the delivery record cannot be
+written, the call goes through and the user sees a warning; the hook never leaves Flowpass input blocked. Delivery
+records live in `~/.local/state/ai-working/flowpass-input-rules/<session-id>.json`.
+
+The hook sees MCP tool calls only. Input sent to Flowpass another way, such as a direct HTTP call from a shell, is
+covered by the global rule that points to the same file, not by this hook.
+
 ## Paseo workspace title
 
 Paseo names a workspace from the first prompt and reads its style only from the repository's
@@ -82,6 +106,7 @@ scope, or another action outside the user's request. A marker alone is not evide
 - Multiple roots, similarly named siblings, exclusions, symlink escapes, and detached-location worktrees.
 - Migration dry-runs and already-confirmed commands accepted; unconfirmed writes rejected.
 - Bootstrap preservation of unrelated hooks and repeated installation with zero changes.
+- Flowpass input hold: one delivery per request, lookups untouched, both runtime naming schemes, fail-open paths.
 
 Natural-language decisions also need scenario review: a request to deploy an already specified development change,
 a new destructive production change, and a small change within an existing UI should lead to different decisions.

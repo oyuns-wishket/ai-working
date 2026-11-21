@@ -70,6 +70,16 @@
             "timeout": 4
           }
         ]
+      },
+      {
+        "matcher": "^mcp__.*flowpass.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/flowpass-input-rules.mjs",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PostToolUse": [
